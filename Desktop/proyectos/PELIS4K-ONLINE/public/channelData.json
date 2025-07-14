@@ -1,0 +1,1348 @@
+{
+  "channels": [
+    {
+      "id": "DSPORTS",
+      "name": "DSPORTS",
+      "image": "https://imgs.search.brave.com/5V8Ls3AM092aBxtmThvOYVgAyX37y-VndjSIrvXL8r0/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly96b25h/bW92aWwubmV0L3dw/LWNvbnRlbnQvdXBs/b2Fkcy8yMDI0LzEx/L0RTcG9ydHMud2Vi/cA",
+      "iframeUrl": "https://rereyano.ru/player/3/94"
+    },
+    {
+      "id": "claro_sports",
+      "name": "CLARO SPORTS",
+      "image": "https://digitaltv.prensariozone.com/wp-content/uploads/2023/06/Claro-Sports-Logo-516.jpg",
+      "iframeUrl": "https://canalesonline.netlify.app/servidores/m3u8.html?stream=Claro_Sports"
+    },
+    {
+      "id": "nba_tv",
+      "name": "NBA TV",
+      "image": "https://image.discovery.indazn.com/ca/v2/ca/image?id=a9muho2q6vod1hv0y84x2sihe_image-header_pDach_1661948923000",
+      "iframeUrl": "https://canalesonline.netlify.app/servidores/cvatt.html?get=TkJBX1RW"
+    },
+    {
+      "id": "espn_premium",
+      "name": "ESPN PREMIUM",
+      "image": "canales_imgs/CH76.png",
+      "iframeUrl": "https://canalesonline.netlify.app/servidores/cvatt.html?get=Rm94X1Nwb3J0c19QcmVtaXVuX0hE"
+    },
+    {
+      "id": "espn_1",
+      "name": "ESPN",
+      "image": "https://imgs.search.brave.com/RWDrYkkkFIFGmzyVDB5tUX6v78FUNwO0q41rr5_ob3Y/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9pbWdz/LnNlYXJjaC5icmF2/ZS5jb20veFdDTjNW/Uk1qc3UwdUpHWkNZ/d2YtdW4xY3NXbEpz/YXJZcndlbkNacVhk/by9yczpmaXQ6NTAw/OjA6MDowL2c6Y2Uv/YUhSMGNITTZMeTls/YzNCdS9jSEpsYzNO/eWIyOXRMbU52L2JT/OTFjeTltYVd4bGN5/OHkvTURJeEx6QTJM/ekF0UlZOUS9UaTFN/YjJkdkxXWnZjaTFR/L2NtVnpjMUp2YjIw/dE56Z3cvZURRM01D/NXFjR2M",
+      "iframeUrl": "https://canalesonline.netlify.app/servidores/cvatt.html?get=RVNQTjJIRA"
+    },
+    {
+      "id": "espn_2",
+      "name": "ESPN 2",
+"image": "https://imgs.search.brave.com/RWDrYkkkFIFGmzyVDB5tUX6v78FUNwO0q41rr5_ob3Y/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9pbWdz/LnNlYXJjaC5icmF2/ZS5jb20veFdDTjNW/Uk1qc3UwdUpHWkNZ/d2YtdW4xY3NXbEpz/YXJZcndlbkNacVhk/by9yczpmaXQ6NTAw/OjA6MDowL2c6Y2Uv/YUhSMGNITTZMeTls/YzNCdS9jSEpsYzNO/eWIyOXRMbU52L2JT/OTFjeTltYVd4bGN5/OHkvTURJeEx6QTJM/ekF0UlZOUS9UaTFN/YjJkdkxXWnZjaTFR/L2NtVnpjMUp2YjIw/dE56Z3cvZURRM01D/NXFjR2M",      "iframeUrl": "https://canalesonline.netlify.app/servidores/cvatt.html?get=RVNQTjJfQXJn"
+    },
+    {
+      "id": "espn_3",
+      "name": "ESPN 3",
+"image": "https://imgs.search.brave.com/RWDrYkkkFIFGmzyVDB5tUX6v78FUNwO0q41rr5_ob3Y/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9pbWdz/LnNlYXJjaC5icmF2/ZS5jb20veFdDTjNW/Uk1qc3UwdUpHWkNZ/d2YtdW4xY3NXbEpz/YXJZcndlbkNacVhk/by9yczpmaXQ6NTAw/OjA6MDowL2c6Y2Uv/YUhSMGNITTZMeTls/YzNCdS9jSEpsYzNO/eWIyOXRMbU52L2JT/OTFjeTltYVd4bGN5/OHkvTURJeEx6QTJM/ekF0UlZOUS9UaTFN/YjJkdkxXWnZjaTFR/L2NtVnpjMUp2YjIw/dE56Z3cvZURRM01D/NXFjR2M",      "iframeUrl": "https://canalesonline.netlify.app/servidores/cvatt.html?get=RVNQTjM"
+    },
+    {
+      "id": "espn_4",
+      "name": "ESPN 4",
+"image": "https://imgs.search.brave.com/RWDrYkkkFIFGmzyVDB5tUX6v78FUNwO0q41rr5_ob3Y/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9pbWdz/LnNlYXJjaC5icmF2/ZS5jb20veFdDTjNW/Uk1qc3UwdUpHWkNZ/d2YtdW4xY3NXbEpz/YXJZcndlbkNacVhk/by9yczpmaXQ6NTAw/OjA6MDowL2c6Y2Uv/YUhSMGNITTZMeTls/YzNCdS9jSEpsYzNO/eWIyOXRMbU52L2JT/OTFjeTltYVd4bGN5/OHkvTURJeEx6QTJM/ekF0UlZOUS9UaTFN/YjJkdkxXWnZjaTFR/L2NtVnpjMUp2YjIw/dE56Z3cvZURRM01D/NXFjR2M",      "iframeUrl": "https://canalesonline.netlify.app/servidores/cvatt.html?get=RVNQTkhE"
+    },
+    {
+      "id": "espn_5",
+      "name": "ESPN 5",
+"image": "https://imgs.search.brave.com/RWDrYkkkFIFGmzyVDB5tUX6v78FUNwO0q41rr5_ob3Y/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9pbWdz/LnNlYXJjaC5icmF2/ZS5jb20veFdDTjNW/Uk1qc3UwdUpHWkNZ/d2YtdW4xY3NXbEpz/YXJZcndlbkNacVhk/by9yczpmaXQ6NTAw/OjA6MDowL2c6Y2Uv/YUhSMGNITTZMeTls/YzNCdS9jSEpsYzNO/eWIyOXRMbU52L2JT/OTFjeTltYVd4bGN5/OHkvTURJeEx6QTJM/ekF0UlZOUS9UaTFN/YjJkdkxXWnZjaTFR/L2NtVnpjMUp2YjIw/dE56Z3cvZURRM01D/NXFjR2M",      "iframeUrl": "https://canalesonline.netlify.app/servidores/cvatt.html?get=RVNQTjQ="
+    },
+    {
+      "id": "espn_6",
+      "name": "ESPN 6",
+"image": "https://imgs.search.brave.com/RWDrYkkkFIFGmzyVDB5tUX6v78FUNwO0q41rr5_ob3Y/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9pbWdz/LnNlYXJjaC5icmF2/ZS5jb20veFdDTjNW/Uk1qc3UwdUpHWkNZ/d2YtdW4xY3NXbEpz/YXJZcndlbkNacVhk/by9yczpmaXQ6NTAw/OjA6MDowL2c6Y2Uv/YUhSMGNITTZMeTls/YzNCdS9jSEpsYzNO/eWIyOXRMbU52L2JT/OTFjeTltYVd4bGN5/OHkvTURJeEx6QTJM/ekF0UlZOUS9UaTFN/YjJkdkxXWnZjaTFR/L2NtVnpjMUp2YjIw/dE56Z3cvZURRM01D/NXFjR2M",      "iframeUrl": "https://canalesonline.netlify.app/servidores/cvatt.html?get=Rm94U3BvcnRzM19VWQ=="
+    },
+    {
+      "id": "espn_7",
+      "name": "ESPN 7",
+"image": "https://imgs.search.brave.com/RWDrYkkkFIFGmzyVDB5tUX6v78FUNwO0q41rr5_ob3Y/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9pbWdz/LnNlYXJjaC5icmF2/ZS5jb20veFdDTjNW/Uk1qc3UwdUpHWkNZ/d2YtdW4xY3NXbEpz/YXJZcndlbkNacVhk/by9yczpmaXQ6NTAw/OjA6MDowL2c6Y2Uv/YUhSMGNITTZMeTls/YzNCdS9jSEpsYzNO/eWIyOXRMbU52L2JT/OTFjeTltYVd4bGN5/OHkvTURJeEx6QTJM/ekF0UlZOUS9UaTFN/YjJkdkxXWnZjaTFR/L2NtVnpjMUp2YjIw/dE56Z3cvZURRM01D/NXFjR2M",      "iframeUrl": "https://canalesonline.netlify.app/servidores/cvatt.html?get=Rm94U3BvcnRzMl9VWQ=="
+    },
+    {
+      "id": "fox_sports",
+      "name": "FOX SPORTS",
+      "image": "https://yt3.googleusercontent.com/MczcN1RMZCz0ItcUKEArqKx3a0xbViF8iUpjR9eT8hunRDYWcH6YneNVXLAxO8-3-hHwZBbP1w=s900-c-k-c0x00ffffff-no-rj",
+      "iframeUrl": "https://canalesonline.netlify.app/servidores/cvatt.html?get=Rm94U3BvcnRz"
+    },
+    {
+      "id": "fox_sports_2",
+      "name": "FOX SPORTS 2",
+      "image": "https://imgs.search.brave.com/Wdt8A75GViuCjfR98qWhR1NVfkniDa96FA2vQ4EA9mA/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9pbWdz/LnNlYXJjaC5icmF2/ZS5jb20vajVnTjZ2/ZTQ1RWE4MWJobW9q/TG5saEdjeUZ5YXVS/NldKcE1TNWVuUkNQ/VS9yczpmaXQ6NTAw/OjA6MDowL2c6Y2Uv/YUhSMGNITTZMeTkx/Y0d4di9ZV1F1ZDJs/cmFXMWxaR2xoL0xt/OXlaeTkzYVd0cGNH/VmsvYVdFdlkyOXRi/Vzl1Y3k5aS9MMkps/TDBadmVGOVRjRzl5/L2RITmZNbDlCY21k/bGJuUnAvYm1GZk1q/QXlNeTV6ZG1j",
+      "iframeUrl": "https://canalesonline.netlify.app/servidores/cvatt.html?get=Rm94U3BvcnRzMkhE"
+    },
+    {
+      "id": "fox_sports_3",
+      "name": "FOX SPORTS 3",
+      "image": "https://imgs.search.brave.com/NV4IjYU4jZ9OBRJcKwRUfQWqbPqJqhUWUiN9cC6zSYI/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9pbWdz/LnNlYXJjaC5icmF2/ZS5jb20vSUFoaFo4/djd0TFI2aHhsSFQy/RlFEVUFXZXg0UFJ2/STJHQXpoUW9INUkw/RS9yczpmaXQ6NTAw/OjA6MDowL2c6Y2Uv/YUhSMGNITTZMeTkx/Y0d4di9ZV1F1ZDJs/cmFXMWxaR2xoL0xt/OXlaeTkzYVd0cGNH/VmsvYVdFdlkyOXRi/Vzl1Y3k5ai9MMk0z/TDBadmVGOVRjRzl5/L2RITmZNMTlCY21k/bGJuUnAvYm1GZk1q/QXlNeTV6ZG1j",
+      "iframeUrl": "https://canalesonline.netlify.app/servidores/cvatt.html?get=Rm94U3BvcnRzM0hE"
+    },
+    {
+      "id": "tnt_hd",
+      "name": "TNT HD",
+      "image": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRCw6i2eY036RJCtoyYanvfDoZqSVLiAvMH9g&s",
+      "iframeUrl": "https://canalesonline.netlify.app/servidores/cvatt.html?get=VE5UX0hEX0FyZw"
+    },
+    {
+      "id": "tyc_sports",
+      "name": "TYC SPORTS",
+      "image": "https://statics-files.tycsports.com/frontend/tycsports/img/site_image.jpg",
+      "iframeUrl": "https://canalesonline.netlify.app/servidores/cvatt.html?get=VHlDU3BvcnQ"
+    },
+    {
+      "id": "tyc_sports_2",
+      "name": "TYC SPORTS 2",
+      "image": "https://statics-files.tycsports.com/frontend/tycsports/img/site_image.jpg",
+      "iframeUrl": "https://canalesonline.netlify.app/servidores/cvatt.html?get=RXZlbnRvczFIRA"
+    },
+    {
+      "id": "telefe",
+      "name": "TELEFE",
+      "image": "https://yt3.googleusercontent.com/Bad3GqpyvghQQ9OvPHbiuU2CKCZrUwJCkCs5as1ypmYEWgQGtb5Fn_QKxvgv_XqDUfTFa2g8=s900-c-k-c0x00ffffff-no-rj",
+      "iframeUrl": "https://canalesonline.netlify.app/servidores/cvatt.html?get=VGVsZWZlSEQ="
+    },
+    {
+      "id": "tv_publica",
+      "name": "TV PUBLICA",
+      "image": "https://fotos.perfil.com/2024/03/27/trim/1280/720/tv-publica-1777165.jpg",
+      "iframeUrl": "https://canalesonline.netlify.app/servidores/cvatt.html?get=Q2FuYWw3"
+    },
+    {
+      "id": "gol_peru",
+      "name": "GOL PERÚ",
+      "image": "https://imgs.search.brave.com/v6j26w-FCfOfcqYRs_hB-Ju3yyM-rNR5qab058YPbRA/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly91cGxv/YWQud2lraW1lZGlh/Lm9yZy93aWtpcGVk/aWEvY29tbW9ucy90/aHVtYi9jL2NkL0dv/bF9QZXIlQzMlQkFf/MjAxOS5zdmcvMjUw/cHgtR29sX1BlciVD/MyVCQV8yMDE5LnN2/Zy5wbmc",
+      "iframeUrl": "https://stream196tp.com/global2.php?stream=golperu"
+    },
+    {
+      "id": "cinemax",
+      "name": "Cinemax",
+      "image": "https://cdn.prod.website-files.com/605a3cacba514a77ca2e6ab5/614940efbf24c1cc7859d5f7_cinemax-blog.png",
+      "iframeUrl": "hhttps://canalesonline.netlify.app/servidores/cvatt.html?get=Q2luZW1heA=="
+    },
+    {
+      "id": "space",
+      "name": "Space",
+      "image": "https://imgs.search.brave.com/fHMzm1m0DmT-bzzieaaEleJq_cI6kHue-Uth_-xn7yo/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9pbWdz/LnNlYXJjaC5icmF2/ZS5jb20vQ0pGODhN/c0pBUzJ2Qlc1VjFi/d2F6UzZUbUNPTkJR/N2NfUnBXQTBrTDlq/SS9yczpmaXQ6NTAw/OjA6MDowL2c6Y2Uv/YUhSMGNITTZMeTkz/ZDNjdS9abXh2ZHk1/amIyMHVZWEl2L1ky/OXVkR1Z1ZEM5a1lX/MHYvZEdWamJ5MWpi/WE10WldOdi9jM2x6/ZEdWdEwyWnNiM2N2/L1ozVnBZUzFrWlMx/allXNWgvYkdWekx6/TXpMbkJ1Wnc",
+      "iframeUrl": "https://canalesonline.netlify.app/servidores/cvatt.html?get=U3BhY2U="
+    },
+    {
+      "id": "animal_planet",
+      "name": "Animal Planet",
+      "image": "https://imgs.search.brave.com/um9bDdp7W2BQ9S6X0ER7R1I3ZbWWRK67LseWjr6J4Rs/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9pbWdz/LnNlYXJjaC5icmF2/ZS5jb20vV2JLTnJo/ZUVaV25LUEFfX0g4/bzAyQzJENHlzOGpI/U05Db0tOZzhIMURp/TS9yczpmaXQ6NTAw/OjA6MDowL2c6Y2Uv/YUhSMGNITTZMeTlz/YjJkdi9jeTEzYjNK/c1pDNXVaWFF2L2Qz/QXRZMjl1ZEdWdWRD/OTEvY0d4dllXUnpM/ekl3TWpNdi9NRFF2/UVc1cGJXRnNMVkJz/L1lXNWxkQzFNYjJk/dkxURTUvT1RZdE5U/QXdlREk0TVM1dy9i/bWM",
+      "iframeUrl": "https://canalesonline.netlify.app/servidores/cvatt.html?get=QW5pbWFsUGxhbmV0"
+    },
+    {
+      "id": "cronica_tv",
+      "name": "CRÓNICA TV",
+      "image": "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEh4DC0-vjxdknUnvyD_wtUZ3iAacVmZqmj7_O6aRYYGT30zyv7Up4KWSamHZ_eZ3H84uhvmrXs-XiVCG2KX_xVteVyguWXrPr1D_MNiBJT6ckBDA_-5Gx-FTnaXA0EXGl4o2i91qFqnI0Z5P9N45IKO5TX3bDdWMmqTXzua5KV5YRDJAJnkNPN0hx9h/s558/CRONICATV.png",
+      "iframeUrl": "https://canalesonline.netlify.app/servidores/cvatt.html?get=Q3JvbmljYVRW"
+    },
+    {
+      "id": "CH1",
+      "name": "beIN 1",
+      "image": "canales_imgs/bein.png",
+      "iframeUrl": "https://rereyano.ru/player/3/1"
+    },
+    {
+      "id": "CH2",
+      "name": "beIN 2",
+      "image": "canales_imgs/bein.png",
+      "iframeUrl": "https://rereyano.ru/player/3/2"
+    },
+    {
+      "id": "CH3",
+      "name": "beIN 3",
+      "image": "canales_imgs/bein.png",
+      "iframeUrl": "https://rereyano.ru/player/3/3"
+    },
+    {
+      "id": "CH4",
+      "name": "beIN max 4",
+      "image": "canales_imgs/bein.png",
+      "iframeUrl": "https://rereyano.ru/player/3/4"
+    },
+    {
+      "id": "CH5",
+      "name": "beIN max 5",
+      "image": "canales_imgs/bein.png",
+      "iframeUrl": "https://rereyano.ru/player/3/5"
+    },
+    {
+      "id": "CH6",
+      "name": "beIN max 6",
+      "image": "canales_imgs/bein.png",
+      "iframeUrl": "https://rereyano.ru/player/3/6"
+    },
+    {
+      "id": "CH7",
+      "name": "beIN max 7",
+      "image": "canales_imgs/bein.png",
+      "iframeUrl": "https://rereyano.ru/player/3/7"
+    },
+    {
+      "id": "CH8",
+      "name": "beIN max 8",
+      "image": "canales_imgs/bein.png",
+      "iframeUrl": "https://rereyano.ru/player/3/8"
+    },
+    {
+      "id": "CH9",
+      "name": "beIN max 9",
+      "image": "canales_imgs/bein.png",
+      "iframeUrl": "https://rereyano.ru/player/3/9"
+    },
+    {
+      "id": "CH10",
+      "name": "beIN max 10",
+      "image": "canales_imgs/bein.png",
+      "iframeUrl": "https://rereyano.ru/player/3/10"
+    },
+    {
+      "id": "CH11",
+      "name": "canal+",
+      "image": "canales_imgs/CH11.MSUj",
+      "iframeUrl": "https://rereyano.ru/player/3/11"
+    },
+    {
+      "id": "CH12",
+      "name": "canal+ foot",
+      "image": "canales_imgs/CH12.png",
+      "iframeUrl": "https://rereyano.ru/player/3/12"
+    },
+    {
+      "id": "CH13",
+      "name": "canal+ sport",
+      "image": "canales_imgs/CH13.png",
+      "iframeUrl": "https://rereyano.ru/player/3/13"
+    },
+    {
+      "id": "CH14",
+      "name": "canal+ sport360",
+      "image": "canales_imgs/CH14.png",
+      "iframeUrl": "https://rereyano.ru/player/3/14"
+    },
+    {
+      "id": "CH15",
+      "name": "eurosport1",
+      "image": "canales_imgs/CH15.png",
+      "iframeUrl": "https://rereyano.ru/player/3/15"
+    },
+    {
+      "id": "CH16",
+      "name": "eurosport2",
+      "image": "canales_imgs/CH16.png",
+      "iframeUrl": "https://rereyano.ru/player/3/16"
+    },
+    {
+      "id": "CH17",
+      "name": "rmc sport1",
+      "image": "canales_imgs/CH17.png",
+      "iframeUrl": "https://rereyano.ru/player/3/17"
+    },
+    {
+      "id": "CH18",
+      "name": "rmc sport2",
+      "image": "canales_imgs/CH18.png",
+      "iframeUrl": "https://rereyano.ru/player/3/18"
+    },
+    {
+      "id": "CH19",
+      "name": "equipe",
+      "image": "canales_imgs/CH19.jpg",
+      "iframeUrl": "https://rereyano.ru/player/3/19"
+    },
+    {
+      "id": "CH20",
+      "name": "LIGUE 1 FR",
+      "image": "canales_imgs/CH20.jpg",
+      "iframeUrl": "https://rereyano.ru/player/3/20"
+    },
+    {
+      "id": "CH21",
+      "name": "LIGUE 1 FR",
+      "image": "canales_imgs/CH21.jpg",
+      "iframeUrl": "https://rereyano.ru/player/3/21"
+    },
+    {
+      "id": "CH22",
+      "name": "LIGUE 1 FR",
+      "image": "canales_imgs/CH22.jpg",
+      "iframeUrl": "https://rereyano.ru/player/3/22"
+    },
+    {
+      "id": "CH23",
+      "name": "automoto",
+      "image": "canales_imgs/CH23.jpg",
+      "iframeUrl": "https://rereyano.ru/player/3/23"
+    },
+    {
+      "id": "CH24",
+      "name": "tf1",
+      "image": "canales_imgs/CH24.png",
+      "iframeUrl": "https://rereyano.ru/player/3/24"
+    },
+    {
+      "id": "CH25",
+      "name": "tmc",
+      "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f4/TCM_Latam_logo.svg/1200px-TCM_Latam_logo.svg.png",
+      "iframeUrl": "https://rereyano.ru/player/3/25"
+    },
+    {
+      "id": "CH26",
+      "name": "m6",
+      "image": "canales_imgs/CH26.jpg",
+      "iframeUrl": "https://rereyano.ru/player/3/26"
+    },
+    {
+      "id": "CH27",
+      "name": "w9",
+      "image": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQNrATgKkKbfXKowkcWVKLMAcSKyXwFGLVoWw&s",
+      "iframeUrl": "https://rereyano.ru/player/3/27"
+    },
+    {
+      "id": "CH28",
+      "name": "france2",
+      "image": "canales_imgs/CH28.png",
+      "iframeUrl": "https://rereyano.ru/player/3/28"
+    },
+    {
+      "id": "CH29",
+      "name": "france3",
+      "image": "canales_imgs/CH29.webp",
+      "iframeUrl": "https://rereyano.ru/player/3/29"
+    },
+    {
+      "id": "CH30",
+      "name": "france4",
+      "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7b/France_4_-_logo_2018.svg/120px-France_4_-_logo_2018.svg.png",
+      "iframeUrl": "https://rereyano.ru/player/3/30"
+    },
+    {
+      "id": "CH31",
+      "name": "C+Live 1",
+      "image": "canales_imgs/CH31.jpg",
+      "iframeUrl": "https://rereyano.ru/player/3/31"
+    },
+    {
+      "id": "CH32",
+      "name": "C+Live 2",
+      "image": "canales_imgs/CH32.jpg",
+      "iframeUrl": "https://rereyano.ru/player/3/32"
+    },
+    {
+      "id": "CH33",
+      "name": "C+Live 3",
+      "image": "canales_imgs/CH33.jpg",
+      "iframeUrl": "https://rereyano.ru/player/3/33"
+    },
+    {
+      "id": "CH34",
+      "name": "C+Live 4",
+      "image": "canales_imgs/CH34.png",
+      "iframeUrl": "https://rereyano.ru/player/3/34"
+    },
+    {
+      "id": "CH35",
+      "name": "C+Live 5",
+      "image": "canales_imgs/CH35.jpg",
+      "iframeUrl": "https://rereyano.ru/player/3/35"
+    },
+    {
+      "id": "CH36",
+      "name": "C+Live 6",
+      "image": "canales_imgs/CH36.jpg",
+      "iframeUrl": "https://rereyano.ru/player/3/36"
+    },
+    {
+      "id": "CH37",
+      "name": "C+Live 7",
+      "image": "canales_imgs/CH37.jpg",
+      "iframeUrl": "https://rereyano.ru/player/3/37"
+    },
+    {
+      "id": "CH38",
+      "name": "C+Live 8",
+      "image": "canales_imgs/CH32.jpg",
+      "iframeUrl": "https://rereyano.ru/player/3/38"
+    },
+    {
+      "id": "CH39",
+      "name": "C+Live 9",
+      "image": "canales_imgs/CH32.jpg",
+      "iframeUrl": "https://rereyano.ru/player/3/39"
+    },
+    {
+      "id": "CH40",
+      "name": "C+Live 10",
+      "image": "canales_imgs/CH32.jpg",
+      "iframeUrl": "https://rereyano.ru/player/3/40"
+    },
+    {
+      "id": "CH41",
+      "name": "C+Live 11",
+      "image": "canales_imgs/CH32.jpg",
+      "iframeUrl": "https://rereyano.ru/player/3/41"
+    },
+    {
+      "id": "CH42",
+      "name": "C+Live 12",
+      "image": "canales_imgs/CH32.jpg",
+      "iframeUrl": "https://rereyano.ru/player/3/42"
+    },
+    {
+      "id": "CH43",
+      "name": "C+Live 13",
+      "image": "canales_imgs/CH32.jpg",
+      "iframeUrl": "https://rereyano.ru/player/3/43"
+    },
+    {
+      "id": "CH44",
+      "name": "C+Live 14",
+      "image": "canales_imgs/CH32.jpg",
+      "iframeUrl": "https://rereyano.ru/player/3/44"
+    },
+    {
+      "id": "CH45",
+      "name": "C+Live 15",
+      "image": "canales_imgs/CH32.jpg",
+      "iframeUrl": "https://rereyano.ru/player/3/45"
+    },
+    {
+      "id": "CH46",
+      "name": "C+Live 16",
+      "image": "canales_imgs/CH32.jpg",
+      "iframeUrl": "https://rereyano.ru/player/3/46"
+    },
+    {
+      "id": "CH47",
+      "name": "C+Live 17",
+      "image": "canales_imgs/CH47.jpg",
+      "iframeUrl": "https://rereyano.ru/player/3/47"
+    },
+    {
+      "id": "CH48",
+      "name": "C+Live 18",
+      "image": "canales_imgs/CH48.jpg",
+      "iframeUrl": "https://rereyano.ru/player/3/48"
+    },
+    {
+      "id": "CH49",
+      "name": "ES m.laliga",
+      "image": "canales_imgs/CH49.jpg",
+      "iframeUrl": "https://rereyano.ru/player/3/49"
+    },
+    {
+      "id": "CH50",
+      "name": "ES m.laliga2",
+      "image": "canales_imgs/CH50.png",
+      "iframeUrl": "https://rereyano.ru/player/3/50"
+    }, {
+      "id": "CAZÉ TV",
+      "name": "CAZÉ TV",
+      "image": "https://cdn.worldvectorlogo.com/logos/caze-tv-logo-1.svg",
+      "iframeUrl": "https://domainparatodo.online/cn.php?id=CAZETV1"
+    },
+    
+    {
+      "id": "DISNEY + PREMIUM",
+      "name": "DISNEY + PREMIUM (Extensión Solo ARG)",
+      "image": "https://imgs.search.brave.com/S9UExyeSgbaI1SpdMGnUvLfkA4CKPGjsXLhV3tQfzT0/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly91cGxv/YWQud2lraW1lZGlh/Lm9yZy93aWtpcGVk/aWEvY29tbW9ucy82/LzY0L0Rpc25leStf/MjAyNC5zdmc",
+      "iframeUrl": "chrome-extension://opmeopcambhfimffbomjgemehjkbbmji/pages/player.html#https://live-ftc-na-south-2.media.dssott.com/dvt2=exp=1750270152~url=%2Fgru1%2Fva01%2Fdisneyplus%2Fevent%2F2025%2F06%2F17%2FRiver_Plate_ARG_vs_Urawa__20250617_1750172408029%2F~psid=50d5a0e5-1c30-4fb4-8e7c-c8c3de7b5221~aid=f73af040-fc19-4da3-81ec-2e2a14f72f4d~did=bced3976-0a5c-43e5-a2e6-d6099e46fb28~country=AR~kid=k02~hmac=779891994b2114c2a10394109d2b31c9f7c485d439d846a1f74f5a222f2c80b1/gru1/va01/disneyplus/event/2025/06/17/River_Plate_ARG_vs_Urawa__20250617_1750172408029/ctr-all-hdri-sliding.m3u8?&ck=eyJjOGI2ZjFlY2RkOTk0M2E5OTI1MjYwODNhZTljMDk1ZiI6IjdiZmFmYjI3ODkxMjgwNzgxMzBkZDNlY2I4MzhlNTRkIn0%3D"
+    },
+
+
+
+
+    {
+      "id": "CH51",
+      "name": "ES DAZN liga",
+      "image": "canales_imgs/CH51.jpg",
+      "iframeUrl": "https://rereyano.ru/player/3/51"
+    },
+    {
+      "id": "CH52",
+      "name": "ES DAZN liga2",
+      "image": "canales_imgs/CH52.jpg",
+      "iframeUrl": "https://rereyano.ru/player/3/52"
+    },
+    {
+      "id": "CH53",
+      "name": "ES LALIGA HYPERMOTION",
+      "image": "canales_imgs/CH53.png",
+      "iframeUrl": "https://rereyano.ru/player/3/53"
+    },
+    {
+      "id": "CH54",
+      "name": "ES LALIGA HYPERMOTION2",
+      "image": "canales_imgs/CH54.png",
+      "iframeUrl": "https://rereyano.ru/player/3/54"
+    },
+    {
+      "id": "CH55",
+      "name": "ES Vamos",
+      "image": "canales_imgs/CH55.png",
+      "iframeUrl": "https://rereyano.ru/player/3/55"
+    },
+    {
+      "id": "CH56",
+      "name": "ES DAZN 1",
+      "image": "canales_imgs/CH56.svg",
+      "iframeUrl": "https://rereyano.ru/player/3/56"
+    },
+    {
+      "id": "CH57",
+      "name": "ES DAZN 2",
+      "image": "canales_imgs/CH57.png",
+      "iframeUrl": "https://rereyano.ru/player/3/57"
+    },
+    {
+      "id": "CH58",
+      "name": "ES DAZN 3",
+      "image": "canales_imgs/CH58.png",
+      "iframeUrl": "https://rereyano.ru/player/3/58"
+    },
+    {
+      "id": "CH59",
+      "name": "ES DAZN 4",
+      "image": "canales_imgs/CH59.png",
+      "iframeUrl": "https://rereyano.ru/player/3/59"
+    },
+    {
+      "id": "CH60",
+      "name": "ES DAZN F1",
+      "image": "canales_imgs/daznf1.jpg",
+      "iframeUrl": "https://rereyano.ru/player/3/60"
+    },
+    {
+      "id": "CH61",
+      "name": "ES M+ Liga de Campeones",
+      "image": "canales_imgs/CH61.png",
+      "iframeUrl": "https://rereyano.ru/player/3/61"
+    },
+    {
+      "id": "CH62",
+      "name": "ES M+ Deportes",
+      "image": "canales_imgs/CH62.png",
+      "iframeUrl": "https://rereyano.ru/player/3/62"
+    },
+    {
+      "id": "CH63",
+      "name": "ES M+ Deportes2",
+      "image": "canales_imgs/CH62.png",
+      "iframeUrl": "https://rereyano.ru/player/3/63"
+    },
+    {
+      "id": "CH64",
+      "name": "ES M+ Deportes3",
+      "image": "canales_imgs/CH62.png",
+      "iframeUrl": "https://rereyano.ru/player/3/64"
+    },
+    {
+      "id": "CH65",
+      "name": "ES M+ Deportes4",
+      "image": "canales_imgs/CH62.png",
+      "iframeUrl": "https://rereyano.ru/player/3/65"
+    },
+    {
+      "id": "CH66",
+      "name": "ES M+ Deportes5",
+      "image": "canales_imgs/CH62.png",
+      "iframeUrl": "https://rereyano.ru/player/3/66"
+    },
+    {
+      "id": "CH67",
+      "name": "ES M+ Deportes6",
+      "image": "canales_imgs/CH62.png",
+      "iframeUrl": "https://rereyano.ru/player/3/67"
+    },
+    {
+      "id": "CH68",
+      "name": "TUDN USA",
+      "image": "canales_imgs/CH68.png",
+      "iframeUrl": "https://rereyano.ru/player/3/68"
+    },
+    {
+      "id": "CH69",
+      "name": "beIN En español",
+      "image": "canales_imgs/CH69.jpg",
+      "iframeUrl": "https://rereyano.ru/player/3/69"
+    },
+    {
+      "id": "CH70",
+      "name": "FOX Deportes",
+      "image": "canales_imgs/CH70.png",
+      "iframeUrl": "https://rereyano.ru/player/3/70"
+    },
+    {
+      "id": "CH71",
+      "name": "ESPN Deportes",
+"image": "https://imgs.search.brave.com/RWDrYkkkFIFGmzyVDB5tUX6v78FUNwO0q41rr5_ob3Y/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9pbWdz/LnNlYXJjaC5icmF2/ZS5jb20veFdDTjNW/Uk1qc3UwdUpHWkNZ/d2YtdW4xY3NXbEpz/YXJZcndlbkNacVhk/by9yczpmaXQ6NTAw/OjA6MDowL2c6Y2Uv/YUhSMGNITTZMeTls/YzNCdS9jSEpsYzNO/eWIyOXRMbU52L2JT/OTFjeTltYVd4bGN5/OHkvTURJeEx6QTJM/ekF0UlZOUS9UaTFN/YjJkdkxXWnZjaTFR/L2NtVnpjMUp2YjIw/dE56Z3cvZURRM01D/NXFjR2M",      "iframeUrl": "https://rereyano.ru/player/3/71"
+    },
+    {
+      "id": "CH72",
+      "name": "NBC UNIVERSO",
+      "image": "canales_imgs/CH72.png",
+      "iframeUrl": "https://rereyano.ru/player/3/72"
+    },
+    {
+      "id": "CH73",
+      "name": "Telemundo",
+      "image": "canales_imgs/CH73.png",
+      "iframeUrl": "https://rereyano.ru/player/3/73"
+    },
+    {
+      "id": "CH74",
+      "name": "GOL español",
+      "image": "canales_imgs/CH74.png",
+      "iframeUrl": "https://rereyano.ru/player/3/74"
+    },
+    {
+      "id": "CH75",
+      "name": "TNT sport arg",
+      "image": "canales_imgs/TNT SPORT.png",
+      "iframeUrl": "https://rereyano.ru/player/3/75"
+    },
+    {
+      "id": "CH76",
+      "name": "ESPN Premium",
+      "image": "canales_imgs/CH76.png",
+      "iframeUrl": "https://rereyano.ru/player/3/76"
+    },
+    {
+      "id": "CH77",
+      "name": "TyC Sports",
+      "image": "canales_imgs/CH77.png",
+      "iframeUrl": "https://rereyano.ru/player/3/77"
+    },
+    {
+      "id": "CH78",
+      "name": "FOXsport1 arg",
+      "image": "canales_imgs/CH78.png",
+      "iframeUrl": "https://rereyano.ru/player/3/78"
+    },
+    {
+      "id": "CH79",
+      "name": "FOXsport2 arg",
+      "image": "canales_imgs/CH79.png",
+      "iframeUrl": "https://rereyano.ru/player/3/79"
+    },
+    {
+      "id": "CH80",
+      "name": "FOXsport3 arg",
+      "image": "canales_imgs/CH80.png",
+      "iframeUrl": "https://rereyano.ru/player/3/80"
+    },
+    {
+      "id": "CH81",
+      "name": "WINsport+",
+      "image": "canales_imgs/CH81.jpg",
+      "iframeUrl": "https://rereyano.ru/player/3/81"
+    },
+    {
+      "id": "CH82",
+      "name": "WINsport",
+      "image": "canales_imgs/CH82.png",
+      "iframeUrl": "https://rereyano.ru/player/3/82"
+    },
+    {
+      "id": "CH83",
+      "name": "TNT CHILE Premium",
+      "image": "https://imgs.search.brave.com/I8pjw-0v_DawHpqkva2WbgLr34mVS0QAlJhqu9FMunw/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly91cGxv/YWQud2lraW1lZGlh/Lm9yZy93aWtpcGVk/aWEvY29tbW9ucy84/LzhhL1RudF90dl9y/b21hbmlhLnBuZw",
+      "iframeUrl": "https://rereyano.ru/player/3/83"
+    },
+    {
+      "id": "CH84",
+      "name": "Liga1MAX",
+      "image": "canales_imgs/CH84.jpg",
+      "iframeUrl": "https://rereyano.ru/player/3/84"
+    },
+    {
+      "id": "CH85",
+      "name": "GOLPERU",
+      "image": "https://imgs.search.brave.com/v6j26w-FCfOfcqYRs_hB-Ju3yyM-rNR5qab058YPbRA/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly91cGxv/YWQud2lraW1lZGlh/Lm9yZy93aWtpcGVk/aWEvY29tbW9ucy90/aHVtYi9jL2NkL0dv/bF9QZXIlQzMlQkFf/MjAxOS5zdmcvMjUw/cHgtR29sX1BlciVD/MyVCQV8yMDE5LnN2/Zy5wbmc",
+      "iframeUrl": "https://rereyano.ru/player/3/85"
+    },
+    {
+      "id": "CH86",
+      "name": "Zapping sports",
+      "image": "https://imgs.search.brave.com/uVEybefgAdoP9VssVxV63Aly5DbmgFb6DMcj81EU4g0/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9jZG4u/cHJvZC53ZWJzaXRl/LWZpbGVzLmNvbS82/MDVhM2NhY2JhNTE0/YTc3Y2EyZTZhYjUv/NjNhMDc5MzEzYWNj/ZTE1N2I3NTczZGQ3/X3phcHBpbmdzcG9y/dHMuanBn",
+      "iframeUrl": "https://rereyano.ru/player/3/86"
+    },
+    {
+      "id": "CH87",
+      "name": "ESPN1",
+"image": "https://imgs.search.brave.com/RWDrYkkkFIFGmzyVDB5tUX6v78FUNwO0q41rr5_ob3Y/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9pbWdz/LnNlYXJjaC5icmF2/ZS5jb20veFdDTjNW/Uk1qc3UwdUpHWkNZ/d2YtdW4xY3NXbEpz/YXJZcndlbkNacVhk/by9yczpmaXQ6NTAw/OjA6MDowL2c6Y2Uv/YUhSMGNITTZMeTls/YzNCdS9jSEpsYzNO/eWIyOXRMbU52L2JT/OTFjeTltYVd4bGN5/OHkvTURJeEx6QTJM/ekF0UlZOUS9UaTFN/YjJkdkxXWnZjaTFR/L2NtVnpjMUp2YjIw/dE56Z3cvZURRM01D/NXFjR2M",      "iframeUrl": "https://rereyano.ru/player/3/87"
+    },
+    {
+      "id": "CH88",
+      "name": "ESPN2",
+"image": "https://imgs.search.brave.com/RWDrYkkkFIFGmzyVDB5tUX6v78FUNwO0q41rr5_ob3Y/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9pbWdz/LnNlYXJjaC5icmF2/ZS5jb20veFdDTjNW/Uk1qc3UwdUpHWkNZ/d2YtdW4xY3NXbEpz/YXJZcndlbkNacVhk/by9yczpmaXQ6NTAw/OjA6MDowL2c6Y2Uv/YUhSMGNITTZMeTls/YzNCdS9jSEpsYzNO/eWIyOXRMbU52L2JT/OTFjeTltYVd4bGN5/OHkvTURJeEx6QTJM/ekF0UlZOUS9UaTFN/YjJkdkxXWnZjaTFR/L2NtVnpjMUp2YjIw/dE56Z3cvZURRM01D/NXFjR2M",      "iframeUrl": "https://rereyano.ru/player/3/88"
+    },
+    {
+      "id": "CH89",
+      "name": "ESPN3",
+"image": "https://imgs.search.brave.com/RWDrYkkkFIFGmzyVDB5tUX6v78FUNwO0q41rr5_ob3Y/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9pbWdz/LnNlYXJjaC5icmF2/ZS5jb20veFdDTjNW/Uk1qc3UwdUpHWkNZ/d2YtdW4xY3NXbEpz/YXJZcndlbkNacVhk/by9yczpmaXQ6NTAw/OjA6MDowL2c6Y2Uv/YUhSMGNITTZMeTls/YzNCdS9jSEpsYzNO/eWIyOXRMbU52L2JT/OTFjeTltYVd4bGN5/OHkvTURJeEx6QTJM/ekF0UlZOUS9UaTFN/YjJkdkxXWnZjaTFR/L2NtVnpjMUp2YjIw/dE56Z3cvZURRM01D/NXFjR2M",      "iframeUrl": "https://rereyano.ru/player/3/89"
+    },
+    {
+      "id": "CH90",
+      "name": "ESPN4",
+"image": "https://imgs.search.brave.com/RWDrYkkkFIFGmzyVDB5tUX6v78FUNwO0q41rr5_ob3Y/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9pbWdz/LnNlYXJjaC5icmF2/ZS5jb20veFdDTjNW/Uk1qc3UwdUpHWkNZ/d2YtdW4xY3NXbEpz/YXJZcndlbkNacVhk/by9yczpmaXQ6NTAw/OjA6MDowL2c6Y2Uv/YUhSMGNITTZMeTls/YzNCdS9jSEpsYzNO/eWIyOXRMbU52L2JT/OTFjeTltYVd4bGN5/OHkvTURJeEx6QTJM/ekF0UlZOUS9UaTFN/YjJkdkxXWnZjaTFR/L2NtVnpjMUp2YjIw/dE56Z3cvZURRM01D/NXFjR2M",      "iframeUrl": "https://rereyano.ru/player/3/90"
+    },
+    {
+      "id": "CH91",
+      "name": "ESPN5",
+"image": "https://imgs.search.brave.com/RWDrYkkkFIFGmzyVDB5tUX6v78FUNwO0q41rr5_ob3Y/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9pbWdz/LnNlYXJjaC5icmF2/ZS5jb20veFdDTjNW/Uk1qc3UwdUpHWkNZ/d2YtdW4xY3NXbEpz/YXJZcndlbkNacVhk/by9yczpmaXQ6NTAw/OjA6MDowL2c6Y2Uv/YUhSMGNITTZMeTls/YzNCdS9jSEpsYzNO/eWIyOXRMbU52L2JT/OTFjeTltYVd4bGN5/OHkvTURJeEx6QTJM/ekF0UlZOUS9UaTFN/YjJkdkxXWnZjaTFR/L2NtVnpjMUp2YjIw/dE56Z3cvZURRM01D/NXFjR2M",      "iframeUrl": "https://rereyano.ru/player/3/91"
+    },
+    {
+      "id": "CH92",
+      "name": "ESPN6",
+"image": "https://imgs.search.brave.com/RWDrYkkkFIFGmzyVDB5tUX6v78FUNwO0q41rr5_ob3Y/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9pbWdz/LnNlYXJjaC5icmF2/ZS5jb20veFdDTjNW/Uk1qc3UwdUpHWkNZ/d2YtdW4xY3NXbEpz/YXJZcndlbkNacVhk/by9yczpmaXQ6NTAw/OjA6MDowL2c6Y2Uv/YUhSMGNITTZMeTls/YzNCdS9jSEpsYzNO/eWIyOXRMbU52L2JT/OTFjeTltYVd4bGN5/OHkvTURJeEx6QTJM/ekF0UlZOUS9UaTFN/YjJkdkxXWnZjaTFR/L2NtVnpjMUp2YjIw/dE56Z3cvZURRM01D/NXFjR2M",      "iframeUrl": "https://rereyano.ru/player/3/92"
+    },
+    {
+      "id": "CH93",
+      "name": "ESPN7",
+"image": "https://imgs.search.brave.com/RWDrYkkkFIFGmzyVDB5tUX6v78FUNwO0q41rr5_ob3Y/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9pbWdz/LnNlYXJjaC5icmF2/ZS5jb20veFdDTjNW/Uk1qc3UwdUpHWkNZ/d2YtdW4xY3NXbEpz/YXJZcndlbkNacVhk/by9yczpmaXQ6NTAw/OjA6MDowL2c6Y2Uv/YUhSMGNITTZMeTls/YzNCdS9jSEpsYzNO/eWIyOXRMbU52L2JT/OTFjeTltYVd4bGN5/OHkvTURJeEx6QTJM/ekF0UlZOUS9UaTFN/YjJkdkxXWnZjaTFR/L2NtVnpjMUp2YjIw/dE56Z3cvZURRM01D/NXFjR2M",      "iframeUrl": "https://rereyano.ru/player/3/93"
+    },
+    {
+      "id": "CH94",
+      "name": "directv",
+      "image": "canales_imgs/CH95.png",
+      "iframeUrl": "https://rereyano.ru/player/3/94"
+    },
+    {
+      "id": "CH95",
+      "name": "directv2",
+      "image": "canales_imgs/CH95.png",
+      "iframeUrl": "https://rereyano.ru/player/3/95"
+    },
+    {
+      "id": "CH96",
+      "name": "directv+",
+      "image": "canales_imgs/CH96.jpg",
+      "iframeUrl": "https://rereyano.ru/player/3/96"
+    },
+    {
+      "id": "CH97",
+      "name": "ESPN1MX",
+"image": "https://imgs.search.brave.com/RWDrYkkkFIFGmzyVDB5tUX6v78FUNwO0q41rr5_ob3Y/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9pbWdz/LnNlYXJjaC5icmF2/ZS5jb20veFdDTjNW/Uk1qc3UwdUpHWkNZ/d2YtdW4xY3NXbEpz/YXJZcndlbkNacVhk/by9yczpmaXQ6NTAw/OjA6MDowL2c6Y2Uv/YUhSMGNITTZMeTls/YzNCdS9jSEpsYzNO/eWIyOXRMbU52L2JT/OTFjeTltYVd4bGN5/OHkvTURJeEx6QTJM/ekF0UlZOUS9UaTFN/YjJkdkxXWnZjaTFR/L2NtVnpjMUp2YjIw/dE56Z3cvZURRM01D/NXFjR2M",      "iframeUrl": "https://rereyano.ru/player/3/97"
+    },
+    {
+      "id": "CH98",
+      "name": "ESPN2MX",
+"image": "https://imgs.search.brave.com/RWDrYkkkFIFGmzyVDB5tUX6v78FUNwO0q41rr5_ob3Y/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9pbWdz/LnNlYXJjaC5icmF2/ZS5jb20veFdDTjNW/Uk1qc3UwdUpHWkNZ/d2YtdW4xY3NXbEpz/YXJZcndlbkNacVhk/by9yczpmaXQ6NTAw/OjA6MDowL2c6Y2Uv/YUhSMGNITTZMeTls/YzNCdS9jSEpsYzNO/eWIyOXRMbU52L2JT/OTFjeTltYVd4bGN5/OHkvTURJeEx6QTJM/ekF0UlZOUS9UaTFN/YjJkdkxXWnZjaTFR/L2NtVnpjMUp2YjIw/dE56Z3cvZURRM01D/NXFjR2M",      "iframeUrl": "https://rereyano.ru/player/3/98"
+    },
+    {
+      "id": "CH99",
+      "name": "ESPN3MX",
+"image": "https://imgs.search.brave.com/RWDrYkkkFIFGmzyVDB5tUX6v78FUNwO0q41rr5_ob3Y/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9pbWdz/LnNlYXJjaC5icmF2/ZS5jb20veFdDTjNW/Uk1qc3UwdUpHWkNZ/d2YtdW4xY3NXbEpz/YXJZcndlbkNacVhk/by9yczpmaXQ6NTAw/OjA6MDowL2c6Y2Uv/YUhSMGNITTZMeTls/YzNCdS9jSEpsYzNO/eWIyOXRMbU52L2JT/OTFjeTltYVd4bGN5/OHkvTURJeEx6QTJM/ekF0UlZOUS9UaTFN/YjJkdkxXWnZjaTFR/L2NtVnpjMUp2YjIw/dE56Z3cvZURRM01D/NXFjR2M",      "iframeUrl": "https://rereyano.ru/player/3/99"
+    },
+    {
+      "id": "CH100",
+      "name": "ESPN4MX",
+"image": "https://imgs.search.brave.com/RWDrYkkkFIFGmzyVDB5tUX6v78FUNwO0q41rr5_ob3Y/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9pbWdz/LnNlYXJjaC5icmF2/ZS5jb20veFdDTjNW/Uk1qc3UwdUpHWkNZ/d2YtdW4xY3NXbEpz/YXJZcndlbkNacVhk/by9yczpmaXQ6NTAw/OjA6MDowL2c6Y2Uv/YUhSMGNITTZMeTls/YzNCdS9jSEpsYzNO/eWIyOXRMbU52L2JT/OTFjeTltYVd4bGN5/OHkvTURJeEx6QTJM/ekF0UlZOUS9UaTFN/YjJkdkxXWnZjaTFR/L2NtVnpjMUp2YjIw/dE56Z3cvZURRM01D/NXFjR2M",      "iframeUrl": "https://rereyano.ru/player/3/100"
+    },
+    {
+      "id": "CH101",
+      "name": "FOXsport1MX",
+      "image": "https://imgs.search.brave.com/QEltDanwVX8f_FdRBiAD61MYbXES1cxRErzZgdjp-Ew/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9ibG9n/Z2VyLmdvb2dsZXVz/ZXJjb250ZW50LmNv/bS9pbWcvYi9SMjl2/WjJ4bC9BVnZYc0Vn/aTRnaFZ2dkVFcnNt/VDVGb0M0cWM5LV9K/Y193OGNTZTdJb0Q2/N2pEUmZrUzRROWJm/dGtLdTJqVUlST2pu/RzY2X3FzUXBZWENj/c3Rpd1ZuOFhWTnNB/MEFHVHZlS3YtdHJa/enRfdDVTMWxIX1Rj/MUxGNGhnbDhfTjNp/YUlkSzZSU3hScHRj/aS1nMHR6VFd4Qk9U/cDNuRGxxSGczc2tj/SEdEa0tka2NxelNY/b0x0MXpQYnRXam9Z/TVF0am0vczE2MDAv/Zm94LXNwb3J0czEt/bWV4aWNvLnBuZw",
+      "iframeUrl": "https://rereyano.ru/player/3/101"
+    },
+    {
+      "id": "CH102",
+      "name": "FOXsport2MX",
+      "image": "canales_imgs/CH102.png",
+      "iframeUrl": "https://rereyano.ru/player/3/102"
+    },
+    {
+      "id": "CH103",
+      "name": "FOXsport3MX",
+      "image": "canales_imgs/CH103.jpg",
+      "iframeUrl": "https://rereyano.ru/player/3/103"
+    },
+    {
+      "id": "CH104",
+      "name": "FOX SPORTS PREMIUM",
+      "image": "canales_imgs/CH104.png",
+      "iframeUrl": "https://rereyano.ru/player/3/104"
+    },
+    {
+      "id": "CH105",
+      "name": "TVC Deportes",
+      "image": "canales_imgs/CH105.png",
+      "iframeUrl": "https://rereyano.ru/player/3/105"
+    },
+    {
+      "id": "CH106",
+      "name": "TUDNMX",
+      "image": "canales_imgs/CH106.png",
+      "iframeUrl": "https://rereyano.ru/player/3/106"
+    },
+    {
+      "id": "CH107",
+      "name": "CANAL5",
+      "image": "canales_imgs/CH107.png",
+      "iframeUrl": "https://rereyano.ru/player/3/107"
+    },
+    {
+      "id": "CH108",
+      "name": "Azteca 7",
+      "image": "canales_imgs/CH108.webp",
+      "iframeUrl": "https://rereyano.ru/player/3/108"
+    },
+    {
+      "id": "CH109",
+      "name": "VTV plus",
+      "image": "canales_imgs/CH109.png",
+      "iframeUrl": "https://rereyano.ru/player/3/109"
+    },
+    {
+      "id": "CH110",
+      "name": "DE bundliga10",
+      "image": "canales_imgs/CH110.png",
+      "iframeUrl": "https://rereyano.ru/player/3/110"
+    },
+    {
+      "id": "CH111",
+      "name": "DE bundliga1",
+      "image": "canales_imgs/CH111.png",
+      "iframeUrl": "https://rereyano.ru/player/3/111"
+    },
+    {
+      "id": "CH112",
+      "name": "DE bundliga2",
+      "image": "canales_imgs/CH112.png",
+      "iframeUrl": "https://rereyano.ru/player/3/112"
+    },
+    {
+      "id": "CH113",
+      "name": "DE bundliga3",
+      "image": "canales_imgs/CH113.png",
+      "iframeUrl": "https://rereyano.ru/player/3/113"
+    },
+    {
+      "id": "CH114",
+      "name": "DE bundliga4",
+      "image": "canales_imgs/CH114.png",
+      "iframeUrl": "https://rereyano.ru/player/3/114"
+    },
+    {
+      "id": "CH115",
+      "name": "DE bundliga5",
+      "image": "canales_imgs/CH115.jpg",
+      "iframeUrl": "https://rereyano.ru/player/3/115"
+    },
+    {
+      "id": "CH116",
+      "name": "DE bundliga6",
+      "image": "canales_imgs/CH116.jpg",
+      "iframeUrl": "https://rereyano.ru/player/3/116"
+    },
+    {
+      "id": "CH117",
+      "name": "DE bundliga7",
+      "image": "canales_imgs/CH117.png",
+      "iframeUrl": "https://rereyano.ru/player/3/117"
+    },
+    {
+      "id": "CH118",
+      "name": "DE bundliga8",
+      "image": "canales_imgs/CH118.png",
+      "iframeUrl": "https://rereyano.ru/player/3/118"
+    },
+    {
+      "id": "CH119",
+      "name": "DE bundliga9 (mix)",
+      "image": "canales_imgs/CH119.png",
+      "iframeUrl": "https://rereyano.ru/player/3/119"
+    },
+    {
+      "id": "CH120",
+      "name": "DE skyde PL",
+      "image": "https://yt3.googleusercontent.com/cbtke_go6zjnDOI5qlU86Wm6eK9wi_DyRWlC8H3OWTeFIOwjxfADaISX6xtIpf5UeCvGkFg-EQ=s900-c-k-c0x00ffffff-no-rj",
+      "iframeUrl": "https://rereyano.ru/player/3/120"
+    },
+    {
+      "id": "CH121",
+      "name": "DE skyde f1",
+      "image": "https://yt3.googleusercontent.com/cbtke_go6zjnDOI5qlU86Wm6eK9wi_DyRWlC8H3OWTeFIOwjxfADaISX6xtIpf5UeCvGkFg-EQ=s900-c-k-c0x00ffffff-no-rj",
+      "iframeUrl": "https://rereyano.ru/player/3/121"
+    },
+    {
+      "id": "CH122",
+      "name": "DE skyde tennis",
+      "image": "https://yt3.googleusercontent.com/cbtke_go6zjnDOI5qlU86Wm6eK9wi_DyRWlC8H3OWTeFIOwjxfADaISX6xtIpf5UeCvGkFg-EQ=s900-c-k-c0x00ffffff-no-rj",
+      "iframeUrl": "https://rereyano.ru/player/3/122"
+    },
+    {
+      "id": "CH123",
+      "name": "DE dazn 1",
+      "image": "canales_imgs/CH123.svg",
+      "iframeUrl": "https://rereyano.ru/player/3/123"
+    },
+    {
+      "id": "CH124",
+      "name": "DE dazn 2",
+      "image": "canales_imgs/CH124.png",
+      "iframeUrl": "https://rereyano.ru/player/3/124"
+    },
+    {
+      "id": "CH125",
+      "name": "DE Sportdigital Fussball",
+      "image": "canales_imgs/CH125.png",
+      "iframeUrl": "https://rereyano.ru/player/3/125"
+    },
+    {
+      "id": "CH126",
+      "name": "UK TNT SPORT",
+      "image": "canales_imgs/TNT SPORT.png",
+      "iframeUrl": "https://rereyano.ru/player/3/126"
+    },
+    {
+      "id": "CH127",
+      "name": "UK SKY MAIN",
+      "image": "https://yt3.googleusercontent.com/cbtke_go6zjnDOI5qlU86Wm6eK9wi_DyRWlC8H3OWTeFIOwjxfADaISX6xtIpf5UeCvGkFg-EQ=s900-c-k-c0x00ffffff-no-rj",
+      "iframeUrl": "https://rereyano.ru/player/3/127"
+    },
+    {
+      "id": "CH128",
+      "name": "UK SKY FOOT",
+      "image": "https://yt3.googleusercontent.com/cbtke_go6zjnDOI5qlU86Wm6eK9wi_DyRWlC8H3OWTeFIOwjxfADaISX6xtIpf5UeCvGkFg-EQ=s900-c-k-c0x00ffffff-no-rj",
+      "iframeUrl": "https://rereyano.ru/player/3/128"
+    },
+    {
+      "id": "CH129",
+      "name": "UK EPL 3PM",
+      "image": "canales_imgs/CH129.jpeg",
+      "iframeUrl": "https://rereyano.ru/player/3/129"
+    },
+    {
+      "id": "CH130",
+      "name": "UK EPL 3PM",
+      "image": "canales_imgs/CH130.jpg",
+      "iframeUrl": "https://rereyano.ru/player/3/130"
+    },
+    {
+      "id": "CH131",
+      "name": "UK EPL 3PM",
+      "image": "canales_imgs/CH131.jpg",
+      "iframeUrl": "https://rereyano.ru/player/3/131"
+    },
+    {
+      "id": "CH132",
+      "name": "UK EPL 3PM",
+      "image": "canales_imgs/CH132.jpg",
+      "iframeUrl": "https://rereyano.ru/player/3/132"
+    },
+    {
+      "id": "CH133",
+      "name": "UK EPL 3PM",
+      "image": "canales_imgs/CH133.jpg",
+      "iframeUrl": "https://rereyano.ru/player/3/133"
+    },
+    {
+      "id": "CH134",
+      "name": "UK F1",
+      "image": "canales_imgs/CH134.jpg",
+      "iframeUrl": "https://rereyano.ru/player/3/134"
+    },
+    {
+      "id": "CH135",
+      "name": "UK SPFL",
+      "image": "canales_imgs/CH136.jpg",
+      "iframeUrl": "https://rereyano.ru/player/3/135"
+    },
+    {
+      "id": "CH136",
+      "name": "UK SPFL",
+      "image": "canales_imgs/CH136.jpg",
+      "iframeUrl": "https://rereyano.ru/player/3/136"
+    },
+    {
+      "id": "CH137",
+      "name": "IT DAZN",
+      "image": "canales_imgs/CH137.png",
+      "iframeUrl": "https://rereyano.ru/player/3/137"
+    },
+    {
+      "id": "CH138",
+      "name": "IT SKYCALCIO",
+      "image": "canales_imgs/CH138.jpg",
+      "iframeUrl": "https://rereyano.ru/player/3/138"
+    },
+    {
+      "id": "CH139",
+      "name": "IT FEED",
+      "image": "canales_imgs/CH139.png",
+      "iframeUrl": "https://rereyano.ru/player/3/139"
+    },
+    {
+      "id": "CH140",
+      "name": "IT FEED",
+      "image": "canales_imgs/CH140.png",
+      "iframeUrl": "https://rereyano.ru/player/3/140"
+    },
+    {
+      "id": "CH141",
+      "name": "NL ESPN 1",
+"image": "https://imgs.search.brave.com/RWDrYkkkFIFGmzyVDB5tUX6v78FUNwO0q41rr5_ob3Y/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9pbWdz/LnNlYXJjaC5icmF2/ZS5jb20veFdDTjNW/Uk1qc3UwdUpHWkNZ/d2YtdW4xY3NXbEpz/YXJZcndlbkNacVhk/by9yczpmaXQ6NTAw/OjA6MDowL2c6Y2Uv/YUhSMGNITTZMeTls/YzNCdS9jSEpsYzNO/eWIyOXRMbU52L2JT/OTFjeTltYVd4bGN5/OHkvTURJeEx6QTJM/ekF0UlZOUS9UaTFN/YjJkdkxXWnZjaTFR/L2NtVnpjMUp2YjIw/dE56Z3cvZURRM01D/NXFjR2M",      "iframeUrl": "https://rereyano.ru/player/3/141"
+    },
+    {
+      "id": "CH142",
+      "name": "NL ESPN 2",
+"image": "https://imgs.search.brave.com/RWDrYkkkFIFGmzyVDB5tUX6v78FUNwO0q41rr5_ob3Y/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9pbWdz/LnNlYXJjaC5icmF2/ZS5jb20veFdDTjNW/Uk1qc3UwdUpHWkNZ/d2YtdW4xY3NXbEpz/YXJZcndlbkNacVhk/by9yczpmaXQ6NTAw/OjA6MDowL2c6Y2Uv/YUhSMGNITTZMeTls/YzNCdS9jSEpsYzNO/eWIyOXRMbU52L2JT/OTFjeTltYVd4bGN5/OHkvTURJeEx6QTJM/ekF0UlZOUS9UaTFN/YjJkdkxXWnZjaTFR/L2NtVnpjMUp2YjIw/dE56Z3cvZURRM01D/NXFjR2M",      "iframeUrl": "https://rereyano.ru/player/3/142"
+    },
+    {
+      "id": "CH143",
+      "name": "NL ESPN 3",
+"image": "https://imgs.search.brave.com/RWDrYkkkFIFGmzyVDB5tUX6v78FUNwO0q41rr5_ob3Y/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9pbWdz/LnNlYXJjaC5icmF2/ZS5jb20veFdDTjNW/Uk1qc3UwdUpHWkNZ/d2YtdW4xY3NXbEpz/YXJZcndlbkNacVhk/by9yczpmaXQ6NTAw/OjA6MDowL2c6Y2Uv/YUhSMGNITTZMeTls/YzNCdS9jSEpsYzNO/eWIyOXRMbU52L2JT/OTFjeTltYVd4bGN5/OHkvTURJeEx6QTJM/ekF0UlZOUS9UaTFN/YjJkdkxXWnZjaTFR/L2NtVnpjMUp2YjIw/dE56Z3cvZURRM01D/NXFjR2M",      "iframeUrl": "https://rereyano.ru/player/3/143"
+    },
+    {
+      "id": "CH144",
+      "name": "PT SPORT 1",
+      "image": "canales_imgs/CH144.png",
+      "iframeUrl": "https://rereyano.ru/player/3/144"
+    },
+    {
+      "id": "CH145",
+      "name": "PT SPORT 2",
+      "image": "canales_imgs/CH145.png",
+      "iframeUrl": "https://rereyano.ru/player/3/145"
+    },
+    {
+      "id": "CH146",
+      "name": "PT SPORT 3",
+      "image": "canales_imgs/CH146.png",
+      "iframeUrl": "https://rereyano.ru/player/3/146"
+    },
+    {
+      "id": "CH147",
+      "name": "PT BTV",
+      "image": "canales_imgs/CH147.png",
+      "iframeUrl": "https://rereyano.ru/player/3/147"
+    },
+    {
+      "id": "CH148",
+      "name": "GR SPORT 1",
+      "image": "canales_imgs/CH150.jpg",
+      "iframeUrl": "https://rereyano.ru/player/3/148"
+    },
+    {
+      "id": "CH149",
+      "name": "GR SPORT 2",
+      "image": "canales_imgs/CH150.jpg",
+      "iframeUrl": "https://rereyano.ru/player/3/149"
+    },
+    {
+      "id": "CH150",
+      "name": "GR SPORT 3",
+      "image": "canales_imgs/CH150.jpg",
+      "iframeUrl": "https://rereyano.ru/player/3/150"
+    },
+    {
+      "id": "CH151",
+      "name": "TR BeIN sport 1",
+      "image": "canales_imgs/CH151.png",
+      "iframeUrl": "https://rereyano.ru/player/3/151"
+    },
+    {
+      "id": "CH152",
+      "name": "TR BeIN sport 2",
+      "image": "canales_imgs/CH152.webp",
+      "iframeUrl": "https://rereyano.ru/player/3/152"
+    },
+    {
+      "id": "CH153",
+      "name": "BE channel1",
+      "image": "https://imgs.search.brave.com/Na3p9MN1sqo7zvCcPVj9pjpX0nZ5ir38QTJlGFqHVhM/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly91cGxv/YWQud2lraW1lZGlh/Lm9yZy93aWtpcGVk/aWEvY29tbW9ucy90/aHVtYi8yLzJkL0Jl/X3R2X2xvZ28uc3Zn/LzI1MHB4LUJlX3R2/X2xvZ28uc3ZnLnBu/Zw",
+      "iframeUrl": "https://rereyano.ru/player/3/153"
+    },
+    {
+      "id": "CH154",
+      "name": "BE channel2",
+      "image": "https://imgs.search.brave.com/Na3p9MN1sqo7zvCcPVj9pjpX0nZ5ir38QTJlGFqHVhM/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly91cGxv/YWQud2lraW1lZGlh/Lm9yZy93aWtpcGVk/aWEvY29tbW9ucy90/aHVtYi8yLzJkL0Jl/X3R2X2xvZ28uc3Zn/LzI1MHB4LUJlX3R2/X2xvZ28uc3ZnLnBu/Zw",
+      "iframeUrl": "https://rereyano.ru/player/3/154"
+    },
+    {
+      "id": "CH155",
+      "name": "EXTRA SPORT1",
+      "image": "canales_imgs/CH167.png",
+      "iframeUrl": "https://rereyano.ru/player/3/155"
+    },
+    {
+      "id": "CH156",
+      "name": "EXTRA SPORT2",
+      "image": "canales_imgs/CH167.png",
+      "iframeUrl": "https://rereyano.ru/player/3/156"
+    },
+    {
+      "id": "CH157",
+      "name": "EXTRA SPORT3",
+      "image": "canales_imgs/CH167.png",
+      "iframeUrl": "https://rereyano.ru/player/3/157"
+    },
+    {
+      "id": "CH158",
+      "name": "EXTRA SPORT4",
+      "image": "canales_imgs/CH167.png",
+      "iframeUrl": "https://rereyano.ru/player/3/158"
+    },
+    {
+      "id": "CH159",
+      "name": "EXTRA SPORT5",
+      "image": "canales_imgs/CH167.png",
+      "iframeUrl": "https://rereyano.ru/player/3/159"
+    },
+    {
+      "id": "CH160",
+      "name": "EXTRA SPORT6",
+      "image": "canales_imgs/CH167.png",
+      "iframeUrl": "https://rereyano.ru/player/3/160"
+    },
+    {
+      "id": "CH161",
+      "name": "EXTRA SPORT7",
+      "image": "canales_imgs/CH167.png",
+      "iframeUrl": "https://rereyano.ru/player/3/161"
+    },
+    {
+      "id": "CH162",
+      "name": "EXTRA SPORT8",
+      "image": "canales_imgs/CH167.png",
+      "iframeUrl": "https://rereyano.ru/player/3/162"
+    },
+    {
+      "id": "CH163",
+      "name": "EXTRA SPORT9",
+      "image": "canales_imgs/CH167.png",
+      "iframeUrl": "https://rereyano.ru/player/3/163"
+    },
+    {
+      "id": "CH164",
+      "name": "EXTRA SPORT10",
+      "image": "canales_imgs/CH167.png",
+      "iframeUrl": "https://rereyano.ru/player/3/164"
+    },
+    {
+      "id": "CH165",
+      "name": "EXTRA SPORT11",
+      "image": "canales_imgs/CH167.png",
+      "iframeUrl": "https://rereyano.ru/player/3/165"
+    },
+    {
+      "id": "CH166",
+      "name": "EXTRA SPORT12",
+      "image": "canales_imgs/CH167.png",
+      "iframeUrl": "https://rereyano.ru/player/3/166"
+    },
+    {
+      "id": "CH167",
+      "name": "EXTRA SPORT13",
+      "image": "canales_imgs/CH167.png",
+      "iframeUrl": "https://rereyano.ru/player/3/167"
+    },
+    {
+      "id": "CH168",
+      "name": "EXTRA SPORT14",
+      "image": "canales_imgs/CH167.png",
+      "iframeUrl": "https://rereyano.ru/player/3/168"
+    },
+    {
+      "id": "CH169",
+      "name": "EXTRA SPORT15",
+      "image": "canales_imgs/CH167.png",
+      "iframeUrl": "https://rereyano.ru/player/3/169"
+    },
+    {
+      "id": "CH170",
+      "name": "EXTRA SPORT16",
+      "image": "canales_imgs/CH167.png",
+      "iframeUrl": "https://rereyano.ru/player/3/170"
+    },
+    {
+      "id": "CH171",
+      "name": "EXTRA SPORT17",
+      "image": "canales_imgs/CH167.png",
+      "iframeUrl": "https://rereyano.ru/player/3/171"
+    },
+    {
+      "id": "CH172",
+      "name": "EXTRA SPORT18",
+      "image": "canales_imgs/CH167.png",
+      "iframeUrl": "https://rereyano.ru/player/3/172"
+    },
+    {
+      "id": "CH173",
+      "name": "EXTRA SPORT19",
+      "image": "canales_imgs/CH167.png",
+      "iframeUrl": "https://rereyano.ru/player/3/173"
+    },
+    {
+      "id": "CH174",
+      "name": "EXTRA SPORT20",
+      "image": "canales_imgs/CH167.png",
+      "iframeUrl": "https://rereyano.ru/player/3/174"
+    },
+    {
+      "id": "CH175",
+      "name": "EXTRA SPORT21",
+      "image": "canales_imgs/CH167.png",
+      "iframeUrl": "https://rereyano.ru/player/3/175"
+    },
+    {
+      "id": "CH176",
+      "name": "EXTRA SPORT22",
+      "image": "canales_imgs/CH167.png",
+      "iframeUrl": "https://rereyano.ru/player/3/176"
+    },
+    {
+      "id": "CH177",
+      "name": "EXTRA SPORT23",
+      "image": "canales_imgs/CH167.png",
+      "iframeUrl": "https://rereyano.ru/player/3/177"
+    },
+    {
+      "id": "CH178",
+      "name": "EXTRA SPORT24",
+      "image": "canales_imgs/CH167.png",
+      "iframeUrl": "https://rereyano.ru/player/3/178"
+    },
+    {
+      "id": "CH179",
+      "name": "EXTRA SPORT25",
+      "image": "canales_imgs/CH167.png",
+      "iframeUrl": "https://rereyano.ru/player/3/179"
+    },
+    {
+      "id": "CH180",
+      "name": "EXTRA SPORT26",
+      "image": "canales_imgs/CH167.png",
+      "iframeUrl": "https://rereyano.ru/player/3/180"
+    },
+    {
+      "id": "CH181",
+      "name": "EXTRA SPORT27",
+      "image": "canales_imgs/CH167.png",
+      "iframeUrl": "https://rereyano.ru/player/3/181"
+    },
+    {
+      "id": "CH182",
+      "name": "EXTRA SPORT28",
+      "image": "canales_imgs/CH167.png",
+      "iframeUrl": "https://rereyano.ru/player/3/182"
+    },
+    {
+      "id": "CH183",
+      "name": "EXTRA SPORT30",
+      "image": "canales_imgs/CH167.png",
+      "iframeUrl": "https://rereyano.ru/player/3/183"
+    },
+    {
+      "id": "CH184",
+      "name": "EXTRA SPORT31",
+      "image": "canales_imgs/CH167.png",
+      "iframeUrl": "https://rereyano.ru/player/3/184"
+    },
+    {
+      "id": "CH185",
+      "name": "EXTRA SPORT32",
+      "image": "canales_imgs/CH167.png",
+      "iframeUrl": "https://rereyano.ru/player/3/185"
+    },
+    {
+      "id": "CH186",
+      "name": "EXTRA SPORT33",
+      "image": "canales_imgs/CH167.png",
+      "iframeUrl": "https://rereyano.ru/player/3/186"
+    },
+    {
+      "id": "CH187",
+      "name": "EXTRA SPORT34",
+      "image": "canales_imgs/CH167.png",
+      "iframeUrl": "https://rereyano.ru/player/3/187"
+    },
+    {
+      "id": "CH188",
+      "name": "EXTRA SPORT35",
+      "image": "canales_imgs/CH167.png",
+      "iframeUrl": "https://rereyano.ru/player/3/188"
+    },
+    {
+      "id": "CH189",
+      "name": "EXTRA SPORT36",
+      "image": "canales_imgs/CH167.png",
+      "iframeUrl": "https://rereyano.ru/player/3/189"
+    },
+    {
+      "id": "CH190",
+      "name": "EXTRA SPORT37",
+      "image": "canales_imgs/CH167.png",
+      "iframeUrl": "https://rereyano.ru/player/3/190"
+    },
+    {
+      "id": "CH191",
+      "name": "EXTRA SPORT38",
+      "image": "canales_imgs/CH167.png",
+      "iframeUrl": "https://rereyano.ru/player/3/191"
+    },
+    {
+      "id": "CH192",
+      "name": "EXTRA SPORT39",
+      "image": "canales_imgs/CH167.png",
+      "iframeUrl": "https://rereyano.ru/player/3/192"
+    },
+    {
+      "id": "CH193",
+      "name": "EXTRA SPORT40",
+      "image": "canales_imgs/CH167.png",
+      "iframeUrl": "https://rereyano.ru/player/3/193"
+    },
+    {
+      "id": "CH194",
+      "name": "EXTRA SPORT41",
+      "image": "canales_imgs/CH167.png",
+      "iframeUrl": "https://rereyano.ru/player/3/194"
+    },
+    {
+      "id": "CH195",
+      "name": "EXTRA SPORT42",
+      "image": "canales_imgs/CH167.png",
+      "iframeUrl": "https://rereyano.ru/player/3/195"
+    },
+    {
+      "id": "CH196",
+      "name": "EXTRA SPORT43",
+      "image": "canales_imgs/CH167.png",
+      "iframeUrl": "https://rereyano.ru/player/3/196"
+    },
+    {
+      "id": "CH197",
+      "name": "EXTRA SPORT44",
+      "image": "canales_imgs/CH167.png",
+      "iframeUrl": "https://rereyano.ru/player/3/197"
+    },
+    {
+      "id": "CH198",
+      "name": "EXTRA SPORT45",
+      "image": "canales_imgs/CH167.png",
+      "iframeUrl": "https://rereyano.ru/player/3/198"
+    },    {
+      "id": "CH199",
+      "name": "EXTRA SPORT46",
+      "image": "canales_imgs/CH167.png",
+      "iframeUrl": "https://rereyano.ru/player/3/199"
+    },
+    {
+      "id": "CH200",
+      "name": "EXTRA SPORT47",
+      "image": "canales_imgs/CH167.png",
+      "iframeUrl": "https://rereyano.ru/player/3/200"
+    },
+    {
+      "id": "DAZN",
+      "name": "DAZN",
+      "image": "canales_imgs/daznf1.jpg",
+      "iframeUrl": "https://rereyano.ru/player/3/60"
+    }
+  ]
+}

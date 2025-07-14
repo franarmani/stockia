@@ -1,0 +1,107 @@
+/* ESTILOS CRÍTICOS PARA BOTÓN FLOTANTE - MÁXIMA PRIORIDAD ABSOLUTA */
+#floating-back-to-top-unique,
+button#floating-back-to-top-unique,
+.floating-back-to-top-btn,
+button.floating-back-to-top-btn {
+    position: fixed !important;
+    bottom: 30px !important;
+    right: 30px !important;
+    width: 50px !important;
+    height: 50px !important;
+    z-index: 2147483647 !important;
+    background: linear-gradient(135deg, #9D50BB 0%, #6A0DAD 100%) !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 50% !important;
+    font-size: 1.5rem !important;
+    font-weight: 700 !important;
+    cursor: pointer !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+    transform: translateZ(0) !important;
+    isolation: isolate !important;
+    box-shadow: 0 4px 20px rgba(157, 80, 187, 0.8) !important;
+    transition: all 0.3s ease !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    text-align: center !important;
+    line-height: 1 !important;
+    outline: none !important;
+    will-change: transform !important;
+    backface-visibility: hidden !important;
+    -webkit-backface-visibility: hidden !important;
+    -webkit-transform: translateZ(0) !important;
+    -moz-transform: translateZ(0) !important;
+    -ms-transform: translateZ(0) !important;
+    -o-transform: translateZ(0) !important;
+}
+
+/* Estados hover y focus */
+#floating-back-to-top-unique:hover,
+button#floating-back-to-top-unique:hover,
+.floating-back-to-top-btn:hover,
+button.floating-back-to-top-btn:hover {
+    transform: translateY(-3px) scale(1.1) translateZ(0) !important;
+    box-shadow: 0 8px 30px rgba(157, 80, 187, 0.9) !important;
+    background: linear-gradient(135deg, #6A0DAD 0%, #9D50BB 100%) !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+#floating-back-to-top-unique:active,
+button#floating-back-to-top-unique:active,
+.floating-back-to-top-btn:active,
+button.floating-back-to-top-btn:active {
+    transform: translateY(-1px) scale(1.05) translateZ(0) !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+/* Responsive para móviles */
+@media (max-width: 768px) {
+    #floating-back-to-top-unique,
+    button#floating-back-to-top-unique,
+    .floating-back-to-top-btn,
+    button.floating-back-to-top-btn {
+        width: 45px !important;
+        height: 45px !important;
+        bottom: 25px !important;
+        right: 25px !important;
+        font-size: 1.3rem !important;
+    }
+}
+
+@media (max-width: 480px) {
+    #floating-back-to-top-unique,
+    button#floating-back-to-top-unique,
+    .floating-back-to-top-btn,
+    button.floating-back-to-top-btn {
+        width: 40px !important;
+        height: 40px !important;
+        bottom: 20px !important;
+        right: 20px !important;
+        font-size: 1.1rem !important;
+        box-shadow: 0 3px 15px rgba(157, 80, 187, 0.7) !important;
+    }
+}
+
+/* Forzar que ningún otro elemento pueda ocultar el botón */
+* {
+    z-index: auto;
+}
+
+body {
+    isolation: auto;
+}
+
+#floating-back-to-top-unique,
+button#floating-back-to-top-unique,
+.floating-back-to-top-btn,
+button.floating-back-to-top-btn {
+    z-index: 2147483647 !important;
+    isolation: isolate !important;
+}

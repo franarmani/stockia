@@ -1,0 +1,24 @@
+.genres{
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;
+    
+    .genre{
+        background: transparent; // Hacer los géneros transparentes
+        border: 1px solid rgba(255, 255, 255, 0.3); // Borde sutil en lugar del fondo
+        padding: 4px 8px;
+        font-size: 12px;
+        border-radius: 4px;
+        color: white;
+        white-space: nowrap;
+        font-weight: 500;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); // Sombra más sutil
+        transition: all 0.2s ease;
+        
+        &:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(255, 255, 255, 0.1); // Sombra sutil en hover
+            border-color: rgba(255, 255, 255, 0.5); // Borde más visible en hover
+        }
+    }
+}

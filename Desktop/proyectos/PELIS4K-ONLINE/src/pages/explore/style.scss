@@ -1,0 +1,1274 @@
+@import "../../mixins.scss";
+
+// Prevenir zoom y scroll horizontal en móvil
+* {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+html, body {
+    overflow-x: hidden;
+    width: 100%;
+    position: relative;
+}
+
+.explorePage {
+    min-height: 700px;
+    padding-top: 100px;
+    width: 100%;
+    max-width: 100vw;
+    overflow-x: hidden;
+    box-sizing: border-box;
+    
+    .resultNotFound {
+        font-size: 24px;
+        color: var(--black-light);
+    }
+    
+    .noResults {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 20px;
+        padding: 40px 20px;
+        text-align: center;
+        
+        .resultNotFound {
+            font-size: 20px;
+            color: var(--pink);
+            margin-bottom: 10px;
+        }
+        
+        .clearFiltersButton {
+            background: linear-gradient(135deg, var(--pink), #e91e63);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(237, 48, 255, 0.3);
+            
+            &:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 6px 20px rgba(237, 48, 255, 0.4);
+                background: linear-gradient(135deg, #e91e63, var(--pink));
+            }
+            
+            &:active {
+                transform: translateY(0);
+            }
+        }
+    }
+    
+    .errorMessage {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 20px;
+        padding: 40px 20px;
+        text-align: center;
+        
+        .resultNotFound {
+            font-size: 20px;
+            color: var(--pink);
+            margin-bottom: 10px;
+        }
+        
+        .retryButton {
+            background: linear-gradient(135deg, var(--pink), #e91e63);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(237, 48, 255, 0.3);
+            
+            &:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 6px 20px rgba(237, 48, 255, 0.4);
+                background: linear-gradient(135deg, #e91e63, var(--pink));
+            }
+            
+            &:active {
+                transform: translateY(0);
+            }
+        }
+    }
+    .pageHeader {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 25px;
+        flex-direction: column;
+        @include md {
+            flex-direction: row;
+            margin-bottom: 30px;
+        }
+        
+        .pageTitle {
+            font-size: 24px;
+            line-height: 34px;
+            color: white;
+            margin-bottom: 10px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #ffffff, #f0f0f0);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.5px;
+            position: relative;
+            
+            @include md {
+                font-size: 32px;
+                line-height: 42px;
+                margin-bottom: 0;
+            }
+        }
+        
+        .resultInfo {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.7);
+            font-weight: 500;
+            padding: 8px 16px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            display: inline-block;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            
+            @include md {
+                font-size: 15px;
+            }
+        }
+    }
+    
+    // Nueva sección de filtros más elegante y minimalista
+    .filterSection {
+        margin-bottom: 35px;
+        
+        .filterContainer {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(157, 80, 187, 0.2);
+            border-radius: 16px;
+            padding: 20px;
+            backdrop-filter: blur(20px);
+            position: relative;
+            overflow: hidden;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            
+            @include md {
+                padding: 24px;
+            }
+            
+            // Sutil gradiente de fondo
+            &:before {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: linear-gradient(135deg, 
+                    rgba(157, 80, 187, 0.08) 0%, 
+                    rgba(106, 13, 173, 0.05) 50%, 
+                    rgba(255, 255, 255, 0.02) 100%);
+                z-index: -1;
+                opacity: 0;
+                transition: opacity 0.4s ease;
+            }
+            
+            &:hover {
+                border-color: rgba(157, 80, 187, 0.4);
+                transform: translateY(-1px);
+                box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15), 
+                           0 2px 10px rgba(157, 80, 187, 0.2);
+                
+                &:before {
+                    opacity: 1;
+                }
+            }
+            
+            .filterHeader {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                margin-bottom: 14px;
+                
+                .filterTitle {
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    font-size: 14px;
+                    font-weight: 600;
+                    color: rgba(255, 255, 255, 0.9);
+                    letter-spacing: 0.5px;
+                    
+                    @include md {
+                        font-size: 15px;
+                    }
+                    
+                    .filterIcon {
+                        font-size: 16px;
+                        opacity: 0.8;
+                        transition: transform 0.3s ease;
+                        
+                        @include md {
+                            font-size: 18px;
+                        }
+                    }
+                    
+                    &:hover .filterIcon {
+                        transform: scale(1.1);
+                    }
+                }
+                
+                .clearFilters {
+                    display: flex;
+                    align-items: center;
+                    gap: 6px;
+                    background: linear-gradient(135deg, 
+                        rgba(220, 53, 69, 0.15) 0%, 
+                        rgba(200, 30, 50, 0.12) 50%, 
+                        rgba(180, 20, 40, 0.08) 100%);
+                    color: rgba(255, 255, 255, 0.95);
+                    border: 1px solid rgba(220, 53, 69, 0.3);
+                    padding: 8px 16px;
+                    border-radius: 25px;
+                    font-size: 12px;
+                    font-weight: 500;
+                    cursor: pointer;
+                    transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+                    backdrop-filter: blur(15px);
+                    position: relative;
+                    overflow: hidden;
+                    box-shadow: 0 2px 10px rgba(220, 53, 69, 0.15), 
+                               inset 0 1px 0 rgba(255, 255, 255, 0.1);
+                    
+                    // Efecto de brillo
+                    &::before {
+                        content: '';
+                        position: absolute;
+                        top: 0;
+                        left: -100%;
+                        width: 100%;
+                        height: 100%;
+                        background: linear-gradient(90deg, 
+                            transparent 0%, 
+                            rgba(255, 255, 255, 0.1) 50%, 
+                            transparent 100%);
+                        transition: left 0.6s ease;
+                        z-index: 1;
+                    }
+                    
+                    @include md {
+                        padding: 10px 18px;
+                        font-size: 13px;
+                    }
+                    
+                    .clearIcon {
+                        font-size: 11px;
+                        opacity: 0.9;
+                        position: relative;
+                        z-index: 2;
+                    }
+                    
+                    > span {
+                        position: relative;
+                        z-index: 2;
+                        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+                    }
+                    
+                    &:hover {
+                        background: linear-gradient(135deg, 
+                            rgba(220, 53, 69, 0.25) 0%, 
+                            rgba(200, 30, 50, 0.22) 50%, 
+                            rgba(180, 20, 40, 0.18) 100%);
+                        border-color: rgba(220, 53, 69, 0.5);
+                        transform: translateY(-1px) scale(1.02);
+                        color: #ffffff;
+                        box-shadow: 0 4px 18px rgba(220, 53, 69, 0.3), 
+                                   inset 0 1px 0 rgba(255, 255, 255, 0.2);
+                        
+                        &::before {
+                            left: 100%;
+                        }
+                    }
+                    
+                    &:active {
+                        transform: translateY(0) scale(0.98);
+                        transition: all 0.1s ease;
+                    }
+                }
+            }
+            
+            .genreList {
+                display: flex;
+                flex-direction: column;
+                gap: 12px;
+                
+                .genreContainer {
+                    display: flex;
+                    flex-wrap: wrap;
+                    gap: 8px;
+                    transition: all 0.4s ease;
+                    
+                    @include md {
+                        gap: 10px;
+                    }
+                    
+                    // En móvil, limitar altura cuando está colapsado
+                    &.collapsed {
+                        @media (max-width: 767px) {
+                            max-height: 90px;
+                            overflow: hidden;
+                            position: relative;
+                            
+                            &::after {
+                                content: '';
+                                position: absolute;
+                                bottom: 0;
+                                left: 0;
+                                right: 0;
+                                height: 20px;
+                                background: linear-gradient(transparent, rgba(157, 80, 187, 0.1));
+                                pointer-events: none;
+                            }
+                        }
+                    }
+                    
+                    &.expanded {
+                        max-height: none;
+                        overflow: visible;
+                    }
+                }
+                
+                .showMoreGenres {
+                    display: none;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 8px;
+                    background: linear-gradient(135deg, 
+                        rgba(157, 80, 187, 0.12) 0%, 
+                        rgba(106, 13, 173, 0.08) 50%, 
+                        rgba(75, 0, 130, 0.05) 100%);
+                    color: rgba(255, 255, 255, 0.9);
+                    border: 1px solid rgba(157, 80, 187, 0.3);
+                    padding: 12px 20px;
+                    border-radius: 25px;
+                    font-size: 13px;
+                    font-weight: 500;
+                    cursor: pointer;
+                    transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+                    backdrop-filter: blur(15px);
+                    margin-top: 8px;
+                    position: relative;
+                    overflow: hidden;
+                    box-shadow: 0 2px 10px rgba(157, 80, 187, 0.1), 
+                               inset 0 1px 0 rgba(255, 255, 255, 0.1);
+                    
+                    // Solo mostrar en móvil
+                    @media (max-width: 767px) {
+                        display: flex;
+                    }
+                    
+                    // Efecto de brillo
+                    &::before {
+                        content: '';
+                        position: absolute;
+                        top: 0;
+                        left: -100%;
+                        width: 100%;
+                        height: 100%;
+                        background: linear-gradient(90deg, 
+                            transparent 0%, 
+                            rgba(255, 255, 255, 0.1) 50%, 
+                            transparent 100%);
+                        transition: left 0.6s ease;
+                        z-index: 1;
+                    }
+                    
+                    .showMoreIcon {
+                        font-size: 12px;
+                        transition: transform 0.3s ease;
+                        position: relative;
+                        z-index: 2;
+                    }
+                    
+                    > span {
+                        position: relative;
+                        z-index: 2;
+                        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+                    }
+                    
+                    &:hover {
+                        background: linear-gradient(135deg, 
+                            rgba(157, 80, 187, 0.22) 0%, 
+                            rgba(106, 13, 173, 0.18) 50%, 
+                            rgba(75, 0, 130, 0.12) 100%);
+                        border-color: rgba(157, 80, 187, 0.5);
+                        transform: translateY(-1px) scale(1.02);
+                        box-shadow: 0 4px 18px rgba(157, 80, 187, 0.2), 
+                                   inset 0 1px 0 rgba(255, 255, 255, 0.2);
+                        color: #ffffff;
+                        
+                        &::before {
+                            left: 100%;
+                        }
+                        
+                        .showMoreIcon {
+                            transform: scale(1.1);
+                        }
+                    }
+                    
+                    &:active {
+                        transform: translateY(0) scale(0.98);
+                        transition: all 0.1s ease;
+                    }
+                }
+                
+                .genreChip {
+                    background: linear-gradient(135deg, 
+                        rgba(255, 255, 255, 0.1) 0%, 
+                        rgba(157, 80, 187, 0.12) 50%, 
+                        rgba(106, 13, 173, 0.08) 100%);
+                    color: rgba(255, 255, 255, 0.9);
+                    border: 1px solid rgba(255, 255, 255, 0.15);
+                    padding: 10px 16px;
+                    border-radius: 25px;
+                    font-size: 13px;
+                    font-weight: 500;
+                    cursor: pointer;
+                    transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+                    backdrop-filter: blur(15px);
+                    position: relative;
+                    letter-spacing: 0.3px;
+                    min-height: 40px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2), 
+                               inset 0 1px 0 rgba(255, 255, 255, 0.1);
+                    overflow: hidden;
+                    
+                    // Efecto de brillo sutil
+                    &::before {
+                        content: '';
+                        position: absolute;
+                        top: 0;
+                        left: -100%;
+                        width: 100%;
+                        height: 100%;
+                        background: linear-gradient(90deg, 
+                            transparent 0%, 
+                            rgba(255, 255, 255, 0.1) 50%, 
+                            transparent 100%);
+                        transition: left 0.6s ease;
+                        z-index: 1;
+                    }
+                    
+                    // Fondo adicional para mejor contraste
+                    &::after {
+                        content: '';
+                        position: absolute;
+                        top: 0;
+                        left: 0;
+                        right: 0;
+                        bottom: 0;
+                        background: linear-gradient(135deg, 
+                            rgba(157, 80, 187, 0.05) 0%, 
+                            rgba(106, 13, 173, 0.02) 100%);
+                        border-radius: inherit;
+                        z-index: -1;
+                        opacity: 0;
+                        transition: opacity 0.3s ease;
+                    }
+                    
+                    @include md {
+                        padding: 12px 20px;
+                        font-size: 14px;
+                        min-height: 44px;
+                    }
+                    
+                    &:hover {
+                        background: linear-gradient(135deg, 
+                            rgba(157, 80, 187, 0.25) 0%, 
+                            rgba(106, 13, 173, 0.2) 50%, 
+                            rgba(75, 0, 130, 0.15) 100%);
+                        border-color: rgba(157, 80, 187, 0.4);
+                        color: #ffffff;
+                        transform: translateY(-2px) scale(1.02);
+                        box-shadow: 0 6px 20px rgba(157, 80, 187, 0.25), 
+                                   inset 0 1px 0 rgba(255, 255, 255, 0.2);
+                        
+                        &::before {
+                            left: 100%;
+                        }
+                        
+                        &::after {
+                            opacity: 1;
+                        }
+                    }
+                    
+                    &.selected {
+                        background: linear-gradient(135deg, 
+                            #9D50BB 0%, 
+                            #7B1FA2 50%, 
+                            #6A0DAD 100%);
+                        border-color: rgba(157, 80, 187, 0.8);
+                        color: #ffffff;
+                        font-weight: 600;
+                        transform: translateY(-1px);
+                        box-shadow: 0 6px 25px rgba(157, 80, 187, 0.4), 
+                                   inset 0 1px 0 rgba(255, 255, 255, 0.3),
+                                   0 0 0 1px rgba(157, 80, 187, 0.3);
+                        
+                        &::before {
+                            background: linear-gradient(90deg, 
+                                transparent 0%, 
+                                rgba(255, 255, 255, 0.2) 50%, 
+                                transparent 100%);
+                        }
+                        
+                        &::after {
+                            opacity: 0;
+                        }
+                        
+                        &:hover {
+                            background: linear-gradient(135deg, 
+                                #B565D8 0%, 
+                                #8E24AA 50%, 
+                                #7B1FA2 100%);
+                            transform: translateY(-3px) scale(1.05);
+                            box-shadow: 0 8px 30px rgba(157, 80, 187, 0.5), 
+                                       inset 0 1px 0 rgba(255, 255, 255, 0.4),
+                                       0 0 0 2px rgba(157, 80, 187, 0.4);
+                            
+                            &::before {
+                                left: 100%;
+                            }
+                        }
+                    }
+                    
+                    &:active {
+                        transform: translateY(0) scale(0.98);
+                        transition: all 0.1s ease;
+                    }
+                    
+                    // Texto con mejor legibilidad
+                    > span {
+                        position: relative;
+                        z-index: 2;
+                        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+                    }
+                }
+            }
+        }
+    }
+    
+    // Animación para el icono
+    @keyframes pulse {
+        0%, 100% {
+            transform: scale(1);
+        }
+        50% {
+            transform: scale(1.1);
+        }
+    }
+    .filters {
+        display: flex;
+        gap: 10px;
+        flex-direction: column;
+        @include md {
+            flex-direction: row;
+        }
+        
+        .sortByDropdown {
+            position: relative;
+            width: 100%;
+            @include md {
+                width: 280px;
+            }
+            
+            .sortButton {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                width: 100%;
+                padding: 12px 16px;
+                background: linear-gradient(135deg, 
+                    rgba(255, 255, 255, 0.08) 0%, 
+                    rgba(255, 255, 255, 0.05) 50%, 
+                    rgba(255, 255, 255, 0.02) 100%);
+                border: 1px solid rgba(255, 255, 255, 0.15);
+                border-radius: 25px;
+                color: rgba(255, 255, 255, 0.9);
+                font-size: 14px;
+                font-weight: 500;
+                cursor: pointer;
+                transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+                box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2), 
+                           inset 0 1px 0 rgba(255, 255, 255, 0.1);
+                backdrop-filter: blur(15px);
+                position: relative;
+                overflow: hidden;
+                
+                // Efecto de brillo
+                &::before {
+                    content: '';
+                    position: absolute;
+                    top: 0;
+                    left: -100%;
+                    width: 100%;
+                    height: 100%;
+                    background: linear-gradient(90deg, 
+                        transparent 0%, 
+                        rgba(255, 255, 255, 0.08) 50%, 
+                        transparent 100%);
+                    transition: left 0.6s ease;
+                    z-index: 1;
+                }
+                
+                &:hover {
+                    background: linear-gradient(135deg, 
+                        rgba(157, 80, 187, 0.15) 0%, 
+                        rgba(106, 13, 173, 0.12) 50%, 
+                        rgba(75, 0, 130, 0.08) 100%);
+                    border-color: rgba(157, 80, 187, 0.4);
+                    transform: translateY(-1px) scale(1.02);
+                    box-shadow: 0 4px 18px rgba(157, 80, 187, 0.2), 
+                               inset 0 1px 0 rgba(255, 255, 255, 0.2);
+                    color: #ffffff;
+                    
+                    &::before {
+                        left: 100%;
+                    }
+                }
+                
+                &:active {
+                    transform: translateY(0) scale(0.98);
+                    transition: all 0.1s ease;
+                }
+                
+                .sortIcon {
+                    font-size: 16px;
+                    margin-right: 8px;
+                    position: relative;
+                    z-index: 2;
+                }
+                
+                .sortLabel {
+                    flex: 1;
+                    text-align: left;
+                    position: relative;
+                    z-index: 2;
+                    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+                }
+                
+                .dropdownArrow {
+                    font-size: 10px;
+                    transition: transform 0.3s ease;
+                    color: rgba(157, 80, 187, 0.8);
+                    position: relative;
+                    z-index: 2;
+                    
+                    &.open {
+                        transform: rotate(180deg);
+                        color: #ffffff;
+                    }
+                }
+            }
+            
+            .sortDropdownMenu {
+                position: absolute;
+                top: 100%;
+                left: 0;
+                right: 0;
+                background: linear-gradient(135deg, 
+                    rgba(20, 20, 20, 0.95) 0%, 
+                    rgba(30, 30, 30, 0.92) 100%);
+                border: 1px solid rgba(255, 255, 255, 0.15);
+                border-radius: 15px;
+                box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6), 
+                           0 2px 16px rgba(157, 80, 187, 0.15),
+                           inset 0 1px 0 rgba(255, 255, 255, 0.1);
+                z-index: 1000;
+                overflow: hidden;
+                margin-top: 4px;
+                backdrop-filter: blur(20px);
+                
+                .sortOption {
+                    display: flex;
+                    align-items: center;
+                    width: 100%;
+                    padding: 12px 16px;
+                    background: transparent;
+                    border: none;
+                    color: rgba(255, 255, 255, 0.9);
+                    font-size: 14px;
+                    cursor: pointer;
+                    transition: all 0.2s ease;
+                    text-align: left;
+                    position: relative;
+                    
+                    &:not(:last-child) {
+                        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+                    }
+                    
+                    &:hover {
+                        background: linear-gradient(135deg, 
+                            rgba(157, 80, 187, 0.8) 0%, 
+                            rgba(106, 13, 173, 0.7) 100%);
+                        color: white;
+                        transform: translateX(2px);
+                    }
+                    
+                    &.active {
+                        background: linear-gradient(135deg, 
+                            rgba(157, 80, 187, 0.9) 0%, 
+                            rgba(106, 13, 173, 0.8) 100%);
+                        color: white;
+                        font-weight: 600;
+                        
+                        &::after {
+                            content: '✓';
+                            position: absolute;
+                            right: 16px;
+                            font-size: 12px;
+                            color: #ffffff;
+                        }
+                    }
+                    
+                    .optionIcon {
+                        font-size: 16px;
+                        margin-right: 10px;
+                        min-width: 20px;
+                        opacity: 0.8;
+                    }
+                    
+                    .optionLabel {
+                        flex: 1;
+                        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+                    }
+                }
+            }
+        }
+        .react-select-container {
+            &.genresDD {
+                width: 100%;
+                @include md {
+                    max-width: 500px;
+                    min-width: 250px;
+                }
+            }
+            &.sortbyDD {
+                width: 100%;
+                flex-shrink: 0;
+                @include md {
+                    width: 250px;
+                }
+            }
+            .react-select__control {
+                border: 0;
+                outline: 0;
+                box-shadow: none;
+                background-color: var(--black-light);
+                border-radius: 20px;
+                .react-select__value-container {
+                    .react-select__placeholder,
+                    .react-select__input-container {
+                        color: white;
+                        margin: 0 10px;
+                    }
+                }
+                .react-select__single-value {
+                    color: white;
+                }
+                .react-select__multi-value {
+                    background-color: var(--black3);
+                    border-radius: 10px;
+                    .react-select__multi-value__label {
+                        color: white;
+                    }
+                    .react-select__multi-value__remove {
+                        background-color: transparent;
+                        color: white;
+                        cursor: pointer;
+                        &:hover {
+                            color: var(--black-lighter);
+                        }
+                    }
+                }
+            }
+            .react-select__menu {
+                top: 40px;
+                margin: 0;
+                padding: 0;
+            }
+        }
+    }
+    .content {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-bottom: 50px;
+        width: 100%;
+        max-width: 100%;
+        overflow-x: hidden;
+        box-sizing: border-box;
+        justify-content: space-between;
+        
+        // MÓVIL: FORZAR 2 PELÍCULAS POR FILA - SÍ O SÍ
+        @media (max-width: 767px) {
+            display: flex !important;
+            flex-wrap: wrap !important;
+            gap: 4px !important;
+            padding: 0 2px !important;
+            justify-content: space-between !important;
+            
+            .movieCard {
+                width: calc(50% - 2px) !important;
+                max-width: calc(50% - 2px) !important;
+                min-width: calc(50% - 2px) !important;
+                flex: 0 0 calc(50% - 2px) !important;
+                margin-bottom: 15px !important;
+                box-sizing: border-box !important;
+                
+                .posterBlock {
+                    margin-bottom: 8px !important;
+                    
+                    .lazy-load-image-background {
+                        width: 100% !important;
+                        height: auto !important;
+                        
+                        img {
+                            width: 100% !important;
+                            height: auto !important;
+                            aspect-ratio: 2/3 !important;
+                            object-fit: cover !important;
+                        }
+                    }
+                }
+                
+                .textBlock {
+                    padding: 0 2px !important;
+                    
+                    .title {
+                        font-size: 12px !important;
+                        line-height: 1.3 !important;
+                        margin-bottom: 4px !important;
+                        font-weight: 600 !important;
+                    }
+                    
+                    .date {
+                        font-size: 10px !important;
+                        opacity: 0.7 !important;
+                    }
+                }
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .movieCard {
+                width: calc(50% - 3px) !important;
+                max-width: calc(50% - 3px) !important;
+                min-width: calc(50% - 3px) !important;
+                flex: 0 0 calc(50% - 3px) !important;
+            }
+        }
+        
+        // Tabletas
+        @media (min-width: 768px) and (max-width: 991px) {
+            gap: 15px;
+            justify-content: flex-start;
+            
+            .movieCard {
+                flex: 0 0 calc(50% - 7.5px);
+                max-width: calc(50% - 7.5px);
+            }
+        }
+        
+        @include md {
+            gap: 20px;
+            justify-content: flex-start;
+            padding: 0;
+            
+            .movieCard {
+                flex: none;
+                
+                .posterBlock {
+                    margin-bottom: 30px;
+                }
+            }
+        }
+    }
+    
+    .loadMoreContainer {
+        display: flex;
+        justify-content: center;
+        margin-top: 40px;
+        margin-bottom: 40px;
+        
+        .loadMoreButton {
+            background: linear-gradient(135deg, var(--pink), #e91e63);
+            color: white;
+            border: none;
+            padding: 14px 32px;
+            border-radius: 30px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(237, 48, 255, 0.3);
+            position: relative;
+            overflow: hidden;
+            
+            &:before {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: -100%;
+                width: 100%;
+                height: 100%;
+                background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+                transition: left 0.6s;
+            }
+            
+            &:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 6px 25px rgba(237, 48, 255, 0.4);
+                background: linear-gradient(135deg, #e91e63, var(--pink));
+                
+                &:before {
+                    left: 100%;
+                }
+            }
+            
+            &:active {
+                transform: translateY(0);
+                box-shadow: 0 2px 10px rgba(237, 48, 255, 0.3);
+            }
+            
+            @include md {
+                padding: 16px 36px;
+                font-size: 17px;
+            }
+        }
+    }
+}
+
+// REGLAS GLOBALES PARA FORZAR 2 PELÍCULAS POR FILA EN MÓVIL
+@media (max-width: 767px) {
+    .explorePage .content {
+        // Forzar grid layout como backup
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 6px !important;
+        padding: 0 3px !important;
+        
+        // Cada elemento debe ocupar 1 columna
+        > * {
+            grid-column: span 1 !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            min-width: 0 !important;
+        }
+        
+        // Fallback con flexbox
+        &.flex-fallback {
+            display: flex !important;
+            flex-wrap: wrap !important;
+            
+            > * {
+                flex: 0 0 calc(50% - 3px) !important;
+                width: calc(50% - 3px) !important;
+                max-width: calc(50% - 3px) !important;
+            }
+        }
+    }
+}
+
+// CLASE ESPECÍFICA PARA FORZAR 2 COLUMNAS EN MÓVIL
+.mobile-two-columns {
+    @media (max-width: 767px) {
+        // Método 1: CSS Grid (más confiable)
+        display: grid !important;
+        grid-template-columns: repeat(2, 1fr) !important;
+        grid-gap: 6px !important;
+        padding: 0 3px !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+        
+        // Cada card debe ocupar exactamente 1 columna del grid
+        .movieCard {
+            grid-column: span 1 !important;
+            width: 100% !important;
+            max-width: none !important;
+            min-width: 0 !important;
+            flex: none !important;
+            
+            .posterBlock {
+                width: 100% !important;
+                margin-bottom: 10px !important;
+                
+                .lazy-load-image-background,
+                .lazy-load-image-background img,
+                img {
+                    width: 100% !important;
+                    height: auto !important;
+                    aspect-ratio: 2/3 !important;
+                    object-fit: cover !important;
+                    border-radius: 12px !important;
+                }
+            }
+            
+            .textBlock {
+                padding: 0 2px !important;
+                
+                .title {
+                    font-size: 11px !important;
+                    line-height: 1.2 !important;
+                    font-weight: 600 !important;
+                    margin-bottom: 3px !important;
+                    display: -webkit-box !important;
+                    -webkit-line-clamp: 2 !important;
+                    line-clamp: 2 !important;
+                    -webkit-box-orient: vertical !important;
+                    overflow: hidden !important;
+                    height: 26px !important;
+                }
+                
+                .date {
+                    font-size: 9px !important;
+                    opacity: 0.7 !important;
+                }
+                
+                .genres {
+                    margin-top: 4px !important;
+                    
+                    .genre {
+                        font-size: 7px !important;
+                        padding: 1px 3px !important;
+                    }
+                }
+                
+                .circleRating {
+                    width: 30px !important;
+                    height: 30px !important;
+                    
+                    .CircularProgressbar-text {
+                        font-size: 24px !important;
+                    }
+                }
+            }
+        }
+        
+        // Fallback para browsers que no soporten grid
+        @supports not (display: grid) {
+            display: flex !important;
+            flex-wrap: wrap !important;
+            
+            .movieCard {
+                flex: 0 0 calc(50% - 3px) !important;
+                width: calc(50% - 3px) !important;
+                max-width: calc(50% - 3px) !important;
+                
+                &:nth-child(odd) {
+                    margin-right: 6px !important;
+                }
+            }
+        }
+    }
+}
+
+// ÚLTIMAS REGLAS CRÍTICAS - FORZAR 2 COLUMNAS EN MÓVIL
+.explorePage {
+    @media (max-width: 767px) {
+        .content {
+            display: flex !important;
+            flex-wrap: wrap !important;
+            justify-content: space-between !important;
+            gap: 6px !important;
+            padding: 0 3px !important;
+            
+            // CADA MOVIECARD DEBE SER EXACTAMENTE 50% - 3px
+            > .movieCard {
+                width: calc(50% - 3px) !important;
+                max-width: calc(50% - 3px) !important;
+                min-width: calc(50% - 3px) !important;
+                flex: 0 0 calc(50% - 3px) !important;
+                margin: 0 0 15px 0 !important;
+                box-sizing: border-box !important;
+                
+                // Asegurar que las imágenes se adapten
+                .posterBlock {
+                    width: 100% !important;
+                    margin-bottom: 10px !important;
+                    
+                    .lazy-load-image-background {
+                        width: 100% !important;
+                        height: auto !important;
+                        aspect-ratio: 2/3 !important;
+                        
+                        img {
+                            width: 100% !important;
+                            height: 100% !important;
+                            object-fit: cover !important;
+                        }
+                    }
+                }
+                
+                .textBlock {
+                    padding: 0 2px !important;
+                    
+                    .title {
+                        font-size: 11px !important;
+                        line-height: 1.2 !important;
+                        margin-bottom: 3px !important;
+                        font-weight: 600 !important;
+                    }
+                    
+                    .date {
+                        font-size: 9px !important;
+                        opacity: 0.7 !important;
+                    }
+                }
+            }
+        }
+    }
+    
+    // Para pantallas muy pequeñas
+    @media (max-width: 480px) {
+        .content > .movieCard {
+            width: calc(50% - 2px) !important;
+            max-width: calc(50% - 2px) !important;
+            min-width: calc(50% - 2px) !important;
+            flex: 0 0 calc(50% - 2px) !important;
+        }
+    }
+}
+
+// OVERRIDE GLOBAL PARA MOVIECARD EN EXPLORAR - VERSIÓN FINAL
+.explorePage {
+    .content {
+        @media (max-width: 767px) {
+            display: flex !important;
+            flex-wrap: wrap !important;
+            justify-content: space-between !important;
+            gap: 4px !important;
+            padding: 0 2px !important;
+            
+            .movieCard {
+                width: calc(50% - 2px) !important;
+                max-width: calc(50% - 2px) !important;
+                min-width: calc(50% - 2px) !important;
+                flex: 0 0 calc(50% - 2px) !important;
+                margin: 0 0 15px 0 !important;
+                box-sizing: border-box !important;
+            }
+        }
+        
+        // Para pantallas muy pequeñas
+        @media (max-width: 480px) {
+            gap: 3px !important;
+            padding: 0 1px !important;
+            
+            .movieCard {
+                width: calc(50% - 1.5px) !important;
+                max-width: calc(50% - 1.5px) !important;
+                min-width: calc(50% - 1.5px) !important;
+                flex: 0 0 calc(50% - 1.5px) !important;
+            }
+        }
+    }
+    
+    // Asegurar que NO haya más de 2 por fila
+    .movieCard {
+        @media (max-width: 767px) {
+            &:nth-child(n+3) {
+                clear: both;
+            }
+        }
+    }
+}
+
+// ESTILOS ESPECÍFICOS PARA EXPLORE-GRID - FORZAR 2 COLUMNAS
+.explore-grid {
+    @media (max-width: 767px) {
+        display: flex !important;
+        flex-wrap: wrap !important;
+        justify-content: space-between !important;
+        gap: 4px !important;
+        padding: 0 2px !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+        
+        // Cada MovieCard debe ser exactamente 50% menos el gap
+        > .movieCard {
+            width: calc(50% - 2px) !important;
+            max-width: calc(50% - 2px) !important;
+            min-width: calc(50% - 2px) !important;
+            flex: 0 0 calc(50% - 2px) !important;
+            margin: 0 0 15px 0 !important;
+            box-sizing: border-box !important;
+            
+            // Estilos internos del card
+            .posterBlock {
+                width: 100% !important;
+                margin-bottom: 8px !important;
+                aspect-ratio: 2/3 !important;
+                
+                .lazy-load-image-background {
+                    width: 100% !important;
+                    height: 100% !important;
+                    border-radius: 8px !important;
+                    
+                    img {
+                        width: 100% !important;
+                        height: 100% !important;
+                        object-fit: cover !important;
+                        border-radius: 8px !important;
+                    }
+                }
+            }
+            
+            .textBlock {
+                padding: 0 2px !important;
+                
+                .title {
+                    font-size: 12px !important;
+                    line-height: 1.3 !important;
+                    margin-bottom: 4px !important;
+                    font-weight: 600 !important;
+                    color: white !important;
+                }
+                
+                .date {
+                    font-size: 10px !important;
+                    opacity: 0.7 !important;
+                    color: rgba(255, 255, 255, 0.7) !important;
+                }
+            }
+        }
+    }
+    
+    // Para pantallas muy pequeñas
+    @media (max-width: 480px) {
+        gap: 3px !important;
+        padding: 0 1px !important;
+        
+        > .movieCard {
+            width: calc(50% - 1.5px) !important;
+            max-width: calc(50% - 1.5px) !important;
+            min-width: calc(50% - 1.5px) !important;
+            flex: 0 0 calc(50% - 1.5px) !important;
+        }
+    }
+}

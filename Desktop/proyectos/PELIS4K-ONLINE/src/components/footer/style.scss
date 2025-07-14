@@ -1,0 +1,88 @@
+@import "../../mixins.scss";
+
+.footer {
+  background-color: var(--black3);
+  padding: 50px 0;
+  color: white;
+  position: relative;
+
+  .contentWrapper {
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+  }
+
+  .menuItems {
+    list-style: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    margin-bottom: 20px;
+
+    @include md {
+      margin-bottom: 30px;
+      gap: 30px;
+    }
+
+    .menuItem {
+      font-size: 12px;
+      font-weight: 500;
+      @include md {
+        font-size: 16px;
+      }
+
+      a {
+        color: inherit;
+        text-decoration: none;      /* quita subrayado y color predeterminado */
+        transition: color 0.3s;
+
+        &:hover {
+          color: var(--pink);
+        }
+
+        &:focus {
+          outline: none;
+        }
+      }
+    }
+  }
+
+  .infoText {
+    font-size: 12px;
+    line-height: 20px;
+    opacity: 0.5;
+    text-align: center;
+    max-width: 800px;
+    margin-bottom: 20px;
+
+    @include md {
+      font-size: 14px;
+      margin-bottom: 30px;
+    }
+  }
+
+  .socialIcons {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+
+    .icon {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background-color: var(--black);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: box-shadow 0.3s, color 0.3s;
+
+      &:hover {
+        box-shadow: 0 0 10px var(--pink);
+        color: var(--pink);
+      }
+    }
+  }
+}

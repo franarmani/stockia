@@ -1,0 +1,187 @@
+// CURSOR DE PRUEBA TEMPORAL - SIEMPRE VISIBLE
+.custom-cursor-test {
+  position: fixed;
+  width: 30px;
+  height: 30px;
+  background: #ed30ff !important;
+  border: 3px solid #9D50BB !important;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 99999;
+  transform: translate(-50%, -50%);
+  opacity: 1 !important;
+  visibility: visible !important;
+  display: block !important;
+  animation: subtlePulse 2s ease-in-out infinite;
+}
+
+// CUSTOM CURSOR - ESTILO VIOLETA DEFINITIVO
+.custom-cursor {
+  position: fixed;
+  width: 26px;
+  height: 26px;
+  pointer-events: none;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 99999;
+  display: block !important;
+  
+  // Estilo violeta elegante
+  background: linear-gradient(135deg, #9D50BB 0%, #ed30ff 100%);
+  border: 2px solid rgba(237, 48, 255, 0.8);
+  box-shadow: 
+    0 0 15px rgba(237, 48, 255, 0.6),
+    0 0 30px rgba(157, 80, 187, 0.4),
+    inset 0 0 8px rgba(255, 255, 255, 0.3);
+  
+  // Estado inicial visible
+  opacity: 1;
+  visibility: visible;
+  
+  // Transiciones suaves
+  transition: 
+    width 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+    height 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+    background 0.3s ease,
+    border-color 0.3s ease,
+    box-shadow 0.3s ease,
+    opacity 0.4s ease,
+    visibility 0.4s ease;
+  
+  // Estado visible
+  &.visible {
+    opacity: 1 !important;
+    visibility: visible !important;
+    animation: subtlePulse 4s ease-in-out infinite;
+  }
+  
+  // Estado cuando no está visible/activo
+  &:not(.visible) {
+    opacity: 0;
+    visibility: hidden;
+  }
+  
+  // Estado hover más elegante
+  &.hovering {
+    width: 50px;
+    height: 50px;
+    background: linear-gradient(135deg, #ed30ff 0%, #9D50BB 100%);
+    border-color: rgba(237, 48, 255, 1);
+    box-shadow: 
+      0 0 25px rgba(237, 48, 255, 0.8),
+      0 0 45px rgba(157, 80, 187, 0.6),
+      inset 0 0 12px rgba(255, 255, 255, 0.4);
+    animation: none;
+  }
+}
+
+// Animación de pulsación elegante
+@keyframes subtlePulse {
+  0%, 100% {
+    box-shadow: 
+      0 0 15px rgba(237, 48, 255, 0.6),
+      0 0 30px rgba(157, 80, 187, 0.4),
+      inset 0 0 8px rgba(255, 255, 255, 0.3);
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% {
+    box-shadow: 
+      0 0 20px rgba(237, 48, 255, 0.8),
+      0 0 40px rgba(157, 80, 187, 0.6),
+      inset 0 0 12px rgba(255, 255, 255, 0.4);
+    transform: translate(-50%, -50%) scale(1.05);
+  }
+}
+
+// Ocultar cursor nativo SOLO cuando el cursor personalizado está activo
+body {
+  cursor: none !important;
+}
+
+// Restaurar cursor normal en iframes y elementos específicos
+iframe {
+  cursor: auto !important;
+}
+
+// Cursor específico para elementos de texto
+input, 
+textarea, 
+select {
+  cursor: text !important;
+}
+
+// Cursor pointer para elementos interactivos donde sea necesario
+button:hover,
+a:hover,
+[role="button"]:hover {
+  cursor: none !important; // Mantener cursor personalizado
+}
+
+// OCULTAR COMPLETAMENTE EN DISPOSITIVOS MÓVILES Y TABLETAS
+@media (max-width: 1024px), 
+       (hover: none), 
+       (pointer: coarse),
+       (orientation: portrait),
+       (orientation: landscape) and (max-width: 1024px) {
+  .custom-cursor {
+    display: none !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+  }
+  
+  body {
+    cursor: auto !important;
+  }
+  
+  * {
+    cursor: auto !important;
+  }
+  
+  input, 
+  textarea, 
+  select {
+    cursor: text !important;
+  }
+  
+  button,
+  a,
+  [onclick] {
+    cursor: pointer !important;
+  }
+  
+  iframe {
+    cursor: auto !important;
+  }
+}
+
+// FORZAR CURSOR PERSONALIZADO SOLO EN PANTALLAS GRANDES CON MOUSE
+@media (min-width: 1025px) and (hover: hover) and (pointer: fine) {
+  .custom-cursor {
+    display: block !important;
+  }
+  
+  body {
+    cursor: none !important;
+  }
+  
+  // Mantener cursores específicos solo en inputs
+  input, 
+  textarea, 
+  select {
+    cursor: text !important;
+  }
+  
+  iframe {
+    cursor: auto !important;
+  }
+}
+
+// CURSOR DE DEBUG SIMPLE
+.cursor-debug-simple {
+  position: fixed !important;
+  pointer-events: none !important;
+  z-index: 999999 !important;
+  display: block !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}

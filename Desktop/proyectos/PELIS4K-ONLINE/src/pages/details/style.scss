@@ -1,0 +1,503 @@
+@import "../../mixins.scss";
+
+// Flat Design Moderno - Variables simples y limpias
+:root {
+  --flat-bg: rgba(16, 16, 16, 0.95);
+  --flat-surface: rgba(32, 32, 32, 0.9);
+  --flat-border: rgba(255, 255, 255, 0.1);
+  --flat-hover: rgba(255, 255, 255, 0.05);
+  --flat-active: var(--primary);
+  --flat-text: #ffffff;
+  --flat-text-muted: rgba(255, 255, 255, 0.6);
+}
+
+.detailsPage {
+  min-height: 100vh;
+  background: transparent;
+  padding: 0;  // Contenedor simple y limpio para servidores
+  .servers-container {
+    margin: 32px auto;
+    max-width: 1000px;
+    padding: 24px;
+    background: var(--flat-bg);
+    border-radius: 12px;
+    border: 1px solid var(--flat-border);
+
+    .servers-title {
+      color: var(--flat-text);
+      font-size: 20px;
+      font-weight: 600;
+      text-align: center;
+      margin-bottom: 24px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      
+      &::after {
+        content: '';
+        display: block;
+        width: 40px;
+        height: 2px;
+        background: var(--primary);
+        margin: 12px auto 0;
+        border-radius: 1px;
+      }
+    }
+
+    .servers-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 12px;
+      
+      @media (max-width: 768px) {
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+        gap: 8px;
+      }
+    }
+
+    .server-button {
+      padding: 16px 20px;
+      background: var(--flat-surface);
+      border: 1px solid var(--flat-border);
+      border-radius: 8px;
+      color: var(--flat-text);
+      font-weight: 500;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-align: center;
+      
+      &:hover {
+        background: var(--flat-hover);
+        border-color: var(--primary);
+      }
+
+      &.active {
+        background: var(--primary);
+        border-color: var(--primary);
+        color: white;
+      }
+
+      small {
+        display: block;
+        font-size: 11px;
+        opacity: 0.7;
+        margin-top: 4px;
+        font-weight: 400;
+      }
+
+      @media (max-width: 768px) {
+        padding: 12px 16px;
+        font-size: 13px;
+      }
+    }
+  }  // Contenedor simple para temporadas y episodios
+  .seasons-episodes-container {
+    margin: 32px auto;
+    max-width: 1200px;
+    padding: 24px;
+    background: var(--flat-bg);
+    border-radius: 12px;
+    border: 1px solid var(--flat-border);
+
+    .seasons-title {
+      color: var(--flat-text);
+      font-size: 22px;
+      font-weight: 600;
+      text-align: center;
+      margin-bottom: 32px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      
+      &::after {
+        content: '';
+        display: block;
+        width: 50px;
+        height: 2px;
+        background: var(--primary);
+        margin: 12px auto 0;
+        border-radius: 1px;
+      }
+    }
+
+    .seasons-grid {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;      gap: 12px;
+      margin-bottom: 32px;
+      
+      .season-button {
+        padding: 12px 24px;
+        background: var(--flat-surface);
+        border: 1px solid var(--flat-border);
+        border-radius: 20px;
+        color: var(--flat-text);
+        font-weight: 500;
+        font-size: 13px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+        min-width: 100px;
+        text-align: center;
+        position: relative;
+        z-index: 10;
+        pointer-events: auto;
+
+        &:hover {
+          background: var(--flat-hover);
+          border-color: #ed30ff;
+        }
+
+        &.active {
+          background: #ed30ff;
+          border-color: #ed30ff;
+          color: white;
+        }
+
+        @media (max-width: 768px) {
+          padding: 10px 20px;
+          font-size: 12px;
+          min-width: 80px;
+        }
+      }
+    }
+
+    .episodes-title {
+      color: var(--flat-text);
+      font-size: 16px;
+      font-weight: 500;
+      text-align: center;
+      margin-bottom: 20px;      opacity: 0.8;
+    }
+    
+    .episodes-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      gap: 12px;
+      max-height: 400px;
+      overflow-y: auto;
+      
+      // Scrollbar simple
+      &::-webkit-scrollbar {
+        width: 4px;
+      }
+
+      &::-webkit-scrollbar-track {
+        background: var(--flat-border);
+        border-radius: 4px;
+      }
+
+      &::-webkit-scrollbar-thumb {
+        background: #ed30ff;
+        border-radius: 4px;
+        
+        &:hover {
+          background: rgba(237, 48, 255, 0.8);
+        }
+      }
+
+      @media (max-width: 768px) {
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));        gap: 8px;
+      }
+      
+      .episode-button {
+        position: relative;
+        padding: 16px 20px;
+        background: var(--flat-surface);
+        border: 1px solid var(--flat-border);
+        border-radius: 8px;
+        color: var(--flat-text);
+        font-weight: 400;
+        font-size: 13px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        text-align: left;
+        line-height: 1.4;
+
+        &:hover {
+          background: var(--flat-hover);
+          border-color: var(--primary);
+        }
+
+        &.active {
+          background: var(--primary);
+          border-color: var(--primary);
+          color: white;
+        }
+
+        @media (max-width: 768px) {
+          padding: 12px 16px;
+          font-size: 12px;
+        }
+      }
+    }
+  }  // Player simple y limpio
+  .player-container {
+    margin: 32px auto;
+    max-width: 1200px;
+    background: var(--flat-bg);
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid var(--flat-border);
+
+    .player-header {
+      background: var(--flat-surface);
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--flat-border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+
+      .header-left {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+
+        .live-indicator {
+          width: 6px;
+          height: 6px;
+          border-radius: 50%;
+          background: #ff4757;
+        }
+
+        .title {
+          color: var(--flat-text);
+          font-size: 16px;
+          font-weight: 500;
+        }
+      }
+
+      .header-right {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+
+        .protection-badge {
+          background: var(--primary);
+          color: white;
+          padding: 6px 12px;
+          border-radius: 12px;
+          font-size: 10px;
+          font-weight: 600;
+          text-transform: uppercase;
+          letter-spacing: 0.3px;
+        }        .quality-badge {
+          background: var(--flat-surface);
+          color: var(--flat-text-muted);
+          padding: 6px 12px;
+          border-radius: 12px;
+          font-size: 10px;
+          font-weight: 500;
+          border: 1px solid var(--flat-border);
+        }
+      }
+    }
+
+    .video-container {      position: relative;
+      padding-bottom: 56.25%; // 16:9 aspect ratio
+      height: 0;
+      background: #000;
+
+      iframe {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        border: none;
+      }
+
+      .loading-overlay,
+      .error-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: var(--flat-bg);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        color: var(--flat-text);
+        text-align: center;
+        padding: 40px;
+      }
+
+      .loading-overlay {
+        .loading-spinner {
+          width: 40px;
+          height: 40px;
+          border: 2px solid var(--flat-border);
+          border-top: 2px solid var(--primary);
+          border-radius: 50%;
+          animation: spin 1s linear infinite;
+          margin-bottom: 20px;
+        }
+
+        .loading-text {
+          font-size: 14px;
+          color: var(--flat-text-muted);
+          font-weight: 400;
+        }
+      }
+
+      .error-overlay {
+        .error-icon {
+          font-size: 48px;
+          margin-bottom: 20px;
+          opacity: 0.6;
+        }
+
+        .error-title {
+          font-size: 18px;
+          font-weight: 600;
+          margin-bottom: 12px;
+          color: #ff6b6b;
+        }        .error-message {
+          font-size: 14px;
+          color: var(--flat-text-muted);
+          line-height: 1.5;
+        }
+      }
+    }
+  }
+
+  // Información del próximo episodio - diseño simple
+
+// Animaciones simples
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+// Responsive 
+@media (max-width: 768px) {
+  .detailsPage {
+    .servers-container,
+    .seasons-episodes-container,
+    .player-container {
+      margin: 20px 16px;
+      padding: 16px;
+    }
+  }
+}  // Estilos especiales para episodios tipo círculos/cuadrados
+  .episode-circle {
+    width: 50px !important;
+    height: 50px !important;
+    border-radius: 12px !important;
+    padding: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 16px !important;
+    font-weight: 700 !important;
+    position: relative !important;
+    background: var(--flat-surface) !important;
+    border: 2px solid var(--flat-border) !important;
+    color: var(--flat-text) !important;
+    
+    // Versión círculo (opcional)
+    &.circle {
+      border-radius: 50% !important;
+    }
+    
+    // Hover effect con el color ed30ff
+    &:hover {
+      transform: scale(1.1) !important;
+      background: rgba(237, 48, 255, 0.1) !important;
+      border-color: #ed30ff !important;
+      box-shadow: 0 4px 12px rgba(237, 48, 255, 0.3) !important;
+      color: #ed30ff !important;
+    }
+    
+    &.active {
+      background: #ed30ff !important;
+      border-color: #ed30ff !important;
+      color: white !important;
+      transform: scale(1.05) !important;
+      box-shadow: 0 4px 16px rgba(237, 48, 255, 0.5) !important;
+    }
+    
+    @media (max-width: 768px) {
+      width: 40px !important;
+      height: 40px !important;
+      font-size: 14px !important;
+    }
+  }
+
+  // Rediseño del grid de episodios para círculos
+  .seasons-episodes-container .episodes-grid {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    justify-content: center !important;
+    gap: 12px !important;
+    max-height: 350px !important;
+    overflow-y: auto !important;
+    padding: 20px !important;
+    
+    @media (max-width: 768px) {
+      gap: 8px !important;
+      padding: 15px !important;
+    }
+  }
+
+  // Mejorar el título de episodios
+  .seasons-episodes-container .episodes-title {
+    font-size: 18px !important;
+    margin-bottom: 16px !important;
+    color: var(--flat-text) !important;
+  }  // Información del próximo episodio - diseño simple
+  .next-episode-simple {
+    margin-top: 24px;
+    padding-top: 20px;
+    border-top: 1px solid var(--flat-border);
+    text-align: center;
+    
+    .next-info {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      
+      .next-label {
+        color: var(--flat-text-muted);
+        font-size: 14px;
+        font-weight: 400;
+      }
+      
+      .next-title {
+        color: #ed30ff;
+        font-size: 14px;
+        font-weight: 600;
+      }
+      
+      .next-date {
+        color: var(--flat-text);
+        font-size: 14px;
+        font-weight: 500;
+        background: var(--flat-surface);
+        padding: 4px 12px;
+        border-radius: 12px;
+        border: 1px solid var(--flat-border);
+      }
+      
+      &.ended .next-label {
+        color: #ff6b6b;
+        font-weight: 500;
+      }
+      
+      @media (max-width: 768px) {
+        flex-direction: column;
+        gap: 4px;
+        
+        .next-label,
+        .next-title,
+        .next-date {
+          font-size: 13px;
+        }
+      }
+    }
+  }
+}
