@@ -1,6 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAuthStore } from '@/stores/authStore'
-import { useEffect, lazy, Suspense } from 'react'
+import { useEffect, lazy, Suspense, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import LoadingSpinner from '@/components/ui/LoadingSpinner'
 import { useBusinessStore } from '@/stores/businessStore'
@@ -8,6 +8,26 @@ import { useBusinessStore } from '@/stores/businessStore'
 // Layouts
 import AppShellLauncher from '@/components/layout/AppShellLauncher'
 import TrialExpiredModal from '@/components/TrialExpiredModal'
+
+// ── localStorage cache helpers ──
+const PROFILE_CACHE_KEY = 'stockia_profile'
+const BUSINESS_CACHE_KEY = 'stockia_business'
+
+function cacheProfile(profile: any) {
+  try { localStorage.setItem(PROFILE_CACHE_KEY, JSON.stringify(profile)) } catch {}
+}
+function cacheBusiness(business: any) {
+  try { localStorage.setItem(BUSINESS_CACHE_KEY, JSON.stringify(business)) } catch {}
+}
+function getCachedProfile() {
+  try { const s = localStorage.getItem(PROFILE_CACHE_KEY); return s ? JSON.parse(s) : null } catch { return null }
+}
+function getCachedBusiness() {
+  try { const s = localStorage.getItem(BUSINESS_CACHE_KEY); return s ? JSON.parse(s) : null } catch { return null }
+}
+function clearCache() {
+  try { localStorage.removeItem(PROFILE_CACHE_KEY); localStorage.removeItem(BUSINESS_CACHE_KEY) } catch {}
+}
 
 // Lazy-loaded pages
 const LoginPage = lazy(() => import('@/pages/auth/LoginPage'))
@@ -79,115 +99,147 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
 
 export default function App() {
   const { setUser, setLoading, setProfile } = useAuthStore()
-  const { fetchBusiness } = useBusinessStore()
+  const { fetchBusiness, setBusiness } = useBusinessStore()
 
   useEffect(() => {
-    // ── BULLETPROOF AUTH ──
-    // 1. getSession() loads the profile exactly ONCE on mount
-    // 2. onAuthStateChange ONLY handles: sign-out (clear) and fresh sign-in (load if not loaded)
-    // 3. Once profileLoaded=true, profile is NEVER cleared or reloaded (until SIGNED_OUT)
-    // 4. No AbortSignal, no timeout, no debounce — just a simple fetch
+    // ── BULLETPROOF AUTH WITH LOCALSTORAGE CACHE ──
+    // The Supabase free tier has server-side query timeouts.
+    // After the first successful load, we cache profile+business in localStorage.
+    // On subsequent visits / tab switches, we use the cache instantly.
 
     let profileLoaded = false
-    let loadPromise: Promise<void> | null = null // dedup concurrent loads
 
-    async function loadProfileOnce(userId: string): Promise<void> {
-      // Already loaded → nothing to do
-      if (profileLoaded) return
-
-      // Another call already loading → wait for it
-      if (loadPromise) {
-        await loadPromise
-        return
+    function applyProfile(data: any) {
+      const profile = {
+        id: data.id,
+        business_id: data.business_id,
+        name: data.name,
+        email: data.email,
+        role: data.role as 'admin' | 'seller',
+        is_superadmin: data.is_superadmin ?? false,
+        created_at: data.created_at,
       }
-
-      loadPromise = (async () => {
-        try {
-          // Race: query vs 30s safety timeout
-          const result = await Promise.race([
-            supabase
-              .from('users')
-              .select('*')
-              .eq('id', userId)
-              .maybeSingle(),
-            new Promise<{ data: null; error: { message: string } }>((resolve) =>
-              setTimeout(() => resolve({ data: null, error: { message: '30s timeout' } }), 30000)
-            ),
-          ])
-
-          const { data, error } = result as any
-
-          if (error || !data) {
-            console.warn('[Auth] profile query failed:', error?.message ?? 'no row found')
-            return
-          }
-
-          setProfile({
-            id: data.id,
-            business_id: data.business_id,
-            name: data.name,
-            email: data.email,
-            role: data.role as 'admin' | 'seller',
-            is_superadmin: (data as any).is_superadmin ?? false,
-            created_at: data.created_at,
-          })
-          await fetchBusiness(data.business_id)
-          profileLoaded = true
-          console.log('[Auth] profile loaded OK')
-        } catch (e: any) {
-          console.warn('[Auth] profile load exception:', e.message)
-        } finally {
-          loadPromise = null
-        }
-      })()
-
-      await loadPromise
+      setProfile(profile)
+      cacheProfile(profile)
+      return profile
     }
 
-    // ── Step 1: initial session check on mount ──
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (session?.user) {
-        setUser(session.user)
-        await loadProfileOnce(session.user.id)
-      }
-      setLoading(false)
-    })
+    async function loadFromNetwork(userId: string): Promise<boolean> {
+      try {
+        const { data, error } = await supabase
+          .from('users')
+          .select('*')
+          .eq('id', userId)
+          .maybeSingle()
 
-    // ── Step 2: listen for auth changes ──
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      // Sign out → clear everything
-      if (event === 'SIGNED_OUT') {
-        profileLoaded = false
-        loadPromise = null
-        setUser(null)
-        setProfile(null)
+        if (error || !data) {
+          console.warn('[Auth] network query failed:', error?.message ?? 'no row')
+          return false
+        }
+
+        const profile = applyProfile(data)
+
+        // Fetch business and cache it too
+        const { data: biz } = await supabase
+          .from('businesses')
+          .select('*')
+          .eq('id', profile.business_id)
+          .single()
+
+        if (biz) {
+          setBusiness(biz)
+          cacheBusiness(biz)
+        }
+
+        profileLoaded = true
+        console.log('[Auth] loaded from network OK')
+        return true
+      } catch (e: any) {
+        console.warn('[Auth] network error:', e.message)
+        return false
+      }
+    }
+
+    function loadFromCache(): boolean {
+      const cached = getCachedProfile()
+      const cachedBiz = getCachedBusiness()
+      if (cached) {
+        setProfile(cached)
+        if (cachedBiz) setBusiness(cachedBiz)
+        profileLoaded = true
+        console.log('[Auth] loaded from cache')
+        return true
+      }
+      return false
+    }
+
+    // ── Step 1: check session on mount ──
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (!session?.user) {
         setLoading(false)
         return
       }
 
-      // No session → nothing to do
-      if (!session?.user) return
-
-      // Sync the user/token (always, even on TOKEN_REFRESHED)
       setUser(session.user)
 
-      // Profile already loaded → done, don't touch anything
+      // Try cache first (instant)
+      if (loadFromCache()) {
+        setLoading(false)
+        // Refresh from network in background (silent)
+        loadFromNetwork(session.user.id)
+        return
+      }
+
+      // No cache → must load from network (with retries)
+      for (let i = 1; i <= 3; i++) {
+        const ok = await loadFromNetwork(session.user.id)
+        if (ok) break
+        if (i < 3) await new Promise(r => setTimeout(r, i * 2000))
+      }
+      setLoading(false)
+    })
+
+    // ── Step 2: auth state changes ──
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_OUT') {
+        profileLoaded = false
+        setUser(null)
+        setProfile(null)
+        setBusiness(null)
+        clearCache()
+        setLoading(false)
+        return
+      }
+
+      if (!session?.user) return
+
+      setUser(session.user)
+
+      // Already loaded → just sync token, done
       if (profileLoaded) {
         setLoading(false)
         return
       }
 
-      // Fresh sign-in (user just logged in from LoginPage) → load profile
-      if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
+      // New sign-in → try cache, then network
+      if (event === 'SIGNED_IN') {
+        if (loadFromCache()) {
+          setLoading(false)
+          loadFromNetwork(session.user.id) // silent refresh
+          return
+        }
+
         setLoading(true)
-        await loadProfileOnce(session.user.id)
+        for (let i = 1; i <= 3; i++) {
+          const ok = await loadFromNetwork(session.user.id)
+          if (ok) break
+          if (i < 3) await new Promise(r => setTimeout(r, i * 2000))
+        }
         setLoading(false)
       }
     })
 
-    return () => {
-      subscription.unsubscribe()
-    }
+    return () => { subscription.unsubscribe() }
   }, [])
 
   return (

@@ -6,12 +6,14 @@ interface BusinessState {
   business: Business | null
   loading: boolean
   fetchBusiness: (businessId: string) => Promise<void>
+  setBusiness: (business: Business | null) => void
   updateBusiness: (updates: Partial<Business>) => Promise<void>
 }
 
 export const useBusinessStore = create<BusinessState>((set, get) => ({
   business: null,
   loading: false,
+  setBusiness: (business) => set({ business }),
   fetchBusiness: async (businessId: string) => {
     if (!businessId) return
     set({ loading: true })
