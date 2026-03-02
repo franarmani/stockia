@@ -12,14 +12,14 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png'],
       manifest: {
-        name: 'NexoVentas',
-        short_name: 'NexoVentas',
+        name: 'STOCKIA',
+        short_name: 'STOCKIA',
         description: 'Sistema de gestión y facturación para negocios',
         theme_color: '#059669',
         background_color: '#f8fafc',
         display: 'standalone',
         orientation: 'any',
-        start_url: '/pos',
+        start_url: '/menu',
         icons: [
           { src: '/pwa-192x192.png', sizes: '192x192', type: 'image/png' },
           { src: '/pwa-512x512.png', sizes: '512x512', type: 'image/png' },

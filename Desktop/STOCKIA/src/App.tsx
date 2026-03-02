@@ -93,12 +93,13 @@ export default function App() {
 
     async function loadProfile(userId: string): Promise<boolean> {
       try {
-        // NO AbortSignal.timeout — let the query finish naturally
+        // 15s timeout — long enough for slow Supabase, short enough not to hang forever
         const { data, error } = await supabase
           .from('users')
           .select('*')
           .eq('id', userId)
           .maybeSingle()
+          .abortSignal(AbortSignal.timeout(15000))
 
         if (error || !data) {
           console.warn('[Auth] loadProfile failed:', error?.message ?? 'no row')
