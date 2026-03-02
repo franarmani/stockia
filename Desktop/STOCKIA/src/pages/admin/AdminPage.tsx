@@ -71,14 +71,17 @@ export default function AdminPage() {
   const [filter, setFilter] = useState<'all' | 'trial' | 'active' | 'expired'>('all')
   const [updating, setUpdating] = useState<string | null>(null)
 
-  // Guard: only superadmin
-  if (!profile) return null
-  if (!profile.is_superadmin) return <Navigate to="/menu" replace />
+  const isSuperadmin = !!profile?.is_superadmin
 
   useEffect(() => {
+    if (!isSuperadmin) return
     fetchAll()
     fetchPaymentRequests()
-  }, [])
+  }, [isSuperadmin])
+
+  // Guard: only superadmin (AFTER hooks to comply with React rules)
+  if (!profile) return null
+  if (!isSuperadmin) return <Navigate to="/menu" replace />
 
   async function fetchPaymentRequests() {
     setLoadingPayments(true)
@@ -159,7 +162,7 @@ export default function AdminPage() {
 
   function openWA(business: BusinessRow, type: 'activar' | 'vencido') {
     const msg = type === 'activar'
-      ? `Hola! Tu cuenta en STOCKIA ha sido activada ✅. Ya podés ingresar en https://stockia.com.ar — Cualquier consulta avisame. Saludos, Fran`
+      ? `Hola! Tu cuenta en STOCKIA ha sido activada ✅. Ya podés ingresar en https://stockia-two.vercel.app — Cualquier consulta avisame. Saludos, Fran`
       : `Hola! Tu período de prueba en STOCKIA ha vencido 📅. Para seguir usando el sistema transferí $50.000 al alias *${ALIAS}* y avisame por acá. Saludos, Fran`
 
     const phone = business.phone?.replace(/\D/g, '') || ''

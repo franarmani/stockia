@@ -1,0 +1,359 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
+
+  /* Brand — STOCKIA palette */
+  --color-primary: #1DB954;
+  --color-primary-foreground: #ffffff;
+  --color-primary-light: #ecfdf5;
+  --color-primary-dark: #16A34A;
+
+  --color-brand-blue: #1E3A8A;
+  --color-brand-blue-light: #3B82F6;
+
+  /* Light-theme tokens (used inside glass panels / white content areas) */
+  --color-secondary: #f8fafc;
+  --color-secondary-foreground: #0f172a;
+
+  --color-accent: #1DB954;
+  --color-accent-foreground: #ffffff;
+
+  --color-destructive: #EF4444;
+  --color-destructive-foreground: #ffffff;
+
+  --color-muted: #f1f5f9;
+  --color-muted-foreground: #64748b;
+
+  --color-card: #ffffff;
+  --color-card-foreground: #0f172a;
+
+  --color-border: #e2e8f0;
+  --color-input: #e2e8f0;
+  --color-ring: #1DB954;
+
+  /* ── Dark app shell ── */
+  --color-background: #07142f;
+  --color-foreground: #ffffff;
+  --color-muted-foreground: rgba(255,255,255,0.50);
+  --color-border: rgba(255,255,255,0.10);
+  --color-input: rgba(255,255,255,0.10);
+  --color-muted: rgba(255,255,255,0.06);
+  --color-card: rgba(255,255,255,0.06);
+  --color-card-foreground: #ffffff;
+
+  /* Sidebar tokens (kept for compat) */
+  --color-sidebar: #1E3A8A;
+  --color-sidebar-foreground: #cbd5e1;
+  --color-sidebar-accent: #1e40af;
+  --color-sidebar-muted: #94a3b8;
+  --color-sidebar-border: #1e40af;
+
+  --color-success: #1DB954;
+  --color-warning: #F59E0B;
+
+  --radius-sm: 0.25rem;
+  --radius-md: 0.375rem;
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
+  --radius-2xl: 1rem;
+}
+
+* {
+  @apply border-border;
+}
+
+body {
+  @apply font-sans antialiased;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  background: #07142f;
+  color: #ffffff;
+}
+
+/* Scrollbar — minimal */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.25); }
+
+/* ========= App background (launcher dark gradient) ========= */
+.app-bg {
+  background:
+    radial-gradient(900px circle at 20% 15%, rgba(46, 84, 255, 0.22), transparent 60%),
+    radial-gradient(900px circle at 80% 75%, rgba(29, 185, 84, 0.16), transparent 55%),
+    linear-gradient(180deg, #0b1a44 0%, #07142f 55%, #061027 100%);
+  min-height: 100vh;
+}
+
+/* ========= Glass utilities ========= */
+.glass-card {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 1rem;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.25);
+}
+.glass-card--glow {
+  box-shadow: 0 0 0 1px rgba(29,185,84,0.25), 0 4px 24px rgba(0,0,0,0.30);
+}
+
+.glass-panel {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
+  border-radius: 1.25rem;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.35);
+}
+
+.glass-header {
+  background: rgba(7, 20, 47, 0.75);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+}
+
+.glass-btn {
+  background: rgba(255, 255, 255, 0.09);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.85);
+  border-radius: 0.75rem;
+}
+.glass-btn:hover {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.18);
+  color: #ffffff;
+}
+
+/* White content panels (inside glass shell — forms, tables, inputs) */
+.content-panel {
+  background: #ffffff;
+  color: #0f172a;
+  border-radius: 1.25rem;
+}
+
+/* ========= Animations ========= */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.97); }
+  to { opacity: 1; transform: scale(1); }
+}
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(-14px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(8px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+@keyframes slideInUp {
+  from { opacity: 0; transform: translateY(18px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes pulse-soft {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .7; }
+}
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.animate-fade-in { animation: fadeIn 0.2s ease-out; }
+.animate-fade-in-up { animation: fadeInUp 0.3s ease-out both; }
+.animate-scale-in { animation: scaleIn 0.15s ease-out; }
+.animate-slide-in-left { animation: slideInLeft 0.22s ease-out; }
+.animate-slide-in-right { animation: slideInRight 0.25s ease-out; }
+.animate-slide-in-up { animation: slideInUp 0.25s ease-out; }
+.animate-pulse-soft { animation: pulse-soft 2s ease-in-out infinite; }
+
+/* Beep visual */
+@keyframes beepFlash {
+  0% { opacity: 1; }
+  50% { opacity: 0.5; }
+  100% { opacity: 1; }
+}
+.beep-flash { animation: beepFlash 0.15s ease-out; }
+
+/* Gradient primary button */
+.gradient-primary {
+  background: linear-gradient(135deg, #1DB954 0%, #16A34A 100%);
+}
+.gradient-dark {
+  background: linear-gradient(180deg, #1E3A8A 0%, #1e40af 100%);
+}
+
+/* Card hover — subtle lift (used in white card areas) */
+.card-hover {
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+.card-hover:hover {
+  box-shadow: 0 4px 16px rgba(0,0,0,0.06), 0 1px 4px rgba(0,0,0,0.04);
+  transform: translateY(-2px);
+}
+
+/* Safe area bottom padding */
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Print */
+@media print {
+  .no-print { display: none !important; }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   .dark-shell — context applied to all pages inside AppShellLauncher.
+   Overrides Tailwind hardcoded color classes so every page renders
+   correctly on the dark gradient background.
+═══════════════════════════════════════════════════════════════ */
+
+/* ── Text colors ── */
+.dark-shell { color: #ffffff; }
+.dark-shell .text-foreground  { color: #ffffff !important; }
+.dark-shell .text-slate-900   { color: rgba(255,255,255,0.95) !important; }
+.dark-shell .text-slate-800   { color: rgba(255,255,255,0.90) !important; }
+.dark-shell .text-slate-700   { color: rgba(255,255,255,0.80) !important; }
+.dark-shell .text-slate-600   { color: rgba(255,255,255,0.65) !important; }
+.dark-shell .text-muted-foreground { color: rgba(255,255,255,0.50) !important; }
+.dark-shell .text-slate-500   { color: rgba(255,255,255,0.45) !important; }
+.dark-shell .text-slate-400   { color: rgba(255,255,255,0.40) !important; }
+/* Keep colored text intact (green/red/amber/blue) */
+.dark-shell .text-green-600,
+.dark-shell .text-green-700   { color: #4ade80 !important; }
+.dark-shell .text-red-600,
+.dark-shell .text-red-700     { color: #f87171 !important; }
+.dark-shell .text-amber-600,
+.dark-shell .text-amber-700,
+.dark-shell .text-amber-800   { color: #fbbf24 !important; }
+.dark-shell .text-blue-600    { color: #60a5fa !important; }
+.dark-shell .text-violet-600  { color: #a78bfa !important; }
+.dark-shell .text-cyan-600    { color: #22d3ee !important; }
+.dark-shell .text-indigo-600  { color: #818cf8 !important; }
+.dark-shell .text-teal-600    { color: #2dd4bf !important; }
+.dark-shell .text-orange-600  { color: #fb923c !important; }
+.dark-shell .text-rose-600    { color: #fb7185 !important; }
+
+/* ── Card / panel backgrounds ── */
+.dark-shell .bg-white {
+  background: rgba(255,255,255,0.07) !important;
+}
+.dark-shell .bg-slate-50  { background: rgba(255,255,255,0.04) !important; }
+.dark-shell .bg-slate-100 { background: rgba(255,255,255,0.06) !important; }
+.dark-shell .bg-slate-200 { background: rgba(255,255,255,0.09) !important; }
+.dark-shell .bg-muted     { background: rgba(255,255,255,0.05) !important; }
+
+/* Colored icon backgrounds — make them richer on dark */
+.dark-shell .bg-green-100  { background: rgba(74,222,128,0.15) !important; }
+.dark-shell .bg-red-100    { background: rgba(248,113,113,0.15) !important; }
+.dark-shell .bg-amber-100,
+.dark-shell .bg-amber-50   { background: rgba(251,191,36,0.14) !important; }
+.dark-shell .bg-blue-100   { background: rgba(96,165,250,0.15) !important; }
+.dark-shell .bg-violet-100 { background: rgba(167,139,250,0.15) !important; }
+.dark-shell .bg-cyan-100   { background: rgba(34,211,238,0.14) !important; }
+.dark-shell .bg-indigo-100 { background: rgba(129,140,248,0.14) !important; }
+.dark-shell .bg-teal-100   { background: rgba(45,212,191,0.14) !important; }
+.dark-shell .bg-orange-100 { background: rgba(251,146,60,0.14) !important; }
+.dark-shell .bg-rose-100   { background: rgba(251,113,133,0.14) !important; }
+
+/* ── Borders ── */
+.dark-shell .border,
+.dark-shell .border-slate-200,
+.dark-shell .border-slate-100,
+.dark-shell [class*='border-b'],
+.dark-shell [class*='divide-'] > * {
+  border-color: rgba(255,255,255,0.10) !important;
+}
+.dark-shell .shadow-sm {
+  box-shadow: 0 2px 16px rgba(0,0,0,0.35) !important;
+}
+
+/* ── Inputs / selects / textareas ── */
+.dark-shell input:not([type='checkbox']):not([type='radio']):not([type='range']),
+.dark-shell textarea,
+.dark-shell select {
+  background: rgba(255,255,255,0.08) !important;
+  border-color: rgba(255,255,255,0.14) !important;
+  color: #ffffff !important;
+}
+.dark-shell input::placeholder,
+.dark-shell textarea::placeholder {
+  color: rgba(255,255,255,0.30) !important;
+}
+.dark-shell select option {
+  background: #0b1a44;
+  color: #ffffff;
+}
+.dark-shell input:focus,
+.dark-shell textarea:focus,
+.dark-shell select:focus {
+  border-color: rgba(29,185,84,0.60) !important;
+  box-shadow: 0 0 0 3px rgba(29,185,84,0.12) !important;
+  outline: none;
+}
+
+/* ── Buttons ── */
+.dark-shell button.border-slate-200,
+.dark-shell button[class*='border-slate'] {
+  border-color: rgba(255,255,255,0.18) !important;
+  background: rgba(255,255,255,0.07) !important;
+  color: rgba(255,255,255,0.85) !important;
+}
+.dark-shell button[class*='bg-slate-100'] {
+  background: rgba(255,255,255,0.10) !important;
+  color: rgba(255,255,255,0.80) !important;
+}
+.dark-shell button[class*='bg-slate-100']:hover {
+  background: rgba(255,255,255,0.15) !important;
+}
+/* hover:bg-muted / hover:bg-slate-50 override */
+.dark-shell [class*='hover:bg-slate']:hover,
+.dark-shell [class*='hover:bg-muted']:hover {
+  background: rgba(255,255,255,0.10) !important;
+}
+
+/* ── Tables ── */
+.dark-shell thead th {
+  background: rgba(255,255,255,0.05) !important;
+  color: rgba(255,255,255,0.55) !important;
+  border-bottom-color: rgba(255,255,255,0.10) !important;
+}
+.dark-shell tbody tr {
+  border-bottom-color: rgba(255,255,255,0.06) !important;
+}
+.dark-shell tbody tr:hover {
+  background: rgba(255,255,255,0.05) !important;
+}
+
+/* ── Modal/dialog ── */
+.dark-shell [role='dialog'],
+.dark-shell dialog {
+  background: rgba(11,26,68,0.98) !important;
+  border: 1px solid rgba(255,255,255,0.12) !important;
+  color: #ffffff !important;
+}
+.dark-shell .modal-overlay,
+.dark-shell [class*='fixed inset-0 bg-black'] {
+  background: rgba(0,0,0,0.65) !important;
+}
+
+/* ── Scrollbar in dark context ── */
+.dark-shell ::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.15);
+}
+
+/* ── Gradients on main revenue card (DashboardPage) ── */
+.dark-shell .gradient-primary {
+  background: linear-gradient(135deg, #1DB954 0%, #16A34A 100%);
+}
+
