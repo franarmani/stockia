@@ -84,98 +84,99 @@ export default function App() {
   const { fetchBusiness } = useBusinessStore()
 
   useEffect(() => {
-    // ── Simple & robust auth flow ──
-    // Supabase fires many SIGNED_IN events. We load profile exactly ONCE
-    // and ignore all further events. No debounce, no timeout, no races.
+    // ── BULLETPROOF AUTH ──
+    // 1. getSession() loads the profile exactly ONCE on mount
+    // 2. onAuthStateChange ONLY handles: sign-out (clear) and fresh sign-in (load if not loaded)
+    // 3. Once profileLoaded=true, profile is NEVER cleared or reloaded (until SIGNED_OUT)
+    // 4. No AbortSignal, no timeout, no debounce — just a simple fetch
 
-    let profileLoaded = false   // once true, never reload (until SIGNED_OUT)
-    let loadingStarted = false  // prevents concurrent load attempts
+    let profileLoaded = false
+    let loadPromise: Promise<void> | null = null // dedup concurrent loads
 
-    async function loadProfile(userId: string): Promise<boolean> {
-      try {
-        // 15s timeout — long enough for slow Supabase, short enough not to hang forever
-        const { data, error } = await supabase
-          .from('users')
-          .select('*')
-          .eq('id', userId)
-          .maybeSingle()
-          .abortSignal(AbortSignal.timeout(15000))
+    async function loadProfileOnce(userId: string): Promise<void> {
+      // Already loaded → nothing to do
+      if (profileLoaded) return
 
-        if (error || !data) {
-          console.warn('[Auth] loadProfile failed:', error?.message ?? 'no row')
-          return false
-        }
-
-        setProfile({
-          id: data.id,
-          business_id: data.business_id,
-          name: data.name,
-          email: data.email,
-          role: data.role as 'admin' | 'seller',
-          is_superadmin: (data as any).is_superadmin ?? false,
-          created_at: data.created_at,
-        })
-        await fetchBusiness(data.business_id)
-        console.log('[Auth] profile loaded OK')
-        return true
-      } catch (e: any) {
-        console.warn('[Auth] loadProfile exception:', e.message)
-        return false
+      // Another call already loading → wait for it
+      if (loadPromise) {
+        await loadPromise
+        return
       }
+
+      loadPromise = (async () => {
+        try {
+          const { data, error } = await supabase
+            .from('users')
+            .select('*')
+            .eq('id', userId)
+            .maybeSingle()
+
+          if (error || !data) {
+            console.warn('[Auth] profile query failed:', error?.message ?? 'no row found')
+            return
+          }
+
+          setProfile({
+            id: data.id,
+            business_id: data.business_id,
+            name: data.name,
+            email: data.email,
+            role: data.role as 'admin' | 'seller',
+            is_superadmin: (data as any).is_superadmin ?? false,
+            created_at: data.created_at,
+          })
+          await fetchBusiness(data.business_id)
+          profileLoaded = true
+          console.log('[Auth] profile loaded OK')
+        } catch (e: any) {
+          console.warn('[Auth] profile load exception:', e.message)
+        } finally {
+          loadPromise = null
+        }
+      })()
+
+      await loadPromise
     }
 
+    // ── Step 1: initial session check on mount ──
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (session?.user) {
+        setUser(session.user)
+        await loadProfileOnce(session.user.id)
+      }
+      setLoading(false)
+    })
+
+    // ── Step 2: listen for auth changes ──
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      // ── SIGNED_OUT: reset everything ──
+      // Sign out → clear everything
       if (event === 'SIGNED_OUT') {
         profileLoaded = false
-        loadingStarted = false
+        loadPromise = null
         setUser(null)
         setProfile(null)
         setLoading(false)
         return
       }
 
-      // No session → stop loading
-      if (!session?.user) {
-        setLoading(false)
-        return
-      }
+      // No session → nothing to do
+      if (!session?.user) return
 
-      // Always sync user token
+      // Sync the user/token (always, even on TOKEN_REFRESHED)
       setUser(session.user)
 
-      // ── Profile already loaded → done ──
+      // Profile already loaded → done, don't touch anything
       if (profileLoaded) {
         setLoading(false)
         return
       }
 
-      // ── Another event already triggered loading → ignore this one ──
-      if (loadingStarted) return
-
-      // ── First event with a session → load profile (with retries) ──
-      loadingStarted = true
-      setLoading(true)
-
-      for (let attempt = 1; attempt <= 3; attempt++) {
-        if (profileLoaded) break // another path loaded it
-        const ok = await loadProfile(session.user.id)
-        if (ok) {
-          profileLoaded = true
-          break
-        }
-        // Wait before retry: 1s, 2s
-        if (attempt < 3) {
-          await new Promise(r => setTimeout(r, attempt * 1000))
-        }
+      // Fresh sign-in (user just logged in from LoginPage) → load profile
+      if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
+        setLoading(true)
+        await loadProfileOnce(session.user.id)
+        setLoading(false)
       }
-
-      if (!profileLoaded) {
-        console.error('[Auth] all 3 load attempts failed — clearing session')
-        setProfile(null)
-      }
-      setLoading(false)
-      loadingStarted = false
     })
 
     return () => {
