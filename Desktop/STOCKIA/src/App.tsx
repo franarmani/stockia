@@ -84,53 +84,27 @@ export default function App() {
   const { fetchBusiness } = useBusinessStore()
 
   useEffect(() => {
-    // ── Robust auth flow ──
-    // Supabase fires multiple events (SIGNED_IN, INITIAL_SESSION, TOKEN_REFRESHED)
-    // often concurrently. We use flags + debounce to prevent loops and race conditions.
+    // ── Simple & robust auth flow ──
+    // Supabase fires many SIGNED_IN events. We load profile exactly ONCE
+    // and ignore all further events. No debounce, no timeout, no races.
 
-    let profileLoaded = false       // true once we have a valid profile
-    let loadInFlight = false        // prevents concurrent loadProfile calls
-    let debounceTimer: ReturnType<typeof setTimeout> | null = null
-
-    // Safety: if nothing resolves in 10s, just unlock loading
-    const safety = setTimeout(() => {
-      setLoading(false)
-      console.warn('[Auth] Safety timeout fired — loading was stuck')
-    }, 10000)
+    let profileLoaded = false   // once true, never reload (until SIGNED_OUT)
+    let loadingStarted = false  // prevents concurrent load attempts
 
     async function loadProfile(userId: string): Promise<boolean> {
-      // Skip if already loaded or another load is in progress
-      if (profileLoaded) {
-        console.log('[Auth] loadProfile skipped — already loaded')
-        return true
-      }
-      if (loadInFlight) {
-        console.log('[Auth] loadProfile skipped — already in flight')
-        return false
-      }
-
-      loadInFlight = true
-      console.log('[Auth] loadProfile start', userId)
-
       try {
+        // NO AbortSignal.timeout — let the query finish naturally
         const { data, error } = await supabase
           .from('users')
           .select('*')
           .eq('id', userId)
           .maybeSingle()
-          .abortSignal(AbortSignal.timeout(8000))
 
-        if (error) {
-          console.warn('[Auth] loadProfile query error:', error.message)
+        if (error || !data) {
+          console.warn('[Auth] loadProfile failed:', error?.message ?? 'no row')
           return false
         }
 
-        if (!data) {
-          console.warn('[Auth] loadProfile: no profile found for', userId)
-          return false
-        }
-
-        console.log('[Auth] loadProfile success, fetching business...')
         setProfile({
           id: data.id,
           business_id: data.business_id,
@@ -141,64 +115,69 @@ export default function App() {
           created_at: data.created_at,
         })
         await fetchBusiness(data.business_id)
-        profileLoaded = true
-        console.log('[Auth] loadProfile complete')
+        console.log('[Auth] profile loaded OK')
         return true
       } catch (e: any) {
-        console.warn('[Auth] loadProfile error:', e.message)
+        console.warn('[Auth] loadProfile exception:', e.message)
         return false
-      } finally {
-        loadInFlight = false
       }
     }
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('[Auth] onAuthStateChange:', event, !!session?.user)
-      clearTimeout(safety)
-
-      // Sign out → clear everything
+      // ── SIGNED_OUT: reset everything ──
       if (event === 'SIGNED_OUT') {
         profileLoaded = false
+        loadingStarted = false
         setUser(null)
         setProfile(null)
         setLoading(false)
         return
       }
 
-      // No session → ignore
+      // No session → stop loading
       if (!session?.user) {
         setLoading(false)
         return
       }
 
-      // Always keep the latest user/token in sync
+      // Always sync user token
       setUser(session.user)
 
-      // If profile is already loaded, just stop loading and done
+      // ── Profile already loaded → done ──
       if (profileLoaded) {
-        console.log('[Auth] Profile already loaded, skipping reload')
         setLoading(false)
         return
       }
 
-      // Debounce: Supabase fires multiple events rapidly. Wait 100ms for them to settle.
-      if (debounceTimer) clearTimeout(debounceTimer)
+      // ── Another event already triggered loading → ignore this one ──
+      if (loadingStarted) return
+
+      // ── First event with a session → load profile (with retries) ──
+      loadingStarted = true
       setLoading(true)
 
-      debounceTimer = setTimeout(async () => {
-        const success = await loadProfile(session.user.id)
-        if (!success && !profileLoaded) {
-          // Profile couldn't load — first time ever: redirect to login will happen via ProtectedRoute
-          console.warn('[Auth] Profile load failed on initial attempt')
-          setProfile(null)
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        if (profileLoaded) break // another path loaded it
+        const ok = await loadProfile(session.user.id)
+        if (ok) {
+          profileLoaded = true
+          break
         }
-        setLoading(false)
-      }, 150)
+        // Wait before retry: 1s, 2s
+        if (attempt < 3) {
+          await new Promise(r => setTimeout(r, attempt * 1000))
+        }
+      }
+
+      if (!profileLoaded) {
+        console.error('[Auth] all 3 load attempts failed — clearing session')
+        setProfile(null)
+      }
+      setLoading(false)
+      loadingStarted = false
     })
 
     return () => {
-      clearTimeout(safety)
-      if (debounceTimer) clearTimeout(debounceTimer)
       subscription.unsubscribe()
     }
   }, [])
