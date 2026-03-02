@@ -34,8 +34,13 @@ export default function LoginPage() {
     if (!email || !password) { toast.error('Completá todos los campos'); return }
     setLoading(true)
     const { error } = await supabase.auth.signInWithPassword({ email, password })
-    if (error) { toast.error('Email o contraseña incorrectos') }
-    setLoading(false)
+    if (error) {
+      toast.error('Email o contraseña incorrectos')
+      setLoading(false)
+    } else {
+      // Navigate immediately — ProtectedRoute will show spinner while profile loads
+      navigate('/menu')
+    }
   }
 
   async function handleForgotPassword(e: React.FormEvent) {

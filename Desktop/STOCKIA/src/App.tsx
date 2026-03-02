@@ -37,7 +37,8 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading, profile } = useAuthStore()
   const { business } = useBusinessStore()
 
-  if (loading) {
+  // Loading OR (user exists but profile hasn't loaded yet) → show spinner
+  if (loading || (user && !profile)) {
     return (
       <div className="flex items-center justify-center h-screen bg-background">
         <div className="flex flex-col items-center gap-3">
@@ -48,11 +49,8 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
     )
   }
 
-  // No session → login
+  // No session at all → login
   if (!user) return <Navigate to="/login" replace />
-
-  // Session exists but profile failed to load → login (signOut handled in useEffect above)
-  if (!profile) return <Navigate to="/login" replace />
 
   const isTrialExpired =
     business?.subscription_status === 'trial' &&
@@ -105,11 +103,19 @@ export default function App() {
 
       loadPromise = (async () => {
         try {
-          const { data, error } = await supabase
-            .from('users')
-            .select('*')
-            .eq('id', userId)
-            .maybeSingle()
+          // Race: query vs 30s safety timeout
+          const result = await Promise.race([
+            supabase
+              .from('users')
+              .select('*')
+              .eq('id', userId)
+              .maybeSingle(),
+            new Promise<{ data: null; error: { message: string } }>((resolve) =>
+              setTimeout(() => resolve({ data: null, error: { message: '30s timeout' } }), 30000)
+            ),
+          ])
+
+          const { data, error } = result as any
 
           if (error || !data) {
             console.warn('[Auth] profile query failed:', error?.message ?? 'no row found')
