@@ -67,12 +67,13 @@ export default function POSPage() {
   const { profile } = useAuthStore()
   const {
     items, discount, paymentMethod, customerId,
-    receiptType, installments, surchargePct, paymentSplits,
+    receiptType, installments, surchargePct, pmDiscountPct, paymentSplits,
     addItem, removeItem, updateQuantity, setDiscount,
     setPaymentMethod, setCustomerId, getSubtotal, getTotal, clearCart,
-    setReceiptType, setInstallments, setSurchargePct, setPaymentSplits,
+    setReceiptType, setInstallments, setSurchargePct, setPmDiscountPct, setPaymentSplits,
   } = usePOSStore()
 
+  const { business } = useBusinessStore()
   const fiscalCertStatus = useFiscalStore((s) => s.settings?.cert_status)
   const isFiscalConnected = fiscalCertStatus === 'connected'
   const fiscalEnv = useFiscalStore((s) => s.env)
@@ -253,6 +254,21 @@ export default function POSPage() {
     setInstallments(opt.n)
     setSurchargePct(opt.surcharge)
   }
+
+  // Apply payment method discount/surcharge from business settings
+  function handleSelectPaymentMethod(method: PaymentMethodType) {
+    setPaymentMethod(method)
+    const discounts = (business as any)?.payment_method_discounts as Record<string, number> | null
+    const pct = discounts?.[method] ?? 0
+    setPmDiscountPct(pct)
+  }
+
+  // Sync pmDiscountPct on mount with current payment method
+  useEffect(() => {
+    const discounts = (business as any)?.payment_method_discounts as Record<string, number> | null
+    const pct = discounts?.[paymentMethod] ?? 0
+    setPmDiscountPct(pct)
+  }, [business])
 
   // Mixed payment helpers
   function addMixedSplit() {
@@ -723,8 +739,11 @@ export default function POSPage() {
       <div className="border-t border-white/8 px-3 pt-3 pb-3 space-y-2.5 shrink-0">
         {!mixedPaymentMode && (
           <div className="grid grid-cols-5 gap-1.5">
-            {PAYMENT_METHODS.map((pm) => (
-              <button key={pm.id} onClick={() => setPaymentMethod(pm.id)}
+            {PAYMENT_METHODS.map((pm) => {
+              const discounts = (business as any)?.payment_method_discounts as Record<string, number> | null
+              const pmPct = discounts?.[pm.id] ?? 0
+              return (
+              <button key={pm.id} onClick={() => handleSelectPaymentMethod(pm.id)}
                 className={`flex flex-col items-center gap-1 py-2 rounded-xl text-[10px] font-bold border-2 transition-all active:scale-95 ${
                   paymentMethod === pm.id
                     ? 'border-primary bg-primary/20 text-primary shadow-md shadow-primary/20'
@@ -732,8 +751,14 @@ export default function POSPage() {
                 }`}>
                 <pm.icon className="w-4 h-4" />
                 {pm.label}
+                {pmPct > 0 && (
+                  <span className="text-[8px] font-bold text-green-400">
+                    -{pmPct}%
+                  </span>
+                )}
               </button>
-            ))}
+              )
+            })}
           </div>
         )}
 
@@ -827,6 +852,15 @@ export default function POSPage() {
           <div className="flex items-center justify-between text-xs text-amber-400 bg-amber-400/8 rounded-lg px-2.5 py-1.5">
             <span>Descuento {discount}%</span>
             <span className="font-semibold">-{formatCurrency(getSubtotal() * discount / 100)}</span>
+          </div>
+        )}
+
+        {pmDiscountPct > 0 && !mixedPaymentMode && (
+          <div className="flex items-center justify-between text-xs text-green-400 bg-green-400/8 rounded-lg px-2.5 py-1.5">
+            <span>Dto. por {PAYMENT_LABELS[paymentMethod]} ({pmDiscountPct}%)</span>
+            <span className="font-semibold">
+              -{formatCurrency(getSubtotal() * (1 - discount / 100) * (1 + surchargePct / 100) * pmDiscountPct / 100)}
+            </span>
           </div>
         )}
 

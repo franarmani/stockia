@@ -1,36 +1,74 @@
 import { useEffect, useState } from 'react'
-import { CalendarDays, TrendingUp, ShoppingCart, Download, Package } from 'lucide-react'
+import { CalendarDays, TrendingUp, ShoppingCart, Download, Package, RefreshCw, Loader2 } from 'lucide-react'
 import { useBusinessStore } from '@/stores/businessStore'
-import { getDailySummaries, exportSummaryCSV } from './dailySummaryService'
+import { getDailySummaries, generateDailySummary, exportSummaryCSV } from './dailySummaryService'
 import { formatCurrency } from '@/lib/utils'
 import type { DailySummary } from '@/types/database'
 import DailySummaryModal from './DailySummaryModal'
+import { toast } from 'sonner'
 
 export default function DailySummaryPage() {
   const { business } = useBusinessStore()
   const [summaries, setSummaries] = useState<DailySummary[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
   const [selected, setSelected] = useState<string | null>(null)
+  const [generating, setGenerating] = useState(false)
+
+  async function loadSummaries() {
+    if (!business?.id) { setLoading(false); return }
+    setLoading(true)
+    setError('')
+    try {
+      const data = await getDailySummaries(business.id)
+      setSummaries(data)
+    } catch (e: any) {
+      console.error('Error loading daily summaries:', e)
+      setError(e?.message || 'Error al cargar resúmenes')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function handleGenerateToday() {
+    if (!business?.id) return
+    setGenerating(true)
+    try {
+      await generateDailySummary(business.id)
+      await loadSummaries()
+      toast.success('Resumen de hoy generado')
+    } catch (e: any) {
+      toast.error(e?.message || 'Error al generar resumen')
+    } finally {
+      setGenerating(false)
+    }
+  }
 
   useEffect(() => {
-    if (!business?.id) return
-    setLoading(true)
-    getDailySummaries(business.id)
-      .then(setSummaries)
-      .finally(() => setLoading(false))
+    loadSummaries()
   }, [business?.id])
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-xl bg-indigo-500/20 flex items-center justify-center">
-          <CalendarDays className="w-5 h-5 text-indigo-400" />
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-indigo-500/20 flex items-center justify-center">
+            <CalendarDays className="w-5 h-5 text-indigo-400" />
+          </div>
+          <div>
+            <h1 className="text-xl font-bold text-white">Resúmenes diarios</h1>
+            <p className="text-[12px] text-white/50">Historial de cierres de caja</p>
+          </div>
         </div>
-        <div>
-          <h1 className="text-xl font-bold text-white">Resúmenes diarios</h1>
-          <p className="text-[12px] text-white/50">Historial de cierres de caja</p>
-        </div>
+        <button
+          onClick={handleGenerateToday}
+          disabled={generating || !business?.id}
+          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 text-[13px] font-medium transition disabled:opacity-40"
+        >
+          {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+          Generar resumen de hoy
+        </button>
       </div>
 
       {/* Table */}
@@ -44,11 +82,30 @@ export default function DailySummaryPage() {
               </div>
             ))}
           </div>
+        ) : error ? (
+          <div className="py-16 text-center">
+            <CalendarDays className="w-12 h-12 text-red-400/30 mx-auto mb-3" />
+            <p className="text-red-400 text-[14px]">{error}</p>
+            <button
+              onClick={loadSummaries}
+              className="mt-3 text-[12px] text-indigo-400 hover:text-indigo-300 transition underline"
+            >
+              Reintentar
+            </button>
+          </div>
         ) : summaries.length === 0 ? (
           <div className="py-16 text-center">
             <CalendarDays className="w-12 h-12 text-white/15 mx-auto mb-3" />
             <p className="text-white/40 text-[14px]">No hay resúmenes aún</p>
-            <p className="text-white/25 text-[12px] mt-1">Se generan al cerrar la caja</p>
+            <p className="text-white/25 text-[12px] mt-1">Se generan al cerrar la caja o con el botón "Generar resumen de hoy"</p>
+            <button
+              onClick={handleGenerateToday}
+              disabled={generating || !business?.id}
+              className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 text-[13px] font-medium transition disabled:opacity-40"
+            >
+              {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+              Generar resumen de hoy
+            </button>
           </div>
         ) : (
           <div className="overflow-x-auto">

@@ -12,7 +12,8 @@ import type { UserProfile, FiscalEnv } from '@/types/database'
 import {
   Store, Users, Shield, Plus, Trash2, Crown, Save, FileText, Printer,
   CheckCircle2, Upload, AlertCircle, Wifi, Download, Copy,
-  Key, Zap, ChevronRight, ChevronLeft, Loader2, Globe, ChevronDown,
+  Key, Zap, ChevronRight, ChevronLeft, Loader2, Globe, ChevronDown, Percent,
+  CreditCard, Banknote, ArrowRightLeft,
 } from 'lucide-react'
 
 const WIZARD_STEPS = [
@@ -50,6 +51,9 @@ export default function SettingsPage() {
     receipt_footer: '', auto_print: false,
     logo_url: '', primary_color: '#1DB954',
   })
+  const [pmDiscounts, setPmDiscounts] = useState<Record<string, number>>({
+    cash: 0, debit: 0, credit: 0, transfer: 0,
+  })
   const [userForm, setUserForm] = useState({ email: '', password: '', full_name: '', role: 'seller' as 'admin' | 'seller' })
 
   // Derived state from fiscal store
@@ -76,6 +80,16 @@ export default function SettingsPage() {
         logo_url: business.logo_url || '',
         primary_color: business.primary_color || '#1DB954',
       })
+      // Load payment method discounts
+      const saved = (business as any).payment_method_discounts
+      if (saved && typeof saved === 'object') {
+        setPmDiscounts({
+          cash: saved.cash ?? 0,
+          debit: saved.debit ?? 0,
+          credit: saved.credit ?? 0,
+          transfer: saved.transfer ?? 0,
+        })
+      }
     }
   }, [business])
 
@@ -155,6 +169,7 @@ export default function SettingsPage() {
       auto_print: form.auto_print,
       logo_url: form.logo_url.trim() || null,
       primary_color: form.primary_color || null,
+      payment_method_discounts: pmDiscounts,
     }
     const { error } = await supabase.from('businesses').update(payload).eq('id', profile!.business_id)
     if (error) { toast.error('Error al guardar'); setSaving(false); return }
@@ -795,6 +810,124 @@ export default function SettingsPage() {
               <p className="text-xs text-muted-foreground">Abre el diálogo de impresión después de cada venta</p>
             </div>
           </label>
+        </div>
+      </div>
+
+      {/* Payment method discounts */}
+      <div className="bg-white rounded-2xl shadow-sm">
+        <div className="p-5 pb-3 flex items-center gap-2">
+          <Percent className="w-5 h-5 text-emerald-600" />
+          <h2 className="font-semibold text-foreground">Descuentos por medio de pago</h2>
+        </div>
+        <div className="p-4 sm:p-5 space-y-4">
+          <div className="bg-emerald-50 rounded-xl p-3 text-xs text-emerald-800">
+            <p>Configurá el <strong>porcentaje de descuento</strong> que se aplica cuando el cliente paga con cada medio.</p>
+            <p className="mt-1 text-emerald-600">Ejemplo: poné <strong>5</strong> en Efectivo = 5% de descuento si paga en efectivo. Dejá en 0 para no aplicar descuento.</p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-green-100 flex items-center justify-center shrink-0">
+                <Banknote className="w-4 h-4 text-green-600" />
+              </div>
+              <div className="flex-1">
+                <label className="block text-sm font-medium mb-1">Efectivo</label>
+                <div className="relative">
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="0.5"
+                    value={pmDiscounts.cash || ''}
+                    onChange={(e) => setPmDiscounts({ ...pmDiscounts, cash: Math.max(0, Number(e.target.value)) })}
+                    className="w-full h-10 px-3 pr-14 rounded-xl border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                    placeholder="0"
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">% dto</span>
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-blue-100 flex items-center justify-center shrink-0">
+                <CreditCard className="w-4 h-4 text-blue-600" />
+              </div>
+              <div className="flex-1">
+                <label className="block text-sm font-medium mb-1">Débito</label>
+                <div className="relative">
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="0.5"
+                    value={pmDiscounts.debit || ''}
+                    onChange={(e) => setPmDiscounts({ ...pmDiscounts, debit: Math.max(0, Number(e.target.value)) })}
+                    className="w-full h-10 px-3 pr-14 rounded-xl border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                    placeholder="0"
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">% dto</span>
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-purple-100 flex items-center justify-center shrink-0">
+                <CreditCard className="w-4 h-4 text-purple-600" />
+              </div>
+              <div className="flex-1">
+                <label className="block text-sm font-medium mb-1">Crédito</label>
+                <div className="relative">
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="0.5"
+                    value={pmDiscounts.credit || ''}
+                    onChange={(e) => setPmDiscounts({ ...pmDiscounts, credit: Math.max(0, Number(e.target.value)) })}
+                    className="w-full h-10 px-3 pr-14 rounded-xl border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                    placeholder="0"
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">% dto</span>
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-orange-100 flex items-center justify-center shrink-0">
+                <ArrowRightLeft className="w-4 h-4 text-orange-600" />
+              </div>
+              <div className="flex-1">
+                <label className="block text-sm font-medium mb-1">Transferencia</label>
+                <div className="relative">
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="0.5"
+                    value={pmDiscounts.transfer || ''}
+                    onChange={(e) => setPmDiscounts({ ...pmDiscounts, transfer: Math.max(0, Number(e.target.value)) })}
+                    className="w-full h-10 px-3 pr-14 rounded-xl border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                    placeholder="0"
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">% dto</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          {/* Preview */}
+          {Object.values(pmDiscounts).some(v => v > 0) && (
+            <div className="bg-slate-50 rounded-xl p-3 space-y-1">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Vista previa (sobre $10.000)</p>
+              {Object.entries(pmDiscounts).filter(([, v]) => v > 0).map(([method, pct]) => {
+                const labels: Record<string, string> = { cash: 'Efectivo', debit: 'Débito', credit: 'Crédito', transfer: 'Transferencia' }
+                const amount = 10000 - (10000 * pct) / 100
+                return (
+                  <div key={method} className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">{labels[method] || method}</span>
+                    <span className="text-green-600 font-medium">
+                      -{pct}% → ${amount.toLocaleString('es-AR', { minimumFractionDigits: 2 })}
+                    </span>
+                  </div>
+                )
+              })}
+            </div>
+          )}
         </div>
       </div>
 

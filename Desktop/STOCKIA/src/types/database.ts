@@ -56,6 +56,7 @@ export interface Database {
           allow_negative_stock: boolean
           offline_enabled: boolean
           cert_status: string
+          payment_method_discounts: Record<string, number> | null
           created_at: string
         }
         Insert: {
@@ -83,6 +84,7 @@ export interface Database {
           allow_negative_stock?: boolean
           offline_enabled?: boolean
           cert_status?: string
+          payment_method_discounts?: Record<string, number> | null
           created_at?: string
         }
         Update: {
@@ -110,6 +112,7 @@ export interface Database {
           allow_negative_stock?: boolean
           offline_enabled?: boolean
           cert_status?: string
+          payment_method_discounts?: Record<string, number> | null
           created_at?: string
         }
         Relationships: []

@@ -17,6 +17,8 @@ interface POSState {
   receiptType: ReceiptType
   installments: number
   surchargePct: number
+  /** Payment method discount/surcharge percentage (from business settings) */
+  pmDiscountPct: number
   customerId: string | null
   /** Mixed payments: when length > 0 it means multi-payment mode */
   paymentSplits: PaymentSplit[]
@@ -28,6 +30,7 @@ interface POSState {
   setReceiptType: (type: ReceiptType) => void
   setInstallments: (n: number) => void
   setSurchargePct: (pct: number) => void
+  setPmDiscountPct: (pct: number) => void
   setCustomerId: (id: string | null) => void
   setPaymentSplits: (splits: PaymentSplit[]) => void
   getSubtotal: () => number
@@ -55,6 +58,7 @@ export const usePOSStore = create<POSState>((set, get) => ({
   receiptType: 'ticket',
   installments: 1,
   surchargePct: 0,
+  pmDiscountPct: 0,
   customerId: null,
   paymentSplits: [],
 
@@ -101,6 +105,7 @@ export const usePOSStore = create<POSState>((set, get) => ({
   setReceiptType: (receiptType) => set({ receiptType }),
   setInstallments: (installments) => set({ installments }),
   setSurchargePct: (surchargePct) => set({ surchargePct }),
+  setPmDiscountPct: (pmDiscountPct) => set({ pmDiscountPct }),
   setCustomerId: (customerId) => set({ customerId }),
   setPaymentSplits: (paymentSplits) => set({ paymentSplits }),
 
@@ -113,8 +118,12 @@ export const usePOSStore = create<POSState>((set, get) => ({
     const discount = get().discount
     const afterDiscount = subtotal - (subtotal * discount) / 100
     const surcharge = get().surchargePct
-    return Math.round((afterDiscount + (afterDiscount * surcharge) / 100) * 100) / 100
+    const afterSurcharge = afterDiscount + (afterDiscount * surcharge) / 100
+    // Apply payment method discount (always positive = discount percentage)
+    const pmPct = get().pmDiscountPct
+    const afterPm = afterSurcharge - (afterSurcharge * pmPct) / 100
+    return Math.round(afterPm * 100) / 100
   },
 
-  clearCart: () => set({ items: [], discount: 0, customerId: null, paymentMethod: 'cash', receiptType: 'ticket', installments: 1, surchargePct: 0, paymentSplits: [] }),
+  clearCart: () => set({ items: [], discount: 0, customerId: null, paymentMethod: 'cash', receiptType: 'ticket', installments: 1, surchargePct: 0, pmDiscountPct: 0, paymentSplits: [] }),
 }))
