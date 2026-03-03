@@ -14,7 +14,7 @@ import type { Product, Category, Supplier } from '@/types/database'
 import {
   Search, Plus, Package, AlertTriangle,
   Barcode, MinusCircle, PlusCircle, Edit3, Trash2,
-  Tag, X, Truck, Upload, Download,
+  Tag, X, Truck, Upload, Download, Layers,
 } from 'lucide-react'
 
 const UNIT_OPTIONS: { value: ProductUnit; label: string }[] = [
@@ -38,6 +38,10 @@ export default function ProductsPage() {
   const [showSupplierModal, setShowSupplierModal] = useState(false)
   const [showImportModal, setShowImportModal] = useState(false)
   const [showExportModal, setShowExportModal] = useState(false)
+  const [showBulkUnitsModal, setShowBulkUnitsModal] = useState(false)
+  const [bulkUnitsQty, setBulkUnitsQty] = useState('10')
+  const [bulkConfirmed, setBulkConfirmed] = useState(false)
+  const [bulkSaving, setBulkSaving] = useState(false)
   const [editingProduct, setEditingProduct] = useState<Product | null>(null)
   const [stockProduct, setStockProduct] = useState<Product | null>(null)
   const [stockAdjustment, setStockAdjustment] = useState(0)
@@ -144,6 +148,39 @@ export default function ProductsPage() {
     toast.success('Stock actualizado'); setShowStockModal(false); setSaving(false); fetchAll()
   }
 
+  async function handleBulkAddUnits() {
+    const qty = Number(bulkUnitsQty)
+    if (!qty || qty <= 0) { toast.error('Ingresá una cantidad válida'); return }
+    setBulkSaving(true)
+    const updates = products.map(p => ({
+      id: p.id,
+      stock: Math.round((p.stock + qty) * 1000) / 1000,
+    }))
+    let errorCount = 0
+    for (const u of updates) {
+      const { error } = await supabase.from('products').update({ stock: u.stock }).eq('id', u.id)
+      if (error) errorCount++
+    }
+    // Also log stock movements
+    const movements = products.map(p => ({
+      business_id: profile!.business_id,
+      product_id: p.id,
+      type: 'adjustment' as const,
+      quantity: qty,
+      notes: `Ajuste masivo: +${qty} unidades`,
+    }))
+    await supabase.from('stock_movements').insert(movements)
+    setBulkSaving(false)
+    setShowBulkUnitsModal(false)
+    setBulkConfirmed(false)
+    if (errorCount > 0) {
+      toast.error(`Se actualizaron ${products.length - errorCount} de ${products.length} productos`)
+    } else {
+      toast.success(`Se agregaron ${qty} unidades a ${products.length} productos`)
+    }
+    fetchAll()
+  }
+
   async function handleSaveCategory() {
     if (!catForm.name.trim()) return
     await supabase.from('categories').insert({ business_id: profile!.business_id, name: catForm.name.trim() })
@@ -187,6 +224,9 @@ export default function ProductsPage() {
           </Button>
           <Button variant="outline" size="sm" onClick={() => setShowImportModal(true)}>
             <Upload className="w-4 h-4" /> Importar
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => { setShowBulkUnitsModal(true); setBulkConfirmed(false); setBulkUnitsQty('10') }}>
+            <Layers className="w-4 h-4" /> Unidades masivas
           </Button>
           <Button variant="outline" size="sm" onClick={() => setShowSupplierModal(true)}>
             <Truck className="w-4 h-4" /> Proveedores
@@ -580,6 +620,71 @@ export default function ProductsPage() {
               <p className="text-sm text-white/30">Sin proveedores aún</p>
             </div>
           )}
+        </div>
+      </Modal>
+
+      {/* Bulk Units Modal */}
+      <Modal open={showBulkUnitsModal} onClose={() => setShowBulkUnitsModal(false)} title="Agregar unidades masivas" size="sm">
+        <div className="space-y-4">
+          {/* Warning */}
+          <div className="flex gap-3 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20">
+            <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-semibold text-amber-300">Atención</p>
+              <p className="text-xs text-amber-200/70 mt-0.5 leading-relaxed">
+                Esta acción sumará la cantidad indicada al stock de <span className="font-bold text-amber-200">todos los {products.length} productos activos</span>. Es útil cuando importás productos desde Excel sin unidades cargadas. Esta acción no se puede deshacer fácilmente.
+              </p>
+            </div>
+          </div>
+
+          {/* Quantity input */}
+          <div>
+            <label className="text-xs font-semibold text-white/50 uppercase tracking-widest block mb-1.5">Cantidad a sumar por producto</label>
+            <input
+              type="number"
+              min="1"
+              value={bulkUnitsQty}
+              onChange={(e) => setBulkUnitsQty(e.target.value)}
+              placeholder="Ej: 10"
+              className="w-full h-10 px-3 rounded-xl border border-white/15 bg-white/8 text-white placeholder:text-white/25 text-sm focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary/50"
+            />
+          </div>
+
+          {/* Preview */}
+          <div className="px-4 py-3 rounded-xl bg-white/5 border border-white/8">
+            <p className="text-xs text-white/40">Resultado</p>
+            <p className="text-sm text-white/80 mt-1">
+              Se sumarán <span className="font-bold text-white">{Number(bulkUnitsQty) || 0}</span> unidades a cada uno de los <span className="font-bold text-white">{products.length}</span> productos.
+            </p>
+          </div>
+
+          {/* Confirmation checkbox */}
+          <label className="flex items-center gap-2 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={bulkConfirmed}
+              onChange={(e) => setBulkConfirmed(e.target.checked)}
+              className="w-4 h-4 rounded border-white/20 bg-white/8 text-primary focus:ring-primary/25"
+            />
+            <span className="text-sm text-white/60">Entiendo que se modificará el stock de todos los productos</span>
+          </label>
+
+          {/* Actions */}
+          <div className="flex gap-2.5">
+            <button
+              onClick={() => setShowBulkUnitsModal(false)}
+              className="flex-1 h-10 rounded-xl border border-white/12 bg-white/6 text-white/70 font-semibold text-sm hover:bg-white/10 transition"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={handleBulkAddUnits}
+              disabled={bulkSaving || !bulkConfirmed || !Number(bulkUnitsQty) || Number(bulkUnitsQty) <= 0}
+              className="flex-1 h-10 rounded-xl bg-primary text-white font-semibold text-sm disabled:opacity-35 hover:bg-primary/90 active:scale-[0.98] transition shadow-lg shadow-primary/20"
+            >
+              {bulkSaving ? 'Aplicando...' : 'Aplicar a todos'}
+            </button>
+          </div>
         </div>
       </Modal>
 
