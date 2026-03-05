@@ -1,0 +1,58 @@
+[
+  {
+    "id": "local-afro-house",
+    "title": "AFRO HOUSE",
+    "artist": null,
+    "genre": null,
+    "audio_path": "/AFRO HOUSE.mp3",
+    "mime": "audio/mpeg"
+  },
+  {
+    "id": "local-afro-latino",
+    "title": "Afro Latino",
+    "artist": null,
+    "genre": null,
+    "audio_path": "/Afro Latino.mp3",
+    "mime": "audio/mpeg"
+  },
+  {
+    "id": "local-deep-house-mix",
+    "title": "Deep House Mix",
+    "artist": null,
+    "genre": null,
+    "audio_path": "/Deep House Mix.mp3",
+    "mime": "audio/mpeg"
+  },
+  {
+    "id": "local-mix-cumbia-2026",
+    "title": "MIX CUMBIA 2026",
+    "artist": null,
+    "genre": null,
+    "audio_path": "/MIX CUMBIA 2026.mp3",
+    "mime": "audio/mpeg"
+  },
+  {
+    "id": "local-reggaeton-viejo-mix",
+    "title": "Reggaeton Viejo Mix",
+    "artist": null,
+    "genre": null,
+    "audio_path": "/Reggaeton Viejo Mix.mp3",
+    "mime": "audio/mpeg"
+  },
+  {
+    "id": "local-r-f-s-du-sol",
+    "title": "RÜFÜS DU SOL",
+    "artist": null,
+    "genre": null,
+    "audio_path": "/RÜFÜS DU SOL.mp3",
+    "mime": "audio/mpeg"
+  },
+  {
+    "id": "local-summer-en-ingl-s",
+    "title": "SUMMER En Inglés",
+    "artist": null,
+    "genre": null,
+    "audio_path": "/SUMMER En Inglés.mp3",
+    "mime": "audio/mpeg"
+  }
+]
