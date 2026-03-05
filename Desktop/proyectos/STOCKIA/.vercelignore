@@ -1,4 +1,4 @@
 node_modules
 billing-service/node_modules
-# Deep House Mix.mp3 exceeds Vercel's 100MB file size limit — remove from deployment
 public/Deep House Mix.mp3
+public/SUMMER*

@@ -16,14 +16,6 @@
     "mime": "audio/mpeg"
   },
   {
-    "id": "local-deep-house-mix",
-    "title": "Deep House Mix",
-    "artist": null,
-    "genre": null,
-    "audio_path": "/Deep House Mix.mp3",
-    "mime": "audio/mpeg"
-  },
-  {
     "id": "local-mix-cumbia-2026",
     "title": "MIX CUMBIA 2026",
     "artist": null,
@@ -40,19 +32,11 @@
     "mime": "audio/mpeg"
   },
   {
-    "id": "local-r-f-s-du-sol",
-    "title": "RÜFÜS DU SOL",
+    "id": "local-rufus-du-sol",
+    "title": "RUFUS DU SOL",
     "artist": null,
     "genre": null,
-    "audio_path": "/RÜFÜS DU SOL.mp3",
-    "mime": "audio/mpeg"
-  },
-  {
-    "id": "local-summer-en-ingl-s",
-    "title": "SUMMER En Inglés",
-    "artist": null,
-    "genre": null,
-    "audio_path": "/SUMMER En Inglés.mp3",
+    "audio_path": "/RUFUS DU SOL.mp3",
     "mime": "audio/mpeg"
   }
 ]
