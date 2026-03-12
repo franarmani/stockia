@@ -23,6 +23,18 @@
       ]
     },
     {
+      "source": "/workbox-(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+      ]
+    },
+    {
+      "source": "/music-catalog.json",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+      ]
+    },
+    {
       "source": "/(.*)\\.mp3",
       "headers": [
         { "key": "Content-Type", "value": "audio/mpeg" },
