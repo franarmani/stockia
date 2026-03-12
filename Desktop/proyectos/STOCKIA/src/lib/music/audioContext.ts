@@ -16,7 +16,11 @@ export function getAudioContext(): AudioContext {
 }
 
 export function resumeAudioContext(): void {
-  if (ctx && ctx.state === 'suspended') {
+  // Create context eagerly if not yet created (needed on mobile within user gesture)
+  if (!ctx || ctx.state === 'closed') {
+    ctx = new AudioContext()
+  }
+  if (ctx.state === 'suspended') {
     ctx.resume().catch(() => {})
   }
 }
@@ -34,6 +38,8 @@ export function getAnalysers(audio: HTMLAudioElement): [AnalyserNode, AnalyserNo
     sourceEl = audio
     miniAnalyser = null
     bigAnalyser = null
+    // Resume immediately after capturing the element — critical on iOS
+    audioCtx.resume().catch(() => {})
   }
 
   if (!miniAnalyser) {

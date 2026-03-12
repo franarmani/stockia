@@ -4,6 +4,7 @@
 import { create } from 'zustand'
 import { toast } from 'sonner'
 import { useAuthStore } from '@/stores/authStore'
+import { resumeAudioContext } from '@/lib/music/audioContext'
 import {
   fetchMusicCatalog,
   getTrackSignedUrl,
@@ -58,7 +59,7 @@ interface MusicPlayerState {
   repeatMode: RepeatMode
 
   // Actions
-  loadPlaylist: (playlistId: string, startIndex?: number) => Promise<void>
+  loadPlaylist: (playlistId: string, trackId?: string) => Promise<void>
   play: () => void
   pause: () => void
   togglePlay: () => void
@@ -198,22 +199,36 @@ export const useMusicPlayer = create<MusicPlayerState>((set, get) => ({
 
   // ── Load playlist ─────────────────────────────────────────────────────────
 
-  loadPlaylist: async (playlistId, startIndex = 0) => {
+  loadPlaylist: async (playlistId, trackId) => {
+    // Resume AudioContext *synchronously* while still in the user-gesture call stack
+    resumeAudioContext()
+
     const { playlists, shuffle: doShuffle } = get()
     const playlist = playlists.find((p) => p.id === playlistId)
     if (!playlist) return
 
     let q = buildQueue(playlist)
-    if (doShuffle) q = shuffleArray(q)
 
-    const idx = Math.min(startIndex, q.length - 1)
-    set({ activePlaylistId: playlistId, queue: q, currentIndex: idx })
-    await get()._playTrack(idx)
+    // Find the clicked track's position before any shuffle
+    let startIdx = trackId ? Math.max(0, q.findIndex((t) => t.id === trackId)) : 0
+
+    if (doShuffle) {
+      // Move the clicked track to front, shuffle the rest — Spotify behavior
+      const [clicked] = q.splice(startIdx, 1)
+      q = shuffleArray(q)
+      if (clicked) q.unshift(clicked)
+      startIdx = 0
+    }
+
+    set({ activePlaylistId: playlistId, queue: q, currentIndex: startIdx })
+    await get()._playTrack(startIdx)
   },
 
   // ── Transport controls ────────────────────────────────────────────────────
 
   play: () => {
+    // Resume AudioContext *synchronously* while still in the user-gesture call stack
+    resumeAudioContext()
     const { audioRef, currentTrack } = get()
     if (!audioRef || !currentTrack) return
     audioRef.play().catch(() => {})
@@ -308,7 +323,12 @@ export const useMusicPlayer = create<MusicPlayerState>((set, get) => ({
   _ensureSignedUrl: async (track) => {
     // Local public paths don't need a signed URL — serve directly
     if (track.audio_path.startsWith('/') || track.audio_path.startsWith('http')) {
-      return track.audio_path
+      // Encode each path segment so spaces/special chars work in the browser
+      const encoded = track.audio_path
+        .split('/')
+        .map((seg) => encodeURIComponent(seg))
+        .join('/')
+      return encoded
     }
 
     const now = Date.now()
@@ -369,12 +389,11 @@ export const useMusicPlayer = create<MusicPlayerState>((set, get) => ({
       set({ isPlaying: true, buffering: false })
     } catch (err: any) {
       set({ isPlaying: false, buffering: false })
+      // AbortError = play() was interrupted because we switched tracks — ignore silently
+      if (err?.name === 'AbortError') return
+      console.warn('[Music] playback error:', track.title, err?.message)
       if (repeatMode !== 'one') {
         toast.error(`No se pudo reproducir: ${track.title}`)
-        // Try next track
-        if (queue.length > 1) {
-          setTimeout(() => get().next(), 1_000)
-        }
       }
     }
   },

@@ -1039,29 +1039,29 @@ export default function POSPage() {
                   <p className="text-sm">No se encontraron productos</p>
                 </div>
               ) : (
-                <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))' }}>
+                <div className="grid gap-2.5" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(190px, 1fr))' }}>
                   {filteredProducts.map((product, idx) => (
                     <button
                       key={product.id}
                       onClick={() => { handleProductClick(product); setSearch('') }}
                       disabled={product.stock <= 0}
                       style={{ animationDelay: `${idx * 18}ms` }}
-                      className={`group animate-fade-in-up relative flex flex-col bg-white/6 border rounded-2xl p-3 text-left transition-all disabled:opacity-30 disabled:cursor-not-allowed active:scale-[0.95] ${
+                      className={`group animate-fade-in-up relative flex flex-col bg-white/6 border rounded-2xl p-3.5 text-left transition-all disabled:opacity-30 disabled:cursor-not-allowed active:scale-[0.95] ${
                         product.stock <= product.stock_min && product.stock > 0
                           ? 'border-amber-400/30 hover:border-amber-400/60 hover:bg-amber-500/8 hover:shadow-lg hover:shadow-amber-500/10'
                           : 'border-white/8 hover:border-primary/50 hover:bg-white/10 hover:shadow-lg hover:shadow-primary/8'
                       }`}
                     >
-                      <span className={`absolute top-2 right-2 text-[9px] font-bold px-1.5 py-0.5 rounded-full leading-none ${
+                      <span className={`absolute top-2.5 right-2.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full leading-none ${
                         product.stock === 0 ? 'bg-red-500/20 text-red-400'
                           : product.stock <= product.stock_min ? 'bg-amber-500/20 text-amber-400'
                           : 'bg-green-500/15 text-green-400'
                       }`}>
                         {isDecimalUnit(product.unit) ? product.stock.toFixed(1) : product.stock}
                       </span>
-                      <div className="flex-1 pr-8">
-                        <h3 className="text-[13px] font-semibold text-white line-clamp-2 leading-tight group-hover:text-primary transition-colors">{product.name}</h3>
-                        {product.brand && <p className="text-[10px] text-white/35 truncate mt-0.5">{product.brand}</p>}
+                      <div className="flex-1 pr-10">
+                        <h3 className="text-sm font-semibold text-white line-clamp-3 leading-snug group-hover:text-primary transition-colors">{product.name}</h3>
+                        {product.brand && <p className="text-[11px] text-white/40 truncate mt-0.5">{product.brand}</p>}
                       </div>
                       <p className="text-base font-bold text-primary mt-2">{formatCurrency(product.sale_price)}</p>
                     </button>

@@ -23,7 +23,6 @@ export default function GlobalMusicPlayer() {
   useEffect(() => {
     const audio = new Audio()
     audio.preload = 'metadata'
-    audio.crossOrigin = 'anonymous'
     audioRef.current = audio
     setAudioRef(audio)
 
@@ -43,22 +42,25 @@ export default function GlobalMusicPlayer() {
     const onUnload = () => _persistState()
     window.addEventListener('beforeunload', onUnload)
 
-    // Auto-reload signed URL on error (expired URL)
+    // Auto-reload signed URL on error (expired URL) — only for remote Supabase tracks
     const onError = () => {
       const store = useMusicPlayer.getState()
       const track = store.currentTrack
-      if (track) {
-        // Invalidate cached URL so _ensureSignedUrl re-fetches
-        useMusicPlayer.setState((s) => ({
-          queue: s.queue.map((t) =>
-            t.id === track.id ? { ...t, signedUrl: null, signedUrlExpiresAt: null } : t
-          ),
-          currentTrack: s.currentTrack?.id === track.id
-            ? { ...s.currentTrack, signedUrl: null, signedUrlExpiresAt: null }
-            : s.currentTrack,
-        }))
-        store._playTrack(store.currentIndex)
-      }
+      // Ignore errors when src is empty (triggered by _playTrack resetting the element)
+      if (!audio.src || audio.src === window.location.href) return
+      // Local tracks use direct public paths — never retry signed URLs for them
+      if (!track || track.id.startsWith('local-')) return
+
+      // Invalidate cached URL so _ensureSignedUrl re-fetches
+      useMusicPlayer.setState((s) => ({
+        queue: s.queue.map((t) =>
+          t.id === track.id ? { ...t, signedUrl: null, signedUrlExpiresAt: null } : t
+        ),
+        currentTrack: s.currentTrack?.id === track.id
+          ? { ...s.currentTrack, signedUrl: null, signedUrlExpiresAt: null }
+          : s.currentTrack,
+      }))
+      store._playTrack(store.currentIndex)
     }
     audio.addEventListener('error', onError)
 

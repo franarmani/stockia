@@ -36,7 +36,7 @@ export default function Modal({ open, onClose, title, children, className, size 
       <div
         className={cn(
           'relative animate-scale-in max-h-[90vh] overflow-auto mx-4',
-          'bg-[rgba(11,26,68,0.96)] border border-white/12 shadow-2xl rounded-2xl backdrop-blur-2xl',
+          'bg-[#0b1a44] border border-white/12 shadow-2xl rounded-2xl',
           {
             'w-full max-w-sm': size === 'sm',
             'w-full max-w-lg': size === 'md',

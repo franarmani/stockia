@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/authStore'
 import { formatCurrency } from '@/lib/utils'
@@ -14,6 +14,9 @@ import {
   Plus,
   Wallet,
   Percent,
+  Package,
+  RefreshCw,
+  ChevronDown,
 } from 'lucide-react'
 import {
   BarChart,
@@ -39,6 +42,24 @@ interface DashboardData {
   chartData: { name: string; ventas: number }[]
   cajaOpen: boolean
   cajaExpected: number
+  stockValue: number
+}
+
+interface DolarRate {
+  casa: string
+  nombre: string
+  compra: number
+  venta: number
+}
+
+const DOLAR_LABELS: Record<string, string> = {
+  oficial: 'Oficial',
+  blue: 'Blue',
+  bolsa: 'Bolsa (MEP)',
+  contadoliqui: 'CCL',
+  tarjeta: 'Tarjeta',
+  mayorista: 'Mayorista',
+  cripto: 'Cripto',
 }
 
 export default function DashboardPage() {
@@ -46,6 +67,38 @@ export default function DashboardPage() {
   const navigate = useNavigate()
   const [data, setData] = useState<DashboardData | null>(null)
   const [loading, setLoading] = useState(true)
+  const [dolarRates, setDolarRates] = useState<DolarRate[]>([])
+  const [selectedDolar, setSelectedDolar] = useState<string>('blue')
+  const [dolarLoading, setDolarLoading] = useState(false)
+  const [dolarUpdatedAt, setDolarUpdatedAt] = useState<Date | null>(null)
+  const [showDolarPicker, setShowDolarPicker] = useState(false)
+
+  // Close picker on outside click
+  useEffect(() => {
+    if (!showDolarPicker) return
+    const handler = () => setShowDolarPicker(false)
+    document.addEventListener('click', handler, { capture: true, once: true })
+    return () => document.removeEventListener('click', handler, { capture: true })
+  }, [showDolarPicker])
+
+  const fetchDolarRates = useCallback(async () => {
+    setDolarLoading(true)
+    try {
+      const res = await fetch('https://dolarapi.com/v1/dolares')
+      if (!res.ok) throw new Error('API error')
+      const json: DolarRate[] = await res.json()
+      setDolarRates(json)
+      setDolarUpdatedAt(new Date())
+    } catch {
+      // silently fail — no USD shown if offline/API down
+    } finally {
+      setDolarLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    fetchDolarRates()
+  }, [])
 
   useEffect(() => {
     if (!profile?.business_id) return
@@ -69,12 +122,13 @@ export default function DashboardPage() {
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6)
     const startOfWeek = new Date(sevenDaysAgo.getFullYear(), sevenDaysAgo.getMonth(), sevenDaysAgo.getDate()).toISOString()
 
-    const [salesTodayRes, salesWeekRes, lowStockRes, cashRes, salesDetailRes] = await Promise.all([
+    const [salesTodayRes, salesWeekRes, lowStockRes, cashRes, salesDetailRes, allProductsRes] = await Promise.all([
       supabase.from('sales').select('total').eq('business_id', businessId).eq('voided', false).gte('created_at', startOfDay),
       supabase.from('sales').select('total, created_at').eq('business_id', businessId).eq('voided', false).gte('created_at', startOfWeek),
       supabase.from('products').select('*').eq('business_id', businessId).eq('active', true).lte('stock', 5).order('stock', { ascending: true }).limit(8),
       supabase.from('cash_sessions').select('*, cash_movements(*)').eq('business_id', businessId).eq('status', 'open').limit(1),
       supabase.from('sales').select('*, sale_items(quantity, price, product:products(purchase_price))').eq('business_id', businessId).eq('voided', false).gte('created_at', startOfDay),
+      supabase.from('products').select('sale_price, stock').eq('business_id', businessId).eq('active', true).gt('stock', 0),
     ])
 
     const todayData = salesTodayRes.data || []
@@ -116,6 +170,8 @@ export default function DashboardPage() {
 
     const lowStockProducts = (lowStockRes.data || []).filter((p: any) => p.stock <= p.stock_min)
 
+    const stockValue = (allProductsRes.data || []).reduce((sum: number, p: any) => sum + (p.sale_price || 0) * (p.stock || 0), 0)
+
     setData({
       todaySales,
       todayCount: todayData.length,
@@ -126,6 +182,7 @@ export default function DashboardPage() {
       chartData: chartEntries,
       cajaOpen: !!openSession,
       cajaExpected,
+      stockValue,
     })
     setLoading(false)
   }
@@ -219,6 +276,87 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
+
+      {/* Stock value card */}
+      {(() => {
+        const rate = dolarRates.find(r => r.casa === selectedDolar)
+        const usdValue = rate && rate.venta > 0 ? data.stockValue / rate.venta : null
+        return (
+          <div className="bg-white rounded-2xl p-4 shadow-sm">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-start gap-3 flex-1 min-w-0">
+                <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center shrink-0 mt-0.5">
+                  <Package className="w-5 h-5 text-emerald-600" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs text-muted-foreground">Valor total en stock</p>
+                  <p
+                    className="text-xl font-bold text-foreground cursor-pointer hover:text-emerald-700 transition-colors"
+                    onClick={() => navigate('/products')}
+                  >
+                    {formatCurrency(data.stockValue)}
+                  </p>
+                  {usdValue !== null ? (
+                    <p className="text-sm font-semibold text-emerald-600 mt-0.5">
+                      ≈ U$D {usdValue.toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                    </p>
+                  ) : dolarRates.length === 0 && !dolarLoading ? (
+                    <p className="text-[11px] text-muted-foreground mt-0.5">Sin cotización disponible</p>
+                  ) : null}
+                  <p className="text-[11px] text-muted-foreground mt-1">Precio de venta × unidades disponibles</p>
+                </div>
+              </div>
+
+              {/* Dollar selector */}
+              <div className="flex flex-col items-end gap-1.5 shrink-0">
+                <div className="relative">
+                  <button
+                    onClick={() => setShowDolarPicker(v => !v)}
+                    className="flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg px-2 py-1 transition-colors"
+                  >
+                    <span>$ {DOLAR_LABELS[selectedDolar] ?? selectedDolar}</span>
+                    <ChevronDown className="w-3 h-3" />
+                  </button>
+                  {showDolarPicker && (
+                    <div className="absolute right-0 top-full mt-1 border border-white/10 rounded-xl shadow-xl z-20 py-1 min-w-32.5" style={{ backgroundColor: '#0b1a44' }}>
+                      {dolarRates.map(r => (
+                        <button
+                          key={r.casa}
+                          onClick={() => { setSelectedDolar(r.casa); setShowDolarPicker(false) }}
+                          className={`w-full text-left px-3 py-1.5 text-[12px] hover:bg-white/10 transition-colors flex items-center justify-between gap-2 ${
+                            r.casa === selectedDolar ? 'font-semibold text-emerald-400' : 'text-white/80'
+                          }`}
+                        >
+                          <span>{DOLAR_LABELS[r.casa] ?? r.nombre}</span>
+                          <span className="text-white/45 tabular-nums">${r.venta.toLocaleString('es-AR')}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                {rate && (
+                  <p className="text-[10px] text-muted-foreground text-right">
+                    Venta: ${rate.venta.toLocaleString('es-AR')}
+                  </p>
+                )}
+                <button
+                  onClick={fetchDolarRates}
+                  disabled={dolarLoading}
+                  className="text-muted-foreground hover:text-foreground transition-colors disabled:opacity-40"
+                  title="Actualizar cotización"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${dolarLoading ? 'animate-spin' : ''}`} />
+                </button>
+                {dolarUpdatedAt && (
+                  <p className="text-[10px] text-muted-foreground">
+                    {dolarUpdatedAt.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+        )
+      })()}
 
       {/* Low stock */}
       {data.lowStockProducts.length > 0 && (

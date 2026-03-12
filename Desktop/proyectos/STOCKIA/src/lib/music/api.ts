@@ -75,38 +75,65 @@ interface LocalTrackEntry {
   artist: string | null
   genre: string | null
   audio_path: string
+  mime?: string
 }
 
-async function fetchLocalCatalog(): Promise<MusicPlaylist> {
+interface LocalCategory {
+  id: string
+  name: string
+  folder: string | null
+  tracks: LocalTrackEntry[]
+}
+
+function makePlaylistFromTracks(id: string, name: string, tracks: LocalTrackEntry[]): MusicPlaylist {
+  return {
+    id,
+    name,
+    description: null,
+    cover_path: null,
+    business_id: null,
+    music_playlist_items: tracks.map((t, i) => ({
+      id: `${id}-item-${t.id}`,
+      position: i + 1,
+      music_tracks: {
+        id: t.id,
+        title: t.title,
+        artist: t.artist ?? null,
+        genre: t.genre ?? null,
+        mood: null,
+        duration_seconds: null,
+        cover_path: null,
+        audio_path: t.audio_path,
+        mime: t.mime ?? 'audio/mpeg',
+        is_active: true,
+      },
+    })),
+  }
+}
+
+async function fetchLocalCatalog(): Promise<MusicPlaylist[]> {
   try {
     const res = await fetch('/music-catalog.json')
-    if (!res.ok) return { id: 'local-static', name: 'Mis Canciones', description: null, cover_path: null, business_id: null, music_playlist_items: [] }
-    const tracks: LocalTrackEntry[] = await res.json()
-    return {
-      id: 'local-static',
-      name: 'Mis Canciones',
-      description: null,
-      cover_path: null,
-      business_id: null,
-      music_playlist_items: tracks.map((t, i) => ({
-        id: `local-item-${t.id}`,
-        position: i + 1,
-        music_tracks: {
-          id: t.id,
-          title: t.title,
-          artist: t.artist ?? null,
-          genre: t.genre ?? null,
-          mood: null,
-          duration_seconds: null,
-          cover_path: null,
-          audio_path: t.audio_path,
-          mime: 'audio/mpeg',
-          is_active: true,
-        },
-      })),
+    if (!res.ok) return []
+    const raw = await res.json()
+
+    // New format: array of categories [{id, name, folder, tracks:[]}]
+    if (Array.isArray(raw) && raw.length > 0 && Array.isArray(raw[0]?.tracks)) {
+      const categories: LocalCategory[] = raw
+      return categories
+        .filter(c => c.tracks.length > 0)
+        .map(c => makePlaylistFromTracks(c.id, c.name, c.tracks))
     }
+
+    // Legacy format: flat array of tracks
+    if (Array.isArray(raw) && raw.length > 0) {
+      const tracks: LocalTrackEntry[] = raw
+      return [makePlaylistFromTracks('local-static', 'Mis Canciones', tracks)]
+    }
+
+    return []
   } catch {
-    return { id: 'local-static', name: 'Mis Canciones', description: null, cover_path: null, business_id: null, music_playlist_items: [] }
+    return []
   }
 }
 
@@ -167,12 +194,12 @@ export async function fetchMusicCatalog(businessId: string): Promise<MusicCatalo
     .maybeSingle()
 
   // Always include local static tracks from /music-catalog.json
-  const localPlaylist = await fetchLocalCatalog()
-  if (localPlaylist.music_playlist_items.length > 0) {
-    playlists.push(localPlaylist)
+  const localPlaylists = await fetchLocalCatalog()
+  if (localPlaylists.length > 0) {
+    playlists.push(...localPlaylists)
   }
   // If Supabase has music disabled, still allow playback of local tracks
-  if (!access.enabled) {
+  if (!access.enabled && localPlaylists.length > 0) {
     access = { enabled: true, plan_tier: 'free' }
   }
 
@@ -286,6 +313,10 @@ export async function savePlaybackState(
     repeat_mode: string
   }
 ): Promise<void> {
+  // Local playlists/tracks have non-UUID IDs — skip persisting to Supabase
+  const isLocal = (id: string | null) => !!id && id.startsWith('local-')
+  if (isLocal(state.active_playlist_id) || isLocal(state.current_track_id)) return
+
   const { error } = await supabase
     .from('music_playback_state')
     .upsert({

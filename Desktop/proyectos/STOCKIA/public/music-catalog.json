@@ -1,42 +1,448 @@
 [
   {
-    "id": "local-afro-house",
-    "title": "AFRO HOUSE",
-    "artist": null,
-    "genre": null,
-    "audio_path": "/AFRO HOUSE.mp3",
-    "mime": "audio/mpeg"
+    "id": "local-rock-nacional",
+    "name": "ROCK NACIONAL",
+    "folder": "ROCK NACIONAL",
+    "tracks": [
+      {
+        "id": "local-rock-nacional-06-tarea-fina-la-mosca-y-la-sopa-los-redondos-hd-subtitulado",
+        "title": "06) Tarea fina (La Mosca y la Sopa) - Los Redondos (HD - subtitulado)",
+        "artist": null,
+        "genre": "ROCK NACIONAL",
+        "audio_path": "/ROCK NACIONAL/06) Tarea fina (La Mosca y la Sopa) - Los Redondos (HD - subtitulado).mp3",
+        "mime": "audio/mpeg"
+      },
+      {
+        "id": "local-rock-nacional-ciro-y-los-persas-insisto-video-oficial",
+        "title": "Ciro y Los Persas ｜ INSISTO (Video Oficial)",
+        "artist": null,
+        "genre": "ROCK NACIONAL",
+        "audio_path": "/ROCK NACIONAL/Ciro y Los Persas ｜ INSISTO (Video Oficial).mp3",
+        "mime": "audio/mpeg"
+      },
+      {
+        "id": "local-rock-nacional-gustavo-cerati-puente-official-video",
+        "title": "Gustavo Cerati - Puente (Official Video)",
+        "artist": null,
+        "genre": "ROCK NACIONAL",
+        "audio_path": "/ROCK NACIONAL/Gustavo Cerati - Puente (Official Video).mp3",
+        "mime": "audio/mpeg"
+      },
+      {
+        "id": "local-rock-nacional-las-pelotas-ser-video-oficial-hd",
+        "title": "Las Pelotas - Será (video oficial) HD",
+        "artist": null,
+        "genre": "ROCK NACIONAL",
+        "audio_path": "/ROCK NACIONAL/Las Pelotas - Será (video oficial) HD.mp3",
+        "mime": "audio/mpeg"
+      },
+      {
+        "id": "local-rock-nacional-no-te-va-gustar-a-las-nueve-video-oficial",
+        "title": "No Te Va Gustar - A Las Nueve (Video Oficial)",
+        "artist": null,
+        "genre": "ROCK NACIONAL",
+        "audio_path": "/ROCK NACIONAL/No Te Va Gustar - A Las Nueve (Video Oficial).mp3",
+        "mime": "audio/mpeg"
+      },
+      {
+        "id": "local-rock-nacional-soda-stereo-pr-fugos-gira-me-ver-s-volver",
+        "title": "Soda Stereo - Prófugos (Gira Me Verás Volver)",
+        "artist": null,
+        "genre": "ROCK NACIONAL",
+        "audio_path": "/ROCK NACIONAL/Soda Stereo - Prófugos (Gira Me Verás Volver).mp3",
+        "mime": "audio/mpeg"
+      },
+      {
+        "id": "local-rock-nacional-soda-stereo-signos-gira-me-ver-s-volver",
+        "title": "Soda Stereo - Signos (Gira Me Verás Volver)",
+        "artist": null,
+        "genre": "ROCK NACIONAL",
+        "audio_path": "/ROCK NACIONAL/Soda Stereo - Signos (Gira Me Verás Volver).mp3",
+        "mime": "audio/mpeg"
+      },
+      {
+        "id": "local-rock-nacional-sumo-no-tan-distintos-subtitulos",
+        "title": "Sumo - No tan distintos (subtitulos)",
+        "artist": null,
+        "genre": "ROCK NACIONAL",
+        "audio_path": "/ROCK NACIONAL/Sumo - No tan distintos (subtitulos).mp3",
+        "mime": "audio/mpeg"
+      },
+      {
+        "id": "local-rock-nacional-via-sur-tiempo-atr-s-5-a-favor",
+        "title": "VIA SUR - Tiempo atrás - 5 a favor",
+        "artist": null,
+        "genre": "ROCK NACIONAL",
+        "audio_path": "/ROCK NACIONAL/VIA SUR - Tiempo atrás - 5 a favor.mp3",
+        "mime": "audio/mpeg"
+      }
+    ]
   },
   {
-    "id": "local-afro-latino",
-    "title": "Afro Latino",
-    "artist": null,
-    "genre": null,
-    "audio_path": "/Afro Latino.mp3",
-    "mime": "audio/mpeg"
-  },
-  {
-    "id": "local-mix-cumbia-2026",
-    "title": "MIX CUMBIA 2026",
-    "artist": null,
-    "genre": null,
-    "audio_path": "/MIX CUMBIA 2026.mp3",
-    "mime": "audio/mpeg"
-  },
-  {
-    "id": "local-reggaeton-viejo-mix",
-    "title": "Reggaeton Viejo Mix",
-    "artist": null,
-    "genre": null,
-    "audio_path": "/Reggaeton Viejo Mix.mp3",
-    "mime": "audio/mpeg"
-  },
-  {
-    "id": "local-rufus-du-sol",
-    "title": "RUFUS DU SOL",
-    "artist": null,
-    "genre": null,
-    "audio_path": "/RUFUS DU SOL.mp3",
-    "mime": "audio/mpeg"
+    "id": "local-trabajar-alegre",
+    "name": "TRABAJAR ALEGRE",
+    "folder": "TRABAJAR ALEGRE",
+    "tracks": [
+      {
+        "id": "local-trabajar-alegre-afro-latino",
+        "title": "Afro Latino",
+        "artist": null,
+        "genre": "TRABAJAR ALEGRE",
+        "audio_path": "/TRABAJAR ALEGRE/Afro Latino.mp3",
+        "mime": "audio/mpeg"
+      },
+      {
+        "id": "local-trabajar-alegre-aida-redru-ft-paris-boy-acelerando",
+        "title": "Aida Redru ft. Paris Boy - Acelerando",
+        "artist": null,
+        "genre": "TRABAJAR ALEGRE",
+        "audio_path": "/TRABAJAR ALEGRE/Aida Redru ft. Paris Boy - Acelerando.mp3",
+        "mime": "audio/mpeg"
+      },
+      {
+        "id": "local-trabajar-alegre-avicii-wake-me-up-official-video",
+        "title": "Avicii - Wake Me Up (Official Video)",
+        "artist": null,
+        "genre": "TRABAJAR ALEGRE",
+        "audio_path": "/TRABAJAR ALEGRE/Avicii - Wake Me Up (Official Video).mp3",
+        "mime": "audio/mpeg"
+      },
+      {
+        "id": "local-trabajar-alegre-bacilos-caraluna-official-music-video",
+        "title": "Bacilos - Caraluna (Official Music Video)",
+        "artist": null,
+        "genre": "TRABAJAR ALEGRE",
+        "audio_path": "/TRABAJAR ALEGRE/Bacilos - Caraluna (Official Music Video).mp3",
+        "mime": "audio/mpeg"
+      },
+      {
+        "id": "local-trabajar-alegre-benson-boone-beautiful-things-official-music-video",
+        "title": "Benson Boone - Beautiful Things (Official Music Video)",
+        "artist": null,
+        "genre": "TRABAJAR ALEGRE",
+        "audio_path": "/TRABAJAR ALEGRE/Benson Boone - Beautiful Things (Official Music Video).mp3",
+        "mime": "audio/mpeg"
+      },
+      {
+        "id": "local-trabajar-alegre-beyonc-texas-hold-em-official-lyric-video",
+        "title": "Beyoncé - TEXAS HOLD 'EM (Official Lyric Video)",
+        "artist": null,
+        "genre": "TRABAJAR ALEGRE",
+        "audio_path": "/TRABAJAR ALEGRE/Beyoncé - TEXAS HOLD 'EM (Official Lyric Video).mp3",
+        "mime": "audio/mpeg"
+      },
+      {
+        "id": "local-trabajar-alegre-black-eyed-peas-shakira-david-guetta-don-t-you-worry-official-music-video",
+        "title": "Black Eyed Peas, Shakira, David Guetta - DON'T YOU WORRY (Official Music Video)",
+        "artist": null,
+        "genre": "TRABAJAR ALEGRE",
+        "audio_path": "/TRABAJAR ALEGRE/Black Eyed Peas, Shakira, David Guetta - DON'T YOU WORRY (Official Music Video).mp3",
+        "mime": "audio/mpeg"
+      },
+      {
+        "id": "local-trabajar-alegre-bruno-mars-grenade-official-music-video",
+        "title": "Bruno Mars - Grenade (Official Music Video)",
+        "artist": null,
+        "genre": "TRABAJAR ALEGRE",
+        "audio_path": "/TRABAJAR ALEGRE/Bruno Mars - Grenade (Official Music Video).mp3",
+        "mime": "audio/mpeg"
+      },
+      {
+        "id": "local-trabajar-alegre-centipede",
+        "title": "Centipede",
+        "artist": null,
+        "genre": "TRABAJAR ALEGRE",
+        "audio_path": "/TRABAJAR ALEGRE/Centipede.mp3",
+        "mime": "audio/mpeg"
+      },
+      {
+        "id": "local-trabajar-alegre-ckay-love-nwantiti-ah-ah-ah-lyrics",
+        "title": "CKay - Love Nwantiti (Ah Ah Ah) (Lyrics)",
+        "artist": null,
+        "genre": "TRABAJAR ALEGRE",
+        "audio_path": "/TRABAJAR ALEGRE/CKay - Love Nwantiti (Ah Ah Ah) (Lyrics).mp3",
+        "mime": "audio/mpeg"
+      },
+      {
+        "id": "local-trabajar-alegre-columbia-quevedo-video-oficial",
+        "title": "Columbia - Quevedo (Video Oficial)",
+        "artist": null,
+        "genre": "TRABAJAR ALEGRE",
+        "audio_path": "/TRABAJAR ALEGRE/Columbia - Quevedo (Video Oficial).mp3",
+        "mime": "audio/mpeg"
+      },
+      {
+        "id": "local-trabajar-alegre-cutflowers-moonlit-official-audio",
+        "title": "Cutflowers - moonlit (Official Audio)",
+        "artist": null,
+        "genre": "TRABAJAR ALEGRE",
+        "audio_path": "/TRABAJAR ALEGRE/Cutflowers - moonlit (Official Audio).mp3",
+        "mime": "audio/mpeg"
+      },
+      {
+        "id": "local-trabajar-alegre-dan-abedrop-juan-mag-n-m-rame-ahora",
+        "title": "Dan Abedrop & Juan Magán - Mírame Ahora",
+        "artist": null,
+        "genre": "TRABAJAR ALEGRE",
+        "audio_path": "/TRABAJAR ALEGRE/Dan Abedrop & Juan Magán - Mírame Ahora.mp3",
+        "mime": "audio/mpeg"
+      },
+      {
+        "id": "local-trabajar-alegre-dua-lipa-houdini-official-music-video",
+        "title": "Dua Lipa - Houdini (Official Music Video)",
+        "artist": null,
+        "genre": "TRABAJAR ALEGRE",
+        "audio_path": "/TRABAJAR ALEGRE/Dua Lipa - Houdini (Official Music Video).mp3",
+        "mime": "audio/mpeg"
+      },
+      {
+        "id": "local-trabajar-alegre-dua-lipa-illusion-official-music-video",
+        "title": "Dua Lipa - Illusion (Official Music Video)",
+        "artist": null,
+        "genre": "TRABAJAR ALEGRE",
+        "audio_path": "/TRABAJAR ALEGRE/Dua Lipa - Illusion (Official Music Video).mp3",
+        "mime": "audio/mpeg"
+      },
+      {
+        "id": "local-trabajar-alegre-feid-rema-bubalu-official-video",
+        "title": "Feid, Rema - Bubalu (Official Video)",
+        "artist": null,
+        "genre": "TRABAJAR ALEGRE",
+        "audio_path": "/TRABAJAR ALEGRE/Feid, Rema - Bubalu (Official Video).mp3",
+        "mime": "audio/mpeg"
+      },
+      {
+        "id": "local-trabajar-alegre-fuerza-regida-x-marshmello-harley-quinn-oficial-video",
+        "title": "Fuerza Regida X Marshmello - HARLEY QUINN (Oficial Video)",
+        "artist": null,
+        "genre": "TRABAJAR ALEGRE",
+        "audio_path": "/TRABAJAR ALEGRE/Fuerza Regida X Marshmello - HARLEY QUINN (Oficial Video).mp3",
+        "mime": "audio/mpeg"
+      },
+      {
+        "id": "local-trabajar-alegre-hugel-patadas-de-ahogado-latin-mafia-humbe-rework-cover-audio",
+        "title": "HUGEL – Patadas de Ahogado ⧸ LATIN MAFIA, HUMBE (Rework) [Cover Audio]",
+        "artist": null,
+        "genre": "TRABAJAR ALEGRE",
+        "audio_path": "/TRABAJAR ALEGRE/HUGEL – Patadas de Ahogado ⧸ LATIN MAFIA, HUMBE (Rework) [Cover Audio].mp3",
+        "mime": "audio/mpeg"
+      },
+      {
+        "id": "local-trabajar-alegre-jason-derulo-acapulco-official-music-video",
+        "title": "Jason Derulo - Acapulco [Official Music Video]",
+        "artist": null,
+        "genre": "TRABAJAR ALEGRE",
+        "audio_path": "/TRABAJAR ALEGRE/Jason Derulo - Acapulco [Official Music Video].mp3",
+        "mime": "audio/mpeg"
+      },
+      {
+        "id": "local-trabajar-alegre-joanna-crass-aida-redru-zeper-me-gustas-demasiado-remix-video-oficial",
+        "title": "Joanna Crass, Aida Redru, Zeper - Me Gustas Demasiado Remix (Video Oficial)",
+        "artist": null,
+        "genre": "TRABAJAR ALEGRE",
+        "audio_path": "/TRABAJAR ALEGRE/Joanna Crass, Aida Redru, Zeper - Me Gustas Demasiado Remix (Video Oficial).mp3",
+        "mime": "audio/mpeg"
+      },
+      {
+        "id": "local-trabajar-alegre-justin-bieber-holy-ft-chance-the-rapper",
+        "title": "Justin Bieber - Holy ft. Chance The Rapper",
+        "artist": null,
+        "genre": "TRABAJAR ALEGRE",
+        "audio_path": "/TRABAJAR ALEGRE/Justin Bieber - Holy ft. Chance The Rapper.mp3",
+        "mime": "audio/mpeg"
+      },
+      {
+        "id": "local-trabajar-alegre-karol-g-ti-sto-contigo-official-video",
+        "title": "KAROL G, Tiësto - CONTIGO (Official Video)",
+        "artist": null,
+        "genre": "TRABAJAR ALEGRE",
+        "audio_path": "/TRABAJAR ALEGRE/KAROL G, Tiësto - CONTIGO (Official Video).mp3",
+        "mime": "audio/mpeg"
+      },
+      {
+        "id": "local-trabajar-alegre-maroon-5-beautiful-mistakes-ft-megan-thee-stallion-official-music-video",
+        "title": "Maroon 5 - Beautiful Mistakes ft. Megan Thee Stallion (Official Music Video)",
+        "artist": null,
+        "genre": "TRABAJAR ALEGRE",
+        "audio_path": "/TRABAJAR ALEGRE/Maroon 5 - Beautiful Mistakes ft. Megan Thee Stallion (Official Music Video).mp3",
+        "mime": "audio/mpeg"
+      },
+      {
+        "id": "local-trabajar-alegre-miley-cyrus-flowers-official-video",
+        "title": "Miley Cyrus - Flowers (Official Video)",
+        "artist": null,
+        "genre": "TRABAJAR ALEGRE",
+        "audio_path": "/TRABAJAR ALEGRE/Miley Cyrus - Flowers (Official Video).mp3",
+        "mime": "audio/mpeg"
+      },
+      {
+        "id": "local-trabajar-alegre-mix-cumbia-2026",
+        "title": "MIX CUMBIA 2026",
+        "artist": null,
+        "genre": "TRABAJAR ALEGRE",
+        "audio_path": "/TRABAJAR ALEGRE/MIX CUMBIA 2026.mp3",
+        "mime": "audio/mpeg"
+      },
+      {
+        "id": "local-trabajar-alegre-onerepublic-sunshine-official-audio",
+        "title": "OneRepublic - Sunshine (Official Audio)",
+        "artist": null,
+        "genre": "TRABAJAR ALEGRE",
+        "audio_path": "/TRABAJAR ALEGRE/OneRepublic - Sunshine (Official Audio).mp3",
+        "mime": "audio/mpeg"
+      },
+      {
+        "id": "local-trabajar-alegre-outkast-hey-ya-official-hd-video",
+        "title": "Outkast - Hey Ya! (Official HD Video)",
+        "artist": null,
+        "genre": "TRABAJAR ALEGRE",
+        "audio_path": "/TRABAJAR ALEGRE/Outkast - Hey Ya! (Official HD Video).mp3",
+        "mime": "audio/mpeg"
+      },
+      {
+        "id": "local-trabajar-alegre-paul-russell-lil-boo-thang-official-video",
+        "title": "Paul Russell - Lil Boo Thang (Official Video)",
+        "artist": null,
+        "genre": "TRABAJAR ALEGRE",
+        "audio_path": "/TRABAJAR ALEGRE/Paul Russell - Lil Boo Thang (Official Video).mp3",
+        "mime": "audio/mpeg"
+      },
+      {
+        "id": "local-trabajar-alegre-piscola-video-oficial-la-caravana-magica-x-g-trumpet",
+        "title": "PISCOLA (VIDEO OFICIAL) - LA CARAVANA MAGICA X G TRUMPET",
+        "artist": null,
+        "genre": "TRABAJAR ALEGRE",
+        "audio_path": "/TRABAJAR ALEGRE/PISCOLA (VIDEO OFICIAL) - LA CARAVANA MAGICA X G TRUMPET.mp3",
+        "mime": "audio/mpeg"
+      },
+      {
+        "id": "local-trabajar-alegre-polo-nandez-mar-lucas-parte-de-m-videoclip",
+        "title": "Polo Nandez & Mar Lucas - Parte De Mí (Videoclip)",
+        "artist": null,
+        "genre": "TRABAJAR ALEGRE",
+        "audio_path": "/TRABAJAR ALEGRE/Polo Nandez & Mar Lucas - Parte De Mí (Videoclip).mp3",
+        "mime": "audio/mpeg"
+      },
+      {
+        "id": "local-trabajar-alegre-rachid-taha-mine-jai",
+        "title": "Rachid taha - mine jai",
+        "artist": null,
+        "genre": "TRABAJAR ALEGRE",
+        "audio_path": "/TRABAJAR ALEGRE/Rachid taha - mine jai.mp3",
+        "mime": "audio/mpeg"
+      },
+      {
+        "id": "local-trabajar-alegre-rauw-alejandro-bizarrap-baby-hello-official-video",
+        "title": "Rauw Alejandro, Bizarrap - BABY HELLO (Official Video)",
+        "artist": null,
+        "genre": "TRABAJAR ALEGRE",
+        "audio_path": "/TRABAJAR ALEGRE/Rauw Alejandro, Bizarrap - BABY HELLO (Official Video).mp3",
+        "mime": "audio/mpeg"
+      },
+      {
+        "id": "local-trabajar-alegre-regard-troye-sivan-tate-mcrae-you-official-video",
+        "title": "Regard, Troye Sivan, Tate McRae - You (Official Video)",
+        "artist": null,
+        "genre": "TRABAJAR ALEGRE",
+        "audio_path": "/TRABAJAR ALEGRE/Regard, Troye Sivan, Tate McRae - You (Official Video).mp3",
+        "mime": "audio/mpeg"
+      },
+      {
+        "id": "local-trabajar-alegre-reggaeton-viejo-mix",
+        "title": "Reggaeton Viejo Mix",
+        "artist": null,
+        "genre": "TRABAJAR ALEGRE",
+        "audio_path": "/TRABAJAR ALEGRE/Reggaeton Viejo Mix.mp3",
+        "mime": "audio/mpeg"
+      },
+      {
+        "id": "local-trabajar-alegre-rema-selena-gomez-calm-down-official-music-video",
+        "title": "Rema, Selena Gomez - Calm Down (Official Music Video)",
+        "artist": null,
+        "genre": "TRABAJAR ALEGRE",
+        "audio_path": "/TRABAJAR ALEGRE/Rema, Selena Gomez - Calm Down (Official Music Video).mp3",
+        "mime": "audio/mpeg"
+      },
+      {
+        "id": "local-trabajar-alegre-rufus-du-sol",
+        "title": "RUFUS DU SOL",
+        "artist": null,
+        "genre": "TRABAJAR ALEGRE",
+        "audio_path": "/TRABAJAR ALEGRE/RUFUS DU SOL.mp3",
+        "mime": "audio/mpeg"
+      },
+      {
+        "id": "local-trabajar-alegre-sam-feldt-rita-ora-follow-me-official-video",
+        "title": "Sam Feldt, Rita Ora - Follow Me (Official Video)",
+        "artist": null,
+        "genre": "TRABAJAR ALEGRE",
+        "audio_path": "/TRABAJAR ALEGRE/Sam Feldt, Rita Ora - Follow Me (Official Video).mp3",
+        "mime": "audio/mpeg"
+      },
+      {
+        "id": "local-trabajar-alegre-sza-justin-timberlake-the-other-side-from-trolls-world-tour",
+        "title": "SZA, Justin Timberlake - The Other Side (From Trolls World Tour)",
+        "artist": null,
+        "genre": "TRABAJAR ALEGRE",
+        "audio_path": "/TRABAJAR ALEGRE/SZA, Justin Timberlake - The Other Side (From Trolls World Tour).mp3",
+        "mime": "audio/mpeg"
+      },
+      {
+        "id": "local-trabajar-alegre-teddy-swims-lose-control-lyric-video",
+        "title": "Teddy Swims - Lose Control (Lyric Video)",
+        "artist": null,
+        "genre": "TRABAJAR ALEGRE",
+        "audio_path": "/TRABAJAR ALEGRE/Teddy Swims - Lose Control (Lyric Video).mp3",
+        "mime": "audio/mpeg"
+      },
+      {
+        "id": "local-trabajar-alegre-the-kid-laroi-justin-bieber-stay-official-video",
+        "title": "The Kid LAROI, Justin Bieber - STAY (Official Video)",
+        "artist": null,
+        "genre": "TRABAJAR ALEGRE",
+        "audio_path": "/TRABAJAR ALEGRE/The Kid LAROI, Justin Bieber - STAY (Official Video).mp3",
+        "mime": "audio/mpeg"
+      },
+      {
+        "id": "local-trabajar-alegre-the-rolling-stones-mess-it-up",
+        "title": "The Rolling Stones - Mess It Up",
+        "artist": null,
+        "genre": "TRABAJAR ALEGRE",
+        "audio_path": "/TRABAJAR ALEGRE/The Rolling Stones - Mess It Up.mp3",
+        "mime": "audio/mpeg"
+      },
+      {
+        "id": "local-trabajar-alegre-tyla-water-official-music-video",
+        "title": "Tyla - Water (Official Music Video)",
+        "artist": null,
+        "genre": "TRABAJAR ALEGRE",
+        "audio_path": "/TRABAJAR ALEGRE/Tyla - Water (Official Music Video).mp3",
+        "mime": "audio/mpeg"
+      },
+      {
+        "id": "local-trabajar-alegre-used-to",
+        "title": "Used To",
+        "artist": null,
+        "genre": "TRABAJAR ALEGRE",
+        "audio_path": "/TRABAJAR ALEGRE/Used To.mp3",
+        "mime": "audio/mpeg"
+      },
+      {
+        "id": "local-trabajar-alegre-waiting-for-mena-i-end-up-streaming-myself",
+        "title": "Waiting for Mena I end up streaming myself",
+        "artist": null,
+        "genre": "TRABAJAR ALEGRE",
+        "audio_path": "/TRABAJAR ALEGRE/Waiting for Mena I end up streaming myself.mp3",
+        "mime": "audio/mpeg"
+      },
+      {
+        "id": "local-trabajar-alegre-jung-kook-standing-next-to-you-official-mv",
+        "title": "정국 (Jung Kook) 'Standing Next to You' Official MV",
+        "artist": null,
+        "genre": "TRABAJAR ALEGRE",
+        "audio_path": "/TRABAJAR ALEGRE/정국 (Jung Kook) 'Standing Next to You' Official MV.mp3",
+        "mime": "audio/mpeg"
+      }
+    ]
   }
 ]

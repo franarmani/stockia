@@ -158,6 +158,11 @@ body {
 }
 @keyframes slideInUp {
   from { opacity: 0; transform: translateY(18px); }
+
+@keyframes equalize {
+  from { transform: scaleY(0.3); }
+  to   { transform: scaleY(1); }
+}
   to { opacity: 1; transform: translateY(0); }
 }
 @keyframes pulse-soft {

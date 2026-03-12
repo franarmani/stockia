@@ -167,8 +167,8 @@ export default function AdminPage() {
 
   function openWA(business: BusinessRow, type: 'activar' | 'vencido') {
     const msg = type === 'activar'
-      ? `Hola! Tu cuenta en STOCKIA ha sido activada ✅. Ya podés ingresar en https://stockia-two.vercel.app — Cualquier consulta avisame. Saludos, Fran`
-      : `Hola! Tu período de prueba en STOCKIA ha vencido 📅. Para seguir usando el sistema transferí $50.000 al alias *${ALIAS}* y avisame por acá. Saludos, Fran`
+      ? `Hola! Tu cuenta en STOCKIA ha sido activada \u2705. Ya pod\u00e9s ingresar en https://stockia-two.vercel.app \u2014 Cualquier consulta avisame. Saludos, Fran`
+      : `Hola! Tu per\u00edodo de prueba en STOCKIA ha vencido \u{1F4C5}. Para seguir usando el sistema transfer\u00ed $50.000 al alias *${ALIAS}* y avisame por ac\u00e1. Saludos, Fran`
 
     const phone = business.phone?.replace(/\D/g, '') || ''
     const url = phone
