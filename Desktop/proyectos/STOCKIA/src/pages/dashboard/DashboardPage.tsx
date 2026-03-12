@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/authStore'
 import { formatCurrency } from '@/lib/utils'
@@ -72,13 +72,18 @@ export default function DashboardPage() {
   const [dolarLoading, setDolarLoading] = useState(false)
   const [dolarUpdatedAt, setDolarUpdatedAt] = useState<Date | null>(null)
   const [showDolarPicker, setShowDolarPicker] = useState(false)
+  const dolarPickerRef = useRef<HTMLDivElement>(null)
 
   // Close picker on outside click
   useEffect(() => {
     if (!showDolarPicker) return
-    const handler = () => setShowDolarPicker(false)
-    document.addEventListener('click', handler, { capture: true, once: true })
-    return () => document.removeEventListener('click', handler, { capture: true })
+    const handler = (e: MouseEvent) => {
+      if (dolarPickerRef.current && !dolarPickerRef.current.contains(e.target as Node)) {
+        setShowDolarPicker(false)
+      }
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
   }, [showDolarPicker])
 
   const fetchDolarRates = useCallback(async () => {
@@ -309,7 +314,7 @@ export default function DashboardPage() {
 
               {/* Dollar selector */}
               <div className="flex flex-col items-end gap-1.5 shrink-0">
-                <div className="relative">
+                <div className="relative" ref={dolarPickerRef}>
                   <button
                     onClick={() => setShowDolarPicker(v => !v)}
                     className="flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg px-2 py-1 transition-colors"
