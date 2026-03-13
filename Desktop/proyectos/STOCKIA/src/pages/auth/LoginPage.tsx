@@ -108,9 +108,9 @@ export default function LoginPage() {
       {/* ─── Right panel — form ─── */}
       <div className="flex-1 flex flex-col min-h-screen" style={{ background: 'linear-gradient(180deg, #0d1f4a 0%, #091440 50%, #07142f 100%)' }}>
         {/* Mobile header */}
-        <div className="lg:hidden px-6 pt-12 pb-6">
+        <div className="lg:hidden px-6 pt-10 pb-6">
           <Link to="/">
-            <img src={logo} alt="STOCKIA" className="h-7 w-fit mb-8" />
+            <img src={logo} alt="STOCKIA" className="h-8 w-auto max-w-[180px] object-contain mb-6" />
           </Link>
           <h1 className="text-3xl font-black text-white leading-tight">
             {forgotMode ? 'Recuperar contraseña' : 'Bienvenido'}
