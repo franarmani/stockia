@@ -82,11 +82,39 @@ function syncMusicCatalog(publicDir: string) {
 
 function musicCatalogPlugin(): import('vite').Plugin {
   let publicDir: string
+  let isBuild = false
   return {
     name: 'music-catalog-sync',
     configResolved(config) {
       publicDir = config.publicDir
+      isBuild = config.command === 'build'
       syncMusicCatalog(publicDir)
+    },
+    // After production build, remove local audio files from dist/.
+    // They are hundreds of MB and exceed Vercel's deployment limits.
+    // Supabase-hosted tracks still work; only the "local static" fallback is removed.
+    closeBundle() {
+      if (!isBuild) return
+      const outDir = path.resolve('dist')
+      let removed = 0
+      function clearAudio(dir: string) {
+        if (!fs.existsSync(dir)) return
+        for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+          const full = path.join(dir, entry.name)
+          if (entry.isDirectory()) {
+            clearAudio(full)
+            try { if (fs.readdirSync(full).length === 0) fs.rmdirSync(full) } catch { /* ok */ }
+          } else if (AUDIO_EXTS.includes(path.extname(entry.name).toLowerCase())) {
+            fs.unlinkSync(full)
+            removed++
+          }
+        }
+      }
+      clearAudio(outDir)
+      // Clear the music catalog in dist/ so the app won't try to play missing local files
+      const catalogDist = path.join(outDir, 'music-catalog.json')
+      if (fs.existsSync(catalogDist)) fs.writeFileSync(catalogDist, '[]\n')
+      console.log(`[music-catalog] 🧹 Removed ${removed} audio files from dist/ (deployment size optimized)`)
     },
     configureServer(server) {
       const resolvedPublic = path.resolve(publicDir)
