@@ -9,12 +9,14 @@ import Badge from '@/components/ui/Badge'
 import Modal from '@/components/ui/Modal'
 import { IVA_CONDITIONS } from '@/types/database'
 import type { UserProfile, FiscalEnv } from '@/types/database'
-import {
-  Store, Users, Shield, Plus, Trash2, Crown, Save, FileText, Printer,
-  CheckCircle2, Upload, AlertCircle, Wifi, Download, Copy,
-  Key, Zap, ChevronRight, ChevronLeft, Loader2, Globe, ChevronDown, Percent,
-  CreditCard, Banknote, ArrowRightLeft,
+import { 
+  Check, MoreVertical, UserPlus, Star, Store, Users, Shield, Plus, Trash2, Crown, 
+  Save, FileText, Printer, CheckCircle2, Upload, AlertCircle, Wifi, Download, 
+  Copy, Key, Zap, ChevronRight, ChevronLeft, Loader2, Globe, ChevronDown, Percent,
+  CreditCard, Banknote, ArrowRightLeft
 } from 'lucide-react'
+import { differenceInDays } from 'date-fns'
+import { calculateRemainingDays } from '@/lib/subscription'
 
 const WIZARD_STEPS = [
   { id: 1, title: 'Datos fiscales', desc: 'CUIT, condición IVA y punto de venta', icon: FileText },
@@ -392,7 +394,114 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      {/* ===== AFIP WIZARD ===== */}
+      {/* Plan and Subscription */}
+      <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+        <div className="p-5 pb-3 flex items-center gap-2">
+          <Crown className="w-5 h-5 text-amber-500" />
+          <h2 className="font-semibold text-foreground">Tu Plan y Suscripción</h2>
+        </div>
+        
+        <div className="p-4 sm:p-5">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Plan Inicial */}
+            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 relative group">
+              <div className="flex flex-col h-full">
+                <div className="mb-4">
+                  <h3 className="font-bold text-slate-900">Plan Inicial</h3>
+                  <p className="text-xs text-slate-500 font-medium">Versión Básica</p>
+                </div>
+                <div className="space-y-2 mb-6 flex-1">
+                  <div className="flex items-center gap-2 text-[11px] text-slate-600">
+                    <Check className="w-3 h-3 text-slate-400" /> Ventas básicas
+                  </div>
+                  <div className="flex items-center gap-2 text-[11px] text-slate-600">
+                    <Check className="w-3 h-3 text-slate-400" /> Stock limitado
+                  </div>
+                  <div className="flex items-center gap-2 text-[11px] text-slate-600">
+                    <Check className="w-3 h-3 text-slate-400" /> Facturación AFIP
+                  </div>
+                </div>
+                <button disabled className="w-full py-2.5 rounded-xl bg-slate-200 text-slate-500 font-bold text-xs cursor-not-allowed">
+                  No disponible
+                </button>
+              </div>
+            </div>
+
+            {/* Plan Negocio (Active) */}
+            <div className="p-4 rounded-2xl bg-white border-2 border-primary/30 relative shadow-lg shadow-primary/5">
+              <div className="absolute -top-3 right-4 bg-primary text-white text-[10px] font-black px-2 py-1 rounded-full uppercase tracking-wider">
+                Plan Actual
+              </div>
+              <div className="flex flex-col h-full">
+                <div className="mb-4">
+                  <h3 className="font-bold text-slate-900">Plan Negocio</h3>
+                  <p className="text-xs text-primary font-bold">$50.000 / mes</p>
+                </div>
+                <div className="space-y-2 mb-6 flex-1">
+                  <div className="flex items-center gap-2 text-[11px] text-slate-700">
+                    <Check className="w-3 h-3 text-primary" /> Facturación AFIP ilimitada
+                  </div>
+                  <div className="flex items-center gap-2 text-[11px] text-slate-700">
+                    <Check className="w-3 h-3 text-primary" /> Radar AI (Promo 1 mes)
+                  </div>
+                  <div className="flex items-center gap-2 text-[11px] text-slate-700">
+                    <Check className="w-3 h-3 text-primary" /> Usuarios ilimitados
+                  </div>
+                </div>
+                
+                <div className="pt-4 border-t border-slate-100">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Días restantes</p>
+                    <p className="text-[11px] font-bold text-primary">
+                      {calculateRemainingDays(business?.trial_ends_at, business?.subscription_status)} / 30
+                    </p>
+                  </div>
+                  <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+                    <div 
+                      className="h-full bg-primary" 
+                      style={{ width: `${(calculateRemainingDays(business?.trial_ends_at, business?.subscription_status) / 30) * 100}%` }}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Plan Premium */}
+            <div className="p-4 rounded-2xl bg-slate-950 border border-amber-500/20 relative overflow-hidden group">
+              <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:scale-110 transition-transform">
+                <Crown className="w-12 h-12 text-amber-500" />
+              </div>
+              <div className="flex flex-col h-full relative z-10">
+                <div className="mb-4">
+                  <h3 className="font-bold text-white">Plan Premium</h3>
+                  <p className="text-xs text-amber-500 font-bold">$100.000 / mes</p>
+                </div>
+                <div className="space-y-2 mb-6 flex-1">
+                  <div className="flex items-center gap-2 text-[11px] text-white/70">
+                    <Zap className="w-3 h-3 text-amber-500" /> Radar AI Profesional
+                  </div>
+                  <div className="flex items-center gap-2 text-[11px] text-white/70">
+                    <Zap className="w-3 h-3 text-amber-500" /> Gestión Multisucursal
+                  </div>
+                  <div className="flex items-center gap-2 text-[11px] text-white/70">
+                    <Zap className="w-3 h-3 text-amber-500" /> Soporte VIP 24/7
+                  </div>
+                  <div className="flex items-center gap-2 text-[11px] text-amber-500 font-bold">
+                    <Zap className="w-3 h-3" /> Stockia Music Premium
+                  </div>
+                </div>
+                <button 
+                  onClick={() => window.open('https://wa.me/5492915716099?text=Hola,%20quisiera%20mejorar%20mi%20plan%20a%20Premium%20para%20usar%20Stockia%20Music%20en%20mi%20negocio.', '_blank')}
+                  className="w-full py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs transition-colors shadow-lg shadow-amber-500/20"
+                >
+                  Mejorar a Premium
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
         <button
           onClick={() => setWizardOpen((o) => !o)}
@@ -938,57 +1047,81 @@ export default function SettingsPage() {
         </Button>
       </div>
 
-      {/* Plan info */}
-      {business && (
-        <div className="gradient-primary rounded-2xl p-5 text-white">
-          <div className="flex items-center gap-2 mb-2">
-            <Crown className="w-5 h-5" />
-            <span className="font-bold">Plan Negocio</span>
-          </div>
-          <p className="text-sm opacity-90 mb-1">
-            Estado: {business.subscription_status === 'active' ? 'Activo' :
-              business.subscription_status === 'trial' ? 'Período de prueba' : 'Inactivo'}
-          </p>
-          {business.trial_ends_at && (
-            <p className="text-sm opacity-80">
-              Prueba hasta: {new Date(business.trial_ends_at).toLocaleDateString('es-AR', { day: 'numeric', month: 'long', year: 'numeric' })}
-            </p>
-          )}
-        </div>
-      )}
+
 
       {/* Users */}
       {isAdmin && (
-        <div className="bg-white rounded-2xl shadow-sm">
-          <div className="p-5 pb-3 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Users className="w-5 h-5 text-primary" />
-              <h2 className="font-semibold text-foreground">Usuarios</h2>
+        <div className="glass-card rounded-3xl border border-white/5 overflow-hidden">
+          <div className="p-6 pb-4 flex items-center justify-between border-b border-white/5">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20">
+                <Users className="w-5 h-5 text-primary" />
+              </div>
+              <div>
+                <h2 className="font-bold text-white tracking-wide">Equipo de Trabajo</h2>
+                <p className="text-[10px] text-white/30 uppercase tracking-widest mt-0.5">{users.length} Colaboradores</p>
+              </div>
             </div>
-            <Button size="sm" onClick={() => setShowUserModal(true)}>
-              <Plus className="w-4 h-4" /> Agregar
-            </Button>
+            <button 
+              className="flex items-center gap-2 h-9 px-4 rounded-xl gradient-primary text-white text-[12px] font-bold shadow-lg shadow-primary/20 hover:brightness-110 transition-all"
+              onClick={() => setShowUserModal(true)}
+            >
+              <UserPlus className="w-4 h-4" /> Agregar
+            </button>
           </div>
-          <div className="divide-y divide-slate-100">
+          <div className="divide-y divide-white/5">
             {users.map((u) => (
-              <div key={u.id} className="flex items-center justify-between px-4 py-3">
-                <div className="min-w-0">
-                  <p className="text-sm font-medium truncate">{u.name}</p>
-                  <div className="flex items-center gap-2 mt-0.5">
-                    <Badge variant={u.role === 'admin' ? 'default' : 'outline'}>
-                      <Shield className="w-3 h-3" /> {u.role === 'admin' ? 'Admin' : 'Vendedor'}
-                    </Badge>
-                    {u.id === profile?.id && <span className="text-[11px] text-muted-foreground">(tú)</span>}
+              <div key={u.id} className="flex items-center gap-4 px-6 py-4 hover:bg-white/5 transition-colors">
+                {/* Avatar */}
+                <div className="w-11 h-11 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-white font-bold uppercase shrink-0">
+                  {u.name?.charAt(0) || u.email?.charAt(0)}
+                </div>
+                
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-bold text-white truncate">{u.name}</p>
+                    {u.id === profile?.id && (
+                      <span className="px-1.5 py-0.5 rounded-md bg-white/5 text-white/30 text-[9px] font-black uppercase tracking-widest">Tú</span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-3 mt-1">
+                    <p className="text-[11px] text-white/30 truncate">{u.email}</p>
+                    <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider">
+                      {u.role === 'admin' ? (
+                        <span className="text-amber-500 flex items-center gap-1">
+                          <Shield className="w-3 h-3" /> Admin
+                        </span>
+                      ) : (
+                        <span className="text-white/40 flex items-center gap-1">
+                          <Store className="w-3.5 h-3.5 opacity-50" /> Vendedor
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
-                {u.id !== profile?.id && (
-                  <button onClick={() => handleDeleteUser(u.id)} className="w-8 h-8 rounded-xl flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-red-50 transition">
-                    <Trash2 className="w-4 h-4" />
+
+                <div className="flex items-center gap-1.5">
+                  {u.id !== profile?.id && (
+                    <button 
+                      onClick={() => handleDeleteUser(u.id)} 
+                      className="w-9 h-9 rounded-xl flex items-center justify-center text-white/20 hover:text-red-400 hover:bg-red-400/10 transition-all"
+                      title="Eliminar usuario"
+                    >
+                      <Trash2 className="w-4.5 h-4.5" />
+                    </button>
+                  )}
+                  <button className="w-9 h-9 rounded-xl flex items-center justify-center text-white/10 hover:text-white hover:bg-white/10 transition-all">
+                    <MoreVertical className="w-4 h-4" />
                   </button>
-                )}
+                </div>
               </div>
             ))}
-            {users.length === 0 && <div className="text-center py-10 text-muted-foreground text-sm">Sin usuarios</div>}
+            {users.length === 0 && (
+              <div className="flex flex-col items-center justify-center py-16 text-center px-4">
+                <Users className="w-10 h-10 text-white/5 mb-3" />
+                <p className="text-sm font-bold text-white/20 uppercase tracking-widest">Sin colaboradores</p>
+              </div>
+            )}
           </div>
         </div>
       )}

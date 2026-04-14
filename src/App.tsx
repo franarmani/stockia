@@ -45,12 +45,14 @@ const PurchasesPage = lazy(() => import('@/pages/purchases/PurchasesPage'))
 const ComprobantesPage = lazy(() => import('@/pages/comprobantes/ComprobantesPage'))
 const LandingPage = lazy(() => import('@/pages/landing/LandingPage'))
 const SubscriptionBlockedPage = lazy(() => import('@/pages/subscription/SubscriptionBlockedPage'))
+const ProductDetailPage = lazy(() => import('@/pages/products/ProductDetailPage'))
 
 // New feature pages
 const NotificationsPage = lazy(() => import('@/features/notifications/NotificationsPage'))
 const HealthPage = lazy(() => import('@/features/health/HealthPage'))
 const DailySummaryPage = lazy(() => import('@/features/daily_summary/DailySummaryPage'))
 const AdminPage = lazy(() => import('@/pages/admin/AdminPage'))
+const MusicPage = lazy(() => import('@/pages/music/MusicPage'))
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'))
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -258,6 +260,7 @@ export default function App() {
           <Route path="dashboard" element={<DashboardPage />} />
           <Route path="pos" element={<POSPage />} />
           <Route path="products" element={<ProductsPage />} />
+          <Route path="products/:id" element={<ProductDetailPage />} />
           <Route path="purchases" element={<PurchasesPage />} />
           <Route path="comprobantes" element={<ComprobantesPage />} />
           <Route path="customers" element={<CustomersPage />} />
@@ -269,6 +272,7 @@ export default function App() {
           <Route path="notifications" element={<NotificationsPage />} />
           <Route path="health" element={<HealthPage />} />
           <Route path="daily-summary" element={<DailySummaryPage />} />
+          <Route path="music" element={<MusicPage />} />
         </Route>
 
         <Route path="*" element={<NotFoundPage />} />

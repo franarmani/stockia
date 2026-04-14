@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/authStore'
 import { formatCurrency } from '@/lib/utils'
@@ -15,6 +16,7 @@ import {
   Search, Plus, Package, AlertTriangle,
   Barcode, MinusCircle, PlusCircle, Edit3, Trash2,
   Tag, X, Truck, Upload, Download, Layers,
+  Zap, ChevronRight
 } from 'lucide-react'
 
 const UNIT_OPTIONS: { value: ProductUnit; label: string }[] = [
@@ -25,6 +27,7 @@ const UNIT_OPTIONS: { value: ProductUnit; label: string }[] = [
 ]
 
 export default function ProductsPage() {
+  const navigate = useNavigate()
   const { profile } = useAuthStore()
   const [products, setProducts] = useState<Product[]>([])
   const [categories, setCategories] = useState<Category[]>([])
@@ -292,12 +295,16 @@ export default function ProductsPage() {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {filtered.map((p) => (
-            <div key={p.id} className="bg-white rounded-2xl p-4 shadow-sm group">
+            <div 
+              key={p.id} 
+              className="bg-white rounded-2xl p-4 shadow-sm group cursor-pointer hover:shadow-md transition-all active:scale-[0.99]"
+              onClick={() => navigate(`/products/${p.id}`)}
+            >
               <div className="flex items-start justify-between mb-2">
                 <div className="min-w-0 flex-1">
-                  <h3 className="font-semibold text-foreground truncate">{p.name}</h3>
+                  <h3 className="font-semibold text-foreground">{p.name}</h3>
                   {(p.brand || p.model) && (
-                    <p className="text-[11px] text-muted-foreground truncate">
+                    <p className="text-[11px] text-muted-foreground">
                       {p.brand}{p.model ? ` · ${p.model}` : ''}{p.size_label ? ` · ${p.size_label}` : ''}{p.presentation ? ` · ${p.presentation}` : ''}
                     </p>
                   )}
@@ -326,17 +333,30 @@ export default function ProductsPage() {
                     {p.unit && p.unit !== 'u' && <Badge variant="outline" className="text-[10px]">{UNIT_SHORT[p.unit as ProductUnit]}</Badge>}
                   </div>
                 </div>
+              </div>
+
+              <div className="flex items-center justify-between pt-4 mt-4 border-t border-slate-50">
+                <button 
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    navigate(`/products/${p.id}`)
+                  }}
+                  className="flex items-center gap-1.5 text-xs font-bold text-primary hover:text-primary-dark transition-colors"
+                >
+                  <Zap className="w-3.5 h-3.5" /> Analizar con IA
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </button>
 
                 <div className="flex items-center gap-1">
-                  <button onClick={() => handleQuickStock(p, -1)} className="w-8 h-8 flex items-center justify-center rounded-xl text-muted-foreground hover:text-amber-600 hover:bg-amber-50 active:scale-90 transition">
+                  <button onClick={(e) => { e.stopPropagation(); handleQuickStock(p, -1) }} className="w-8 h-8 flex items-center justify-center rounded-xl text-muted-foreground hover:text-amber-600 hover:bg-amber-50 active:scale-90 transition">
                     <MinusCircle className="w-5 h-5" />
                   </button>
-                  <button onClick={() => openStockModal(p)} className={`min-w-9 h-8 px-2 rounded-xl text-sm font-bold text-center transition cursor-pointer ${
+                  <button onClick={(e) => { e.stopPropagation(); openStockModal(p) }} className={`min-w-9 h-8 px-2 rounded-xl text-sm font-bold text-center transition cursor-pointer ${
                     p.stock === 0 ? 'bg-red-100 text-red-700' :
                     p.stock <= p.stock_min ? 'bg-amber-100 text-amber-700' :
                     'bg-green-50 text-green-700'
                   }`}>{isDecimalUnit(p.unit) ? p.stock.toFixed(1) : p.stock}</button>
-                  <button onClick={() => handleQuickStock(p, 1)} className="w-8 h-8 flex items-center justify-center rounded-xl text-muted-foreground hover:text-green-600 hover:bg-green-50 active:scale-90 transition">
+                  <button onClick={(e) => { e.stopPropagation(); handleQuickStock(p, 1) }} className="w-8 h-8 flex items-center justify-center rounded-xl text-muted-foreground hover:text-green-600 hover:bg-green-50 active:scale-90 transition">
                     <PlusCircle className="w-5 h-5" />
                   </button>
                 </div>

@@ -18,7 +18,11 @@ import {
   LogOut,
   ChevronLeft,
   ChevronRight,
+  Zap,
+  Shield,
+  Music
 } from 'lucide-react'
+import { calculateRemainingDays } from '@/lib/subscription'
 
 const NAV_ITEMS = [
   { name: 'Inicio',         href: '/dashboard',    icon: LayoutDashboard },
@@ -30,6 +34,7 @@ const NAV_ITEMS = [
   { name: 'Caja',           href: '/cash-register', icon: Wallet },
   { name: 'Historial',      href: '/sales',         icon: Receipt },
   { name: 'Reportes',       href: '/reports',       icon: BarChart3 },
+  { name: 'Música',          href: '/music',         icon: Music, premium: true },
   { name: 'Configuración',  href: '/settings',      icon: Settings },
 ]
 
@@ -58,6 +63,12 @@ function SidebarContent({
     navigate('/login')
   }
 
+  // Define dynamic nav items based on permissions
+  const dynamicNav = [...NAV_ITEMS]
+  if (profile?.is_superadmin) {
+    dynamicNav.push({ name: 'Panel Admin', href: '/admin', icon: Shield })
+  }
+
   return (
     <div className="flex flex-col h-full bg-sidebar text-sidebar-foreground">
       {/* Logo */}
@@ -69,7 +80,7 @@ function SidebarContent({
       >
         <img src={logoSolo} alt="STOCKIA" className="w-8 h-8 shrink-0" />
         {!collapsed && (
-          <div className="overflow-hidden">
+          <div className="overflow-hidden text-left">
             <p className="text-sm font-bold text-white leading-none tracking-tight">STOCKIA</p>
             {business?.name && (
               <p className="text-[11px] text-white/40 truncate mt-0.5 max-w-[160px]">{business.name}</p>
@@ -80,7 +91,7 @@ function SidebarContent({
 
       {/* Nav */}
       <nav className="flex-1 py-3 overflow-y-auto overflow-x-hidden space-y-0.5 px-2">
-        {NAV_ITEMS.map((item) => (
+        {dynamicNav.map((item) => (
           <NavLink
             key={item.href}
             to={item.href}
@@ -107,6 +118,11 @@ function SidebarContent({
                 {!collapsed && (
                   <>
                     <span className="truncate flex-1">{item.name}</span>
+                    {item.premium && (
+                      <span className="text-[10px] font-bold text-amber-500 bg-amber-500/10 px-1.5 py-0.5 rounded-lg border border-amber-500/20 mr-1 animate-pulse">
+                        PREMIUM
+                      </span>
+                    )}
                     {isActive && (
                       <span className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
                     )}
@@ -119,40 +135,61 @@ function SidebarContent({
       </nav>
 
       {/* Footer */}
-      <div className="border-t border-sidebar-border p-3 shrink-0 space-y-1">
-        {collapsed ? (
-          <button
-            onClick={handleSignOut}
-            title="Cerrar sesión"
-            className="w-full flex justify-center p-2.5 rounded-xl hover:bg-white/10 transition-colors"
-          >
-            <LogOut className="w-4 h-4 text-white/40" />
-          </button>
-        ) : (
-          <button
-            onClick={handleSignOut}
-            className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-white/10 transition-colors text-left"
-          >
-            <div className="w-7 h-7 rounded-lg bg-primary/20 flex items-center justify-center shrink-0">
-              <span className="text-[11px] font-bold text-primary">
-                {profile?.name?.charAt(0)?.toUpperCase() ?? 'U'}
-              </span>
+      <div className="border-t border-sidebar-border p-3 shrink-0 space-y-2">
+        {/* Subscription status (only desktop desktop-non-collapsed) */}
+        {!collapsed && business && (
+          <div className="p-3 rounded-2xl bg-primary/5 border border-primary/10 relative overflow-hidden group/sub">
+            <div className="absolute top-0 right-0 p-3 opacity-10 group-hover/sub:scale-110 transition-transform pointer-events-none">
+              <Zap className="w-8 h-8 text-primary" />
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-[12px] font-semibold text-white/80 truncate">
-                {profile?.name ?? 'Usuario'}
+            <div className="relative z-10">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                <p className="text-[10px] font-bold text-white tracking-widest uppercase">
+                  {(!business.plan || business.plan === 'free') ? 'Plan Negocio' : business.plan === 'premium' ? 'Plan Premium' : 'Plan Negocio'}
+                </p>
+              </div>
+              <p className="text-[13px] font-bold text-white mb-0.5">Suscripción activa</p>
+              <p className="text-[10px] text-white/30 truncate mb-2">
+                ${business.plan === 'premium' ? '100.000' : '50.000'}/mes
               </p>
-              <p className="text-[10px] text-white/35">Cerrar sesión</p>
+              <div className="flex items-center gap-1.5 mt-1">
+                <div className="flex-1 h-1 bg-white/5 rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-primary" 
+                    style={{ width: `${(calculateRemainingDays(business.trial_ends_at, business.subscription_status) / 30) * 100}%` }}
+                  />
+                </div>
+                <span className="text-[9px] font-bold text-primary shrink-0">
+                  {calculateRemainingDays(business.trial_ends_at, business.subscription_status)} días
+                </span>
+              </div>
             </div>
-            <LogOut className="w-3.5 h-3.5 text-white/25 shrink-0" />
-          </button>
+          </div>
         )}
 
-        {/* Collapse toggle — desktop only */}
+        {/* Logout button */}
         <button
-          onClick={onToggleCollapse}
-          title={collapsed ? 'Expandir menú' : 'Colapsar menú'}
-          className="hidden lg:flex w-full items-center justify-center p-1.5 rounded-xl hover:bg-white/10 transition-colors text-white/25 hover:text-white/50"
+          onClick={handleSignOut}
+          title={collapsed ? "Cerrar sesión" : undefined}
+          className={cn(
+            "w-full flex items-center transition-all px-3 py-2.5 rounded-xl hover:bg-white/10 group",
+            collapsed ? "justify-center" : "gap-3"
+          )}
+        >
+          <LogOut className="w-[18px] h-[18px] text-white/40 group-hover:text-white/80 shrink-0" />
+          {!collapsed && (
+            <div className="flex-1 min-w-0 text-left">
+              <p className="text-[13px] font-medium text-white/70 group-hover:text-white truncate">Cerrar sesión</p>
+              <p className="text-[10px] text-white/30 truncate">{profile?.email}</p>
+            </div>
+          )}
+        </button>
+
+        {/* Collapse toggle (Desktop only) */}
+        <button
+          onClick={(e) => { e.stopPropagation(); onToggleCollapse(); }}
+          className="hidden lg:flex w-full items-center justify-center p-2 rounded-xl text-white/20 hover:text-white/60 hover:bg-white/5 transition-all"
         >
           {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
         </button>
@@ -183,11 +220,11 @@ export default function Sidebar({
 
   return (
     <>
-      {/* Desktop: sticky persistent sidebar */}
+      {/* Desktop Persistent Sidebar */}
       <aside
         className={cn(
-          'hidden lg:flex flex-col h-screen sticky top-0 shrink-0 transition-[width] duration-200 ease-in-out overflow-hidden',
-          collapsed ? 'w-16' : 'w-64'
+          'hidden lg:flex flex-col h-screen sticky top-0 shrink-0 transition-[width] duration-300 ease-in-out bg-sidebar border-r border-sidebar-border z-30',
+          collapsed ? 'w-20' : 'w-64'
         )}
       >
         <SidebarContent
@@ -197,23 +234,21 @@ export default function Sidebar({
         />
       </aside>
 
-      {/* Mobile: drawer overlay */}
+      {/* Mobile Drawer */}
       {mobileOpen && (
-        <div
-          className="fixed inset-0 z-50 lg:hidden"
-          onClick={onMobileClose}
-          aria-modal="true"
-          role="dialog"
-        >
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+        <div className="fixed inset-0 z-[100] lg:hidden animate-fade-in">
           <div
-            className="absolute left-0 top-0 h-full w-64 animate-slide-in-left"
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
+            onClick={onMobileClose}
+          />
+          <div
+            className="absolute left-0 top-0 h-full w-72 bg-sidebar border-r border-sidebar-border shadow-2xl animate-slide-in-left"
             onClick={(e) => e.stopPropagation()}
           >
             <SidebarContent
               collapsed={false}
               onClose={onMobileClose}
-              onToggleCollapse={onToggleCollapse}
+              onToggleCollapse={() => {}}
             />
           </div>
         </div>

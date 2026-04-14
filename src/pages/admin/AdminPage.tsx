@@ -7,9 +7,10 @@ import {
   Search, RefreshCw, MessageCircle, LogOut,
   Building2, TrendingUp, AlertTriangle, Copy,
   CreditCard, ImageIcon, ThumbsUp, ThumbsDown,
+  Calendar,
 } from 'lucide-react'
 import { toast } from 'sonner'
-import { format } from 'date-fns'
+import { format, addDays } from 'date-fns'
 import { es } from 'date-fns/locale'
 
 const WA_NUMBER = '5492915716099'
@@ -72,6 +73,9 @@ export default function AdminPage() {
   const [updating, setUpdating] = useState<string | null>(null)
 
   const isSuperadmin = !!profile?.is_superadmin
+  const isAdminUser = profile?.email === 'francoarmani107@gmail.com'
+  const canManagePlans = isSuperadmin && isAdminUser
+
 
   useEffect(() => {
     if (!isSuperadmin) return
@@ -156,6 +160,48 @@ export default function AdminPage() {
       setBusinesses(prev =>
         prev.map(b => b.id === id ? { ...b, subscription_status: status } : b)
       )
+    }
+    setUpdating(null)
+  }
+
+  async function updatePlan(id: string, plan: string) {
+    if (!canManagePlans) return
+    setUpdating(id)
+    const { error } = await supabase
+      .from('businesses')
+      .update({ plan })
+      .eq('id', id)
+
+    if (error) {
+      toast.error('Error: ' + error.message)
+    } else {
+      toast.success('Plan actualizado ✅')
+      setBusinesses(prev => prev.map(b => b.id === id ? { ...b, plan } : b))
+    }
+    setUpdating(null)
+  }
+
+  async function addSubscriptionDays(id: string, currentTrialEnds: string | null) {
+    setUpdating(id)
+    const baseDate = (currentTrialEnds && new Date(currentTrialEnds) > new Date())
+      ? new Date(currentTrialEnds)
+      : new Date()
+    
+    const newDate = addDays(baseDate, 30).toISOString()
+    
+    const { error } = await supabase
+      .from('businesses')
+      .update({ 
+        trial_ends_at: newDate,
+        subscription_status: 'trial' // Ensure it's active
+      })
+      .eq('id', id)
+
+    if (error) {
+      toast.error('Error: ' + error.message)
+    } else {
+      toast.success('📅 +30 días agregados')
+      setBusinesses(prev => prev.map(b => b.id === id ? { ...b, trial_ends_at: newDate, subscription_status: 'trial' } : b))
     }
     setUpdating(null)
   }
@@ -449,6 +495,7 @@ export default function AdminPage() {
                     <th className="text-left px-4 py-3 text-[11px] font-semibold text-white/35 uppercase tracking-wider">Negocio</th>
                     <th className="text-left px-4 py-3 text-[11px] font-semibold text-white/35 uppercase tracking-wider">Contacto</th>
                     <th className="text-left px-4 py-3 text-[11px] font-semibold text-white/35 uppercase tracking-wider">Estado</th>
+                    <th className="text-left px-4 py-3 text-[11px] font-semibold text-white/35 uppercase tracking-wider">Plan</th>
                     <th className="text-left px-4 py-3 text-[11px] font-semibold text-white/35 uppercase tracking-wider">Trial hasta</th>
                     <th className="text-left px-4 py-3 text-[11px] font-semibold text-white/35 uppercase tracking-wider">Registro</th>
                     <th className="text-right px-4 py-3 text-[11px] font-semibold text-white/35 uppercase tracking-wider">Acciones</th>
@@ -474,6 +521,24 @@ export default function AdminPage() {
                             {st}
                           </span>
                         </td>
+                        <td className="px-4 py-3">
+                          {canManagePlans ? (
+                            <select
+                              value={b.plan}
+                              onChange={(e) => updatePlan(b.id, e.target.value)}
+                              disabled={updating === b.id}
+                              className="bg-white/5 border border-white/10 rounded-lg text-[11px] font-bold px-2 py-1 text-white focus:outline-none focus:border-green-500/50"
+                            >
+                              <option value="basic" className="bg-slate-900">Inicial</option>
+                              <option value="pro" className="bg-slate-900">Negocio</option>
+                              <option value="premium" className="bg-slate-900">Premium</option>
+                            </select>
+                          ) : (
+                            <span className="text-[11px] font-bold text-white/60 uppercase">
+                              {b.plan || 'basic'}
+                            </span>
+                          )}
+                        </td>
                         <td className="px-4 py-3 text-xs text-white/40">
                           {b.trial_ends_at
                             ? format(new Date(b.trial_ends_at), "d MMM yyyy", { locale: es })
@@ -491,6 +556,16 @@ export default function AdminPage() {
                               title="Enviar WhatsApp"
                             >
                               <MessageCircle className="w-3.5 h-3.5" />
+                            </button>
+
+                            {/* Sumar 30 días */}
+                            <button
+                              disabled={updating === b.id}
+                              onClick={() => addSubscriptionDays(b.id, b.trial_ends_at)}
+                              className="w-8 h-8 rounded-lg bg-blue-500/20 hover:bg-blue-500/40 flex items-center justify-center text-blue-400 transition-colors"
+                              title="Sumar 30 días"
+                            >
+                              <Calendar className="w-3.5 h-3.5" />
                             </button>
 
                             {/* Activar */}

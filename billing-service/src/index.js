@@ -18,6 +18,7 @@
  */
 
 const express = require('express')
+const cors = require('cors')
 const forge = require('node-forge')
 const soap = require('soap')
 const crypto = require('crypto')
@@ -25,6 +26,7 @@ const { createClient } = require('@supabase/supabase-js')
 const { generateInvoicePDF } = require('./pdf')
 
 const app = express()
+app.use(cors())
 app.use(express.json({ limit: '10mb' }))
 
 const PORT = process.env.PORT || 3001
@@ -447,6 +449,77 @@ app.post('/authorize', authMiddleware, async (req, res) => {
   } catch (err) {
     console.error('Authorize error:', err)
     res.status(400).json({ error: err.message })
+  }
+})
+
+// ------- Market Data Scraper (Local Proxy) -------
+app.post('/market-data', async (req, res) => {
+  try {
+    const { term } = req.body
+    if (!term) return res.status(400).json({ error: 'term required' })
+
+    const cleanTerm = term.normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim()
+    // Use the exact search URL format
+    const url = `https://listado.mercadolibre.com.ar/search?q=${encodeURIComponent(cleanTerm)}`
+    
+    console.log(`[Radar Local] Buscando en Mercado Libre: ${url}`)
+    
+    // Using simple fetch (available in Node 18+)
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36'
+      }
+    })
+
+    if (!response.ok) {
+      throw new Error(`Mercado Libre respondió con status ${response.status}`)
+    }
+
+    const html = await response.text()
+    
+    if (html.includes('suspicious-traffic-frontend')) {
+       throw new Error('Bloqueo detectado incluso en local. Intenta buscando de nuevo en unos minutos.')
+    }
+
+    const prices = []
+    const titles = []
+    
+    const priceRegex = /<span class="andes-money-amount__fraction"[^>]*>([\d\.]+)<\/span>/g
+    const titleRegex = /<h[2-3][^>]*class="[^"]*title[^"]*"[^>]*>([^<]+)<\/h[2-3]>/g
+    
+    let match
+    while ((match = priceRegex.exec(html)) !== null) {
+      const val = parseInt(match[1].replace(/\./g, ''))
+      if (!isNaN(val) && val > 300) prices.push(val)
+    }
+    
+    while ((match = titleRegex.exec(html)) !== null) {
+      const t = match[1].trim()
+      if (t.length > 5 && !t.includes('{')) titles.push(t)
+    }
+
+    if (prices.length < 2) {
+      return res.status(404).json({ ok: false, error: 'No se encontraron resultados en el rastro. Intenta con una palabra más simple.' })
+    }
+
+    const validPrices = prices.slice(0, 15)
+    res.json({
+      ok: true,
+      data: {
+        avg: validPrices.reduce((a, b) => a + b, 0) / validPrices.length,
+        min: Math.min(...validPrices),
+        max: Math.max(...prices),
+        sample_size: prices.length,
+        samples: titles.slice(0, 5).map((t, i) => ({
+          title: t,
+          price: prices[i],
+          permalink: url
+        }))
+      }
+    })
+  } catch (err) {
+    console.error('[Radar Local Error]:', err.message)
+    res.status(500).json({ ok: false, error: err.message })
   }
 })
 

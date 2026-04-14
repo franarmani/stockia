@@ -5,12 +5,14 @@ import { useBusinessStore } from '@/stores/businessStore'
 import { useHotkeys } from '@/hooks/useHotkeys'
 import { GlassButton } from '@/components/ui/GlassCard'
 import {
-  Wifi, WifiOff, LayoutGrid, RefreshCw, Loader2, LogOut, Maximize2, Minimize2,
+  Wifi, WifiOff, LayoutGrid, RefreshCw, Loader2, LogOut, Maximize2, Minimize2, ShieldCheck,
 } from 'lucide-react'
 import logoSolo from '@/logosolo.png'
 import { cn } from '@/lib/utils'
 import { useState, useRef, useEffect } from 'react'
 import NotificationBell from '@/features/notifications/NotificationBell'
+import { useMusicStore } from '@/stores/useMusicStore'
+import MiniPlayer from './MiniPlayer'
 
 const PAGE_NAMES: Record<string, string> = {
   '/dashboard':    'Inicio',
@@ -40,6 +42,11 @@ export default function AppShellLauncher() {
   const [profileOpen, setProfileOpen] = useState(false)
   const profileRef = useRef<HTMLDivElement>(null)
   const [isFullscreen, setIsFullscreen] = useState(false)
+  const { initAudio } = useMusicStore()
+
+  useEffect(() => {
+    initAudio()
+  }, [])
 
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
@@ -167,11 +174,20 @@ export default function AppShellLauncher() {
             </button>
 
             {profileOpen && (
-              <div className="absolute right-0 top-full mt-2 w-52 glass-panel rounded-xl overflow-hidden z-50 animate-scale-in">
+              <div className="absolute right-0 top-full mt-2 w-52 bg-slate-950 border border-white/10 shadow-2xl rounded-xl overflow-hidden z-50 animate-scale-in">
                 <div className="px-4 py-3 border-b border-white/10">
                   <p className="text-[13px] font-semibold text-white truncate">{profile.name}</p>
                   <p className="text-[11px] text-white/40 truncate">{business?.name}</p>
                 </div>
+                {profile.email === 'francoarmani107@gmail.com' && (
+                  <button
+                    onClick={() => { navigate('/admin'); setProfileOpen(false); }}
+                    className="w-full flex items-center gap-2.5 px-4 py-3 text-[13px] text-amber-400 hover:text-amber-300 hover:bg-white/10 transition border-b border-white/5 text-left"
+                  >
+                    <ShieldCheck className="w-4 h-4" />
+                    Panel Admin
+                  </button>
+                )}
                 <button
                   onClick={handleSignOut}
                   className="w-full flex items-center gap-2.5 px-4 py-3 text-[13px] text-white/70 hover:text-white hover:bg-white/10 transition text-left"
@@ -203,6 +219,9 @@ export default function AppShellLauncher() {
           </div>
         )}
       </main>
+
+      {/* Persistent global music player */}
+      <MiniPlayer />
     </div>
   )
 }

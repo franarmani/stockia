@@ -28,6 +28,9 @@ import type { Product } from '@/types/database'
 import { UNIT_SHORT, type ProductUnit } from '@/types/database'
 import { isDecimalUnit } from '@/stores/posStore'
 import Button from '@/components/ui/Button'
+import { getGlobalCopilotInsight, type AnalysisResult } from '@/services/intelligenceService'
+import { Zap, Loader2, CheckCircle2, Info, ChevronRight } from 'lucide-react'
+import { toast } from 'sonner'
 
 interface DashboardData {
   todaySales: number
@@ -46,6 +49,8 @@ export default function DashboardPage() {
   const navigate = useNavigate()
   const [data, setData] = useState<DashboardData | null>(null)
   const [loading, setLoading] = useState(true)
+  const [analyzing, setAnalyzing] = useState(false)
+  const [insight, setInsight] = useState<AnalysisResult | null>(null)
 
   useEffect(() => {
     if (profile?.business_id) fetchDashboard()
@@ -119,6 +124,26 @@ export default function DashboardPage() {
       cajaExpected,
     })
     setLoading(false)
+  }
+
+  async function runGlobalAnalysis() {
+    if (!data) return
+    setAnalyzing(true)
+    try {
+      const result = await getGlobalCopilotInsight({
+        totalSales: data.todaySales,
+        productsSummary: `${data.lowStockProducts.length} con stock bajo`,
+        lowStock: data.lowStockProducts.map(p => p.name).join(', ') || 'Ninguno',
+        deadStock: 'Datos no disponibles aún',
+        debts: 'Consultar módulo de clientes'
+      })
+      setInsight(result)
+      toast.success('Análisis de negocio completado')
+    } catch (error) {
+      toast.error('Error al consultar al copiloto')
+    } finally {
+      setAnalyzing(false)
+    }
   }
 
   if (loading) return <LoadingSpinner />
@@ -260,6 +285,73 @@ export default function DashboardPage() {
         ) : (
           <div className="flex items-center justify-center h-40 text-muted-foreground text-sm">
             Sin ventas esta semana
+          </div>
+        )}
+      </div>
+
+      {/* Copiloto AI Section */}
+      <div className="space-y-4 pb-10">
+        <div className="glass-card border-primary/20 bg-primary/5 p-6 relative overflow-hidden group">
+          <div className="absolute -top-12 -right-12 w-40 h-40 bg-primary/10 rounded-full blur-3xl" />
+          
+          <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div className="max-w-xl">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center">
+                  <Zap className="w-5 h-5 text-primary" />
+                </div>
+                <h2 className="text-xl font-bold text-white tracking-tight">Copiloto de Negocio</h2>
+              </div>
+              <p className="text-white/60 text-sm leading-relaxed">
+                Dejá que la IA analice tus ventas, stock y deudas para decirte dónde podés ganar más dinero hoy.
+              </p>
+            </div>
+            <Button 
+              size="lg" 
+              onClick={runGlobalAnalysis} 
+              disabled={analyzing}
+              className="gradient-primary shadow-xl shadow-green-900/40 h-14 px-8 min-w-[200px]"
+            >
+              {analyzing ? (
+                <>
+                  <Loader2 className="w-5 h-5 mr-3 animate-spin" />
+                  Analizando Salud...
+                </>
+              ) : (
+                <>
+                  {insight ? 'Actualizar Análisis' : 'Analizar mi Negocio'}
+                  <ChevronRight className="w-5 h-5 ml-2" />
+                </>
+              )}
+            </Button>
+          </div>
+        </div>
+
+        {insight && (
+          <div className="animate-fade-in grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div className="glass-card p-6 border-green-500/20 bg-green-500/5">
+              <div className="flex items-center gap-2 mb-4">
+                <CheckCircle2 className="w-5 h-5 text-green-400" />
+                <h3 className="font-bold text-white">Diagnóstico del Copiloto</h3>
+              </div>
+              <p className="text-sm text-white/80 leading-relaxed">{insight.diagnosis}</p>
+            </div>
+
+            <div className="glass-card p-6 border-primary/20 bg-primary/5 flex flex-col justify-between">
+              <div>
+                <div className="flex items-center gap-2 mb-4">
+                  <TrendingUp className="w-5 h-5 text-primary" />
+                  <h3 className="font-bold text-white">Recomendación Clave</h3>
+                </div>
+                <p className="text-sm text-white/80 leading-relaxed italic">
+                  "{insight.recommendations[0]}"
+                </p>
+              </div>
+              <div className="mt-6 pt-4 border-t border-white/10 flex items-center justify-between">
+                <span className="text-xs text-white/40 uppercase font-bold tracking-widest">Impacto</span>
+                <span className="text-lg font-bold text-green-400">{insight.impact}</span>
+              </div>
+            </div>
           </div>
         )}
       </div>

@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '@/stores/authStore'
 import { useBusinessStore } from '@/stores/businessStore'
 import { supabase } from '@/lib/supabase'
+import { calculateRemainingDays } from '@/lib/subscription'
 import ModuleTile from '@/components/ModuleTile'
 import { GlassButton } from '@/components/ui/GlassCard'
 import { formatCurrency } from '@/lib/utils'
@@ -28,6 +29,12 @@ import {
   Clock,
   CheckCircle2,
   Zap,
+  Crown,
+  Cpu,
+  Building2,
+  Headphones,
+  Check,
+  Star,
 } from 'lucide-react'
 
 interface QuickStats {
@@ -154,6 +161,16 @@ const MODULES = [
     iconColor: 'text-indigo-400',
     description: 'Cierres diarios',
     shortcut: undefined,
+  },
+  {
+    name: 'Música',
+    href: '/music',
+    icon: Headphones,
+    color: 'bg-amber-500/20',
+    iconColor: 'text-amber-400',
+    description: 'Ambientación premium',
+    shortcut: 'M',
+    premium: true,
   },
 ]
 
@@ -299,23 +316,6 @@ export default function MenuLauncher() {
           )
         }
 
-        if (status === 'active') {
-          return (
-            <div className="glass-card p-2.5 sm:p-3 flex items-center gap-2.5 border border-green-500/20 bg-green-500/5 shrink-0">
-              <div className="w-8 h-8 rounded-lg bg-green-500/20 flex items-center justify-center shrink-0">
-                <CheckCircle2 className="w-4 h-4 text-green-400" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-[12px] font-bold text-green-400">Plan Negocio · Activo</p>
-                <p className="text-[10px] text-white/40">Suscripción mensual · $50.000/mes</p>
-              </div>
-              <div className="hidden sm:flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-green-500/15 text-green-400">
-                <CheckCircle2 className="w-3 h-3" />
-                Activo
-              </div>
-            </div>
-          )
-        }
 
         return null
       })()}
@@ -381,6 +381,120 @@ export default function MenuLauncher() {
                   {stats.cajaOpen ? 'Abierta' : 'Cerrada'}
                 </p>
               : <div className="h-4 w-14 bg-white/10 rounded animate-pulse mt-0.5" />}
+          </div>
+        </div>
+      </div>
+
+      {/* ── Tu Plan y Suscripción ── */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between px-1">
+          <p className="text-[10px] text-white/30 font-semibold uppercase tracking-widest">Tu Plan y Suscripción</p>
+          {business?.subscription_status === 'trial' && (
+            <span className="px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-400 text-[10px] font-bold animate-pulse-soft">
+              Periodo de Prueba
+            </span>
+          )}
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          {/* Plan Inicial */}
+          <div className={`glass-card p-4 relative overflow-hidden flex flex-col justify-between border-white/5 ${business?.plan === 'basic' ? 'ring-2 ring-slate-500/50 bg-slate-500/5' : 'opacity-60'}`}>
+            <div className="space-y-3 relative z-10">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-sm font-bold text-white">Plan Inicial</h3>
+                  <p className="text-[10px] text-white/40">Versión Básica</p>
+                </div>
+                {business?.plan === 'basic' && <span className="text-[9px] bg-slate-500/30 text-white px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider">Activo</span>}
+              </div>
+              <ul className="space-y-1.5">
+                {['Ventas básicas', 'Stock limitado', 'Facturación AFIP'].map(f => (
+                  <li key={f} className="flex items-center gap-2 text-[11px] text-white/70">
+                    <Check className="w-3 h-3 text-slate-500" />
+                    {f}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <button disabled className="mt-4 w-full h-8 rounded-xl bg-white/5 text-white/30 text-[11px] font-bold cursor-not-allowed">
+              No disponible
+            </button>
+          </div>
+
+          {/* Plan Negocio */}
+          <div className={`glass-card p-4 relative overflow-hidden flex flex-col justify-between border-blue-500/20 ${business?.plan === 'pro' || !business?.plan ? 'ring-2 ring-blue-500/50 bg-blue-500/5 shadow-lg shadow-blue-500/10' : 'opacity-80'}`}>
+            <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
+              <Star className="w-16 h-16 text-blue-400" />
+            </div>
+            <div className="space-y-3 relative z-10">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-sm font-bold text-white">Plan Negocio</h3>
+                  <p className="text-[11px] text-blue-400 font-bold">$50.000 <span className="text-[9px] font-normal text-white/40">/ mes</span></p>
+                </div>
+                {(business?.plan === 'pro' || !business?.plan) && <span className="text-[9px] bg-blue-500/30 text-blue-400 px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider">Activo</span>}
+              </div>
+              <ul className="space-y-1.5">
+                {['Facturación AFIP ilimitada', 'Radar AI (Promo 1 mes)', 'Usuarios ilimitados'].map(f => (
+                  <li key={f} className="flex items-center gap-2 text-[11px] text-white/70">
+                    <Check className="w-3 h-3 text-blue-500" />
+                    {f}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            {(business?.plan === 'pro' || !business?.plan) ? (
+              <div className="mt-4 p-2 rounded-xl bg-blue-500/10 border border-blue-500/20 text-center">
+                <p className="text-[9px] text-blue-400 font-bold uppercase tracking-wider">Días restantes</p>
+                <p className="text-[12px] font-bold text-white">
+                  {calculateRemainingDays(business?.trial_ends_at, business?.subscription_status || 'trial')} / 30
+                </p>
+              </div>
+            ) : (
+              <GlassButton size="sm" className="mt-4 w-full text-[11px] font-bold" onClick={() => navigate('/settings')}>
+                Cambiar a este plan
+              </GlassButton>
+            )}
+          </div>
+
+          {/* Plan Premium */}
+          <div className={`glass-card p-4 relative overflow-hidden flex flex-col justify-between border-primary/30 ${business?.plan === 'premium' ? 'ring-2 ring-primary/50 bg-primary/5 shadow-xl shadow-primary/10' : ''}`}>
+            <div className="absolute top-0 right-0 p-4 opacity-10 pointer-events-none">
+              <Crown className="w-16 h-16 text-primary" />
+            </div>
+            <div className="space-y-3 relative z-10">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-sm font-bold text-white">Plan Premium</h3>
+                  <p className="text-[11px] text-primary font-bold">$100.000 <span className="text-[9px] font-normal text-white/40">/ mes</span></p>
+                </div>
+                {business?.plan === 'premium' && <span className="text-[9px] bg-primary/30 text-primary px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider">Activo</span>}
+              </div>
+              <ul className="space-y-1.5">
+                {['Radar AI Profesional', 'Gestión Multisucursal', 'Soporte VIP 24/7'].map(f => (
+                  <li key={f} className="flex items-center gap-2 text-[11px] text-white/70">
+                    <Check className="w-3 h-3 text-primary" />
+                    {f}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            {business?.plan === 'premium' ? (
+              <div className="mt-4 p-2 rounded-xl bg-primary/10 border border-primary/20 text-center">
+                <p className="text-[9px] text-primary font-bold uppercase tracking-wider">Suscripción Activa</p>
+                <p className="text-[12px] font-bold text-white">Soporte VIP Habilitado</p>
+              </div>
+            ) : (
+              <a 
+                href="https://wa.me/5492915716099?text=Hola!%20Quiero%20mejorar%20mi%20plan%20a%20Premium%20en%20Stockia."
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-4 flex items-center justify-center gap-2 h-8 px-4 rounded-xl bg-primary text-white text-[11px] font-bold shadow-lg shadow-primary/20 hover:brightness-110 transition-all"
+              >
+                <Zap className="w-3 h-3 fill-white" />
+                Mejorar a Premium
+              </a>
+            )}
           </div>
         </div>
       </div>

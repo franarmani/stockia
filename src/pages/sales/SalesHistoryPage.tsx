@@ -209,7 +209,7 @@ export default function SalesHistoryPage() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <p className="text-sm font-semibold truncate">
+                    <p className="text-sm font-semibold">
                       {sale.sale_items?.map((i: SaleWithItems['sale_items'][number]) => i.product?.name).filter(Boolean).join(', ') || 'Venta'}
                     </p>
                     {sale.voided && <Badge variant="destructive" className="text-[10px]">Anulada</Badge>}
@@ -284,7 +284,7 @@ export default function SalesHistoryPage() {
               {selectedSale.sale_items?.map((item: SaleWithItems['sale_items'][number]) => (
                 <div key={item.id} className="flex items-center justify-between py-2 border-b border-slate-100 last:border-0">
                   <div className="min-w-0">
-                    <p className="text-sm font-medium truncate">{item.product?.name || 'Producto'}</p>
+                    <p className="text-sm font-medium">{item.product?.name || 'Producto'}</p>
                     <p className="text-xs text-muted-foreground">{item.quantity} x {formatCurrency(item.price)}</p>
                   </div>
                   <span className="text-sm font-bold shrink-0">{formatCurrency(item.quantity * item.price)}</span>
