@@ -74,10 +74,9 @@ async function smartScrapeML(term: string) {
   const query = term.normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim()
   const cleanQuery = query.replace(/\s+/g, '-')
   
-  // Lista de URLs para intentar en caso de bloqueo
+  // Lista de URLs para intentar en caso de bloqueo - Solo dominios estables
   const targetUrls = [
     `https://www.mercadolibre.com.ar/search?keywords=${encodeURIComponent(query)}`,
-    `https://lista.mercadolibre.com.ar/${encodeURIComponent(cleanQuery)}`,
     `https://www.mercadolibre.com.ar/jm/search?as_word=${encodeURIComponent(query)}`
   ]
 
