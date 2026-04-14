@@ -69,87 +69,115 @@ async function handleAnalyzeProduct(params: any, headers: any) {
 
 /**
  * Smart Scrape: Universal Pattern Extractor
- */
 async function smartScrapeML(term: string) {
   const query = term.normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim()
-  // Use a more resilient search URL (sometimes the browse subdomain is less sensitive)
-  const url = `https://www.mercadolibre.com.ar/jm/search?as_word=${encodeURIComponent(query)}`
+  const cleanQuery = query.replace(/\s+/g, '-')
   
-  console.log(`[Escáner] Consultando: ${url}`)
+  // Lista de URLs para intentar en caso de bloqueo
+  const targetUrls = [
+    `https://www.mercadolibre.com.ar/search?keywords=${encodeURIComponent(query)}`,
+    `https://lista.mercadolibre.com.ar/${encodeURIComponent(cleanQuery)}`,
+    `https://www.mercadolibre.com.ar/jm/search?as_word=${encodeURIComponent(query)}`
+  ]
+
+  let lastError = null;
   
-  const response = await fetch(url, {
-    headers: {
-      'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1',
-      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
-      'Accept-Language': 'es-AR,es;q=0.9',
-      'Accept-Encoding': 'gzip, deflate, br',
-      'Cache-Control': 'no-cache',
-      'Connection': 'keep-alive',
-      'Upgrade-Insecure-Requests': '1',
-      'Sec-Fetch-Dest': 'document',
-      'Sec-Fetch-Mode': 'navigate',
-      'Sec-Fetch-Site': 'none',
-      'Sec-Fetch-User': '?1'
+  for (const url of targetUrls) {
+    try {
+      console.log(`[Escáner] Intentando con URL: ${url}`)
+      
+      const response = await fetch(url, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+          'Accept-Language': 'es-AR,es;q=0.9,en-US;q=0.8,en;q=0.7',
+          'Referer': 'https://www.google.com/',
+          'Cache-Control': 'no-cache',
+          'Connection': 'keep-alive',
+          'Sec-Ch-Ua': '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
+          'Sec-Ch-Ua-Mobile': '?0',
+          'Sec-Ch-Ua-Platform': '"Windows"',
+          'Sec-Fetch-Dest': 'document',
+          'Sec-Fetch-Mode': 'navigate',
+          'Sec-Fetch-Site': 'cross-site',
+          'Sec-Fetch-User': '?1',
+          'Upgrade-Insecure-Requests': '1'
+        }
+      })
+
+      const html = await response.text()
+      
+      // Si detectamos bloqueo de Akamai/Suspicious Traffic, intentamos con la siguiente URL
+      if (html.includes('suspicious-traffic-frontend') || html.includes('captcha') || html.length < 5000) {
+        console.warn(`[Radar AI] Bloqueo detectado en ${url}. Probando alternativa...`)
+        continue;
+      }
+
+      // PATRÓN DE PRECIOS - Más robusto (buscamos precios que suelen estar dentro de etiquetas de moneda)
+      const prices: number[] = []
+      // Buscamos patrones como class="andes-money-amount__fraction" o simplemente el símbolo $
+      const priceRegex = /<span class="andes-money-amount__fraction"[^>]*>([\d\.]+)<\/span>/g
+      let pMatch;
+      while ((pMatch = priceRegex.exec(html)) !== null) {
+        const val = parseInt(pMatch[1].replace(/\./g, ''))
+        if (val > 100) prices.push(val)
+      }
+
+      // Fallback a regex genérico si el específico falla
+      if (prices.length < 5) {
+        const genericPriceRegex = /\$\s?([\d\.]+)/g
+        let gMatch;
+        while ((gMatch = genericPriceRegex.exec(html)) !== null) {
+          const val = parseInt(gMatch[1].replace(/\./g, ''))
+          if (val > 100) prices.push(val)
+        }
+      }
+
+      // PATRÓN DE TÍTULOS
+      const titles: string[] = []
+      const titleRegex = /<h2[^>]*class="[^"]*ui-search-item__title[^"]*"[^>]*>([^<]+)<\/h2>/g
+      let tMatch;
+      while ((tMatch = titleRegex.exec(html)) !== null) {
+        titles.push(tMatch[1].trim())
+      }
+      
+      // Fallback de títulos
+      if (titles.length < 3) {
+        const altTitleRegex = /<h2[^>]*>([^<]+)<\/h2>/g
+        let atMatch;
+        while ((atMatch = altTitleRegex.exec(html)) !== null) {
+          const text = atMatch[1].trim()
+          if (text.length > 10 && !text.includes('{')) titles.push(text)
+        }
+      }
+
+      console.log(`[Escáner] Éxito en ${url}: ${prices.length} precios, ${titles.length} títulos.`)
+
+      if (prices.length >= 2) {
+        const uniquePrices = Array.from(new Set(prices)).sort((a, b) => a - b)
+        const avg = uniquePrices.reduce((a, b) => a + b, 0) / uniquePrices.length
+
+        return {
+          avg,
+          min: Math.min(...uniquePrices),
+          max: Math.max(...uniquePrices),
+          sample_size: uniquePrices.length,
+          samples: titles.slice(0, 5).map((t, i) => ({
+            title: t,
+            price: uniquePrices[i] || avg,
+            permalink: url
+          }))
+        }
+      }
+      
+      console.warn(`[Radar AI] Estructura incompleta en ${url}. Probando alternativa...`)
+    } catch (e: any) {
+      lastError = e;
+      console.warn(`[Radar AI] Error en ${url}: ${e.message}`)
     }
-  })
-
-  const html = await response.text()
-  
-  // DIAGNÓSTICO: Si es muy corto o contiene bloqueo, avisar.
-  if (html.length < 3000 || html.includes('captcha') || html.includes('Protección contra bots') || html.includes('suspicious-traffic-frontend')) {
-     const snippet = html.substring(0, 1000).replace(/<[^>]*>/g, ' ').trim()
-     console.error(`[Radar AI] Bloqueo detectado. Snippet: ${snippet}`)
-     throw new Error(`LA IA NO FUNCIONA (Bloqueo de Mercado Libre): El sitio detectó la consulta como automatizada. Fragmento: "${snippet}..."`)
   }
 
-  // PATRÓN ULTRA-PERMISIVO DE PRECIOS
-  // Busca el símbolo $ seguido de dígitos y puntos
-  const prices: number[] = []
-  const priceRegex = /\$\s?([\d\.]+)/g
-  let pMatch;
-  while ((pMatch = priceRegex.exec(html)) !== null) {
-    const val = parseInt(pMatch[1].replace(/\./g, ''))
-    // Filtramos ruidos: precios muy bajos (ej. $10) o muy altos que no tengan sentido
-    if (val > 100) prices.push(val)
-  }
-
-  // PATRÓN DE TÍTULOS (Buscamos etiquetas h2 que suelen ser los nombres)
-  const titles: string[] = []
-  const titleRegex = /<h2[^>]*>([^<]+)<\/h2>/g
-  let tMatch;
-  while ((tMatch = titleRegex.exec(html)) !== null) {
-     const text = tMatch[1].trim()
-     if (text.length > 5 && !text.includes('{')) titles.push(text)
-  }
-
-  console.log(`[Escáner] Hallazgos: ${prices.length} potenciales precios, ${titles.length} potenciales títulos.`)
-
-  if (prices.length < 2) {
-    const snippet = html.substring(0, 500).replace(/\s+/g, ' ')
-    throw new Error(`DATOS NO ENCONTRADOS: Mercado Libre cambió su estructura o devolvió una página vacía. Fragmento: ${snippet}`)
-  }
-
-  // Filtrar precios
-  const uniquePrices = Array.from(new Set(prices)).sort((a, b) => a - b)
-  const filteredPrices = uniquePrices.filter(p => p > 300) 
-
-  if (filteredPrices.length === 0) {
-    throw new Error('No se detectaron precios válidos en la página de mercado.')
-  }
-
-  const avg = filteredPrices.reduce((a, b) => a + b, 0) / filteredPrices.length
-
-  return {
-    avg,
-    min: Math.min(...filteredPrices),
-    max: Math.max(...filteredPrices),
-    sample_size: filteredPrices.length,
-    samples: titles.slice(0, 5).map((t, i) => ({
-      title: t,
-      price: filteredPrices[i] || avg,
-      permalink: url
-    }))
-  }
+  throw new Error(lastError?.message || 'Mercado Libre está bloqueando las consultas automatizadas. Intenta con un nombre de producto más específico.')
 }
 
 async function analyzeWithGroq(apiKey: string, data: any) {

@@ -71,12 +71,17 @@ export async function analyzeProductIntelligence(params: {
 
     if (error) throw new Error(error.message);
     if (!data) throw new Error('No se recibió respuesta del servidor.');
-    if (!data.ok) throw new Error(data.error || 'Error desconocido en el servidor.');
+    
+    if (!data.ok) {
+      if (data.error?.includes('bloqueando') || data.error?.includes('automatizada')) {
+        throw new Error('MERCADO LIBRE BLOQUEÓ LA CONSULTA: Probablemente detectó demasiadas solicitudes. Intenta buscar un término más específico o espera unos minutos.');
+      }
+      throw new Error(data.error || 'Error desconocido en el servidor.');
+    }
 
     // Validar datos de mercado (son obligatorios para el radar)
     if (!data.marketData) {
-       console.error('[Radar AI] Faltan datos de mercado:', data);
-       throw new Error('No se pudieron obtener referencias de mercado.');
+       throw new Error('No se pudieron obtener referencias de mercado. Intenta un nombre más simple.');
     }
 
     // Análisis de IA (ahora opcional: si falla, seguimos mostrando el radar)
