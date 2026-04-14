@@ -9,6 +9,10 @@ import { useBusinessStore } from '@/stores/businessStore'
 import AppShellLauncher from '@/components/layout/AppShellLauncher'
 import TrialExpiredModal from '@/components/TrialExpiredModal'
 import ScrollToTop from '@/components/layout/ScrollToTop'
+import UpdateNotificationModal from '@/components/modals/UpdateNotificationModal'
+
+// ── VERSIONING ──
+const APP_VERSION = '1.5.0-bento-pro' // Local version
 
 // ── localStorage cache helpers ──
 const PROFILE_CACHE_KEY = 'stockia_profile'
@@ -103,31 +107,33 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
 export default function App() {
   const { setUser, setLoading, setProfile } = useAuthStore()
   const { fetchBusiness, setBusiness } = useBusinessStore()
+  const [showUpdateModal, setShowUpdateModal] = useState(false)
+  const [remoteVersion, setRemoteVersion] = useState('')
 
-  // ── VERSION-BASED CACHE CLEAR ──
-  // Increment this version to force all clients to reload and clear local caches
-  const APP_VERSION = '1.3.3-music-build-fix' 
-  
+  // ── VERSION DETECTION ──
   useEffect(() => {
-    const storedVersion = localStorage.getItem('app_version')
-    if (storedVersion !== APP_VERSION) {
-      console.log(`[Version] Updating from ${storedVersion} to ${APP_VERSION}`)
-      localStorage.clear()
-      sessionStorage.clear()
-      localStorage.setItem('app_version', APP_VERSION)
-      
-      // Unregister all service workers to be sure
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.getRegistrations().then(registrations => {
-          for (const registration of registrations) {
-            registration.unregister()
-          }
-        })
+    async function checkVersion() {
+      try {
+        const res = await fetch('/version.json?t=' + Date.now())
+        const data = await res.json()
+        setRemoteVersion(data.version)
+        
+        if (data.version && data.version !== APP_VERSION) {
+          console.log(`[Update] New version detected: ${data.version}`)
+          setShowUpdateModal(true)
+        }
+      } catch (err) {
+        console.warn('[Update] Failed to fetch version info', err)
       }
-      
-      window.location.reload()
     }
-  }, [APP_VERSION])
+
+    // Initial check
+    checkVersion()
+
+    // Check every 5 minutes
+    const interval = setInterval(checkVersion, 5 * 60 * 1000)
+    return () => clearInterval(interval)
+  }, [])
 
   useEffect(() => {
     // ── BULLETPROOF AUTH WITH LOCALSTORAGE CACHE ──
@@ -305,8 +311,14 @@ export default function App() {
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
       <div className="fixed bottom-4 left-4 z-50 text-[10px] font-bold text-white/5 uppercase tracking-[0.3em] pointer-events-none">
-        v1.4.3-stockia-music-pro-final
+        v{APP_VERSION}
       </div>
+
+      <UpdateNotificationModal 
+        isOpen={showUpdateModal} 
+        currentVersion={APP_VERSION} 
+        newVersion={remoteVersion} 
+      />
     </Suspense>
   )
 }
