@@ -43,7 +43,7 @@ export default function BentoCard({
     <div
       onClick={handleClick}
       className={cn(
-        'group relative overflow-hidden rounded-3xl transition-all duration-300',
+        'group relative overflow-hidden rounded-2xl transition-all duration-300',
         'bg-slate-900/40 border border-white/5 backdrop-blur-md',
         'hover:bg-slate-800/50 hover:border-white/10 hover:shadow-2xl hover:shadow-black/20',
         'active:scale-[0.98] cursor-pointer',
@@ -56,9 +56,9 @@ export default function BentoCard({
       <div className="absolute inset-0 bg-gradient-to-br from-white/[0.02] to-transparent pointer-events-none" />
       
       {/* Content Container */}
-      <div className="relative z-10 p-5 h-full flex flex-col">
+      <div className="relative z-10 p-4 h-full flex flex-col">
         {/* Top Header */}
-        <div className="flex items-start justify-between mb-4">
+        <div className="flex items-start justify-between mb-3">
           <div className="flex items-center gap-3">
             {Icon && (
               <div className={cn(
