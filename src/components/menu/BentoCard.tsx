@@ -43,22 +43,22 @@ export default function BentoCard({
     <div
       onClick={handleClick}
       className={cn(
-        'group relative overflow-hidden rounded-2xl transition-all duration-300',
-        'bg-slate-900/40 border border-white/5 backdrop-blur-md',
-        'hover:bg-slate-800/50 hover:border-white/10 hover:shadow-2xl hover:shadow-black/20',
+        'group relative overflow-hidden rounded-xl transition-all duration-300',
+        'bg-slate-900/60 border border-white/10 backdrop-blur-xl',
+        'hover:bg-slate-800/80 hover:border-white/20 hover:shadow-2xl hover:shadow-black/40',
         'active:scale-[0.98] cursor-pointer',
         colSpan,
         rowSpan,
         className
       )}
     >
-      {/* Decorative Gradient Overlay */}
-      <div className="absolute inset-0 bg-gradient-to-br from-white/[0.02] to-transparent pointer-events-none" />
+      {/* Subtle Gradient Glow */}
+      <div className="absolute -inset-px bg-gradient-to-br from-white/[0.05] to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
       
       {/* Content Container */}
-      <div className="relative z-10 p-4 h-full flex flex-col">
+      <div className="relative z-10 p-3.5 h-full flex flex-col">
         {/* Top Header */}
-        <div className="flex items-start justify-between mb-3">
+        <div className="flex items-start justify-between mb-2">
           <div className="flex items-center gap-3">
             {Icon && (
               <div className={cn(
