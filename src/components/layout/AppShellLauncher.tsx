@@ -10,7 +10,6 @@ import {
 import logoSolo from '@/logosolo.png'
 import { cn } from '@/lib/utils'
 import { useState, useRef, useEffect } from 'react'
-import NotificationBell from '@/features/notifications/NotificationBell'
 import { useMusicStore } from '@/stores/useMusicStore'
 import MiniPlayer from './MiniPlayer'
 import YouTubePlayer from '@/components/music/YouTubePlayer'
@@ -155,8 +154,6 @@ export default function AppShellLauncher() {
               {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
             </button>
             
-            <NotificationBell />
-
             <div className="w-px h-4 bg-white/10 mx-0.5" />
 
             <button

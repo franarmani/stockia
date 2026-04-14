@@ -9,6 +9,7 @@ import { GlassButton } from '@/components/ui/GlassCard'
 import { formatCurrency, cn } from '@/lib/utils'
 import { useBasicModeStore, BASIC_MODE_ALLOWED_HREFS } from '@/features/basic_mode/basicModeStore'
 import { useMusicStore } from '@/stores/useMusicStore'
+import { useNotificationsStore } from '@/features/notifications/notificationsStore'
 import {
   LayoutDashboard,
   ShoppingCart,
@@ -72,13 +73,17 @@ export default function MenuLauncher() {
   const [stats, setStats] = useState<QuickStats | null>(null)
   const { basicMode } = useBasicModeStore()
   const { currentTrack, isPlaying } = useMusicStore()
+  const { unreadCount, fetch: fetchNotifications } = useNotificationsStore()
 
   const visibleModules = basicMode
     ? ALL_MODULES.filter(m => BASIC_MODE_ALLOWED_HREFS.has(m.href))
     : ALL_MODULES
 
   useEffect(() => {
-    if (profile?.business_id) fetchQuickStats()
+    if (profile?.business_id) {
+      fetchQuickStats()
+      fetchNotifications(profile.business_id)
+    }
   }, [profile?.business_id])
 
   async function fetchQuickStats() {
@@ -127,93 +132,95 @@ export default function MenuLauncher() {
           className="relative w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 transition-all active:scale-95 group"
         >
           <Bell className="w-5 h-5 text-white/40 group-hover:text-white transition-colors" />
-          <div className="absolute top-3 right-3 w-2.5 h-2.5 bg-amber-500 rounded-full border-2 border-slate-950" />
+          {unreadCount > 0 && (
+            <div className="absolute -top-1 -right-1 min-w-[1.25rem] h-5 px-1 bg-amber-500 rounded-full border-2 border-slate-950 flex items-center justify-center">
+              <span className="text-[10px] font-black text-slate-950 leading-none">
+                {unreadCount > 9 ? '+9' : unreadCount}
+              </span>
+            </div>
+          )}
         </button>
       </div>
 
       {/* ── Bento Grid ── */}
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4 p-1">
         
-        {/* HERO: PUNTO DE VENTA (2x2) */}
+        {/* HERO: PUNTO DE VENTA (4x2) */}
         <BentoCard
           title="Punto de Venta"
-          description="Venta rápida"
+          description="Venta rápida y gestión"
           icon={ShoppingCart}
           href="/pos"
-          colSpan="col-span-2"
+          colSpan="col-span-2 md:col-span-4"
           rowSpan="row-span-2"
           iconBackground="bg-green-500"
           iconColor="text-slate-950"
           className="ring-2 ring-green-500/20 bg-green-500/5 border-green-500/10"
         >
-          <div className="mt-4 space-y-4">
-            <div className="p-4 rounded-2xl bg-white/5 border border-white/5">
+          <div className="mt-4 flex flex-col md:flex-row gap-4 h-full">
+            <div className="flex-1 p-5 rounded-[2rem] bg-white/5 border border-white/5 flex flex-col justify-center">
               <p className="text-[10px] text-white/30 uppercase tracking-widest font-black mb-1">Ventas Hoy</p>
-              <h2 className="text-2xl font-black text-white">{stats ? formatCurrency(stats.todaySales) : '--'}</h2>
-              <div className="flex items-center gap-2 mt-1">
-                <TrendingUp className="w-3 h-3 text-green-400" />
-                <span className="text-[10px] font-bold text-green-400 uppercase tracking-wider">{stats?.todayCount || 0} Operaciones</span>
+              <h2 className="text-3xl font-black text-white">{stats ? formatCurrency(stats.todaySales) : '--'}</h2>
+              <div className="flex items-center gap-2 mt-2">
+                <div className="flex items-center gap-1 bg-green-500/10 px-2 py-0.5 rounded-full border border-green-500/20">
+                  <TrendingUp className="w-3 h-3 text-green-400" />
+                  <span className="text-[10px] font-bold text-green-400 uppercase tracking-wider">{stats?.todayCount || 0} Operaciones</span>
+                </div>
               </div>
             </div>
             
-            <button 
-              onClick={(e) => { e.stopPropagation(); navigate('/pos') }}
-              className="w-full flex items-center justify-between h-12 px-6 rounded-2xl bg-green-500 text-slate-950 hover:bg-green-400 transition-all font-black group/btn overflow-hidden relative"
-            >
-              <span className="relative z-10 text-xs uppercase tracking-widest">Nueva Venta</span>
-              <ArrowRight className="relative z-10 w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
-              <div className="absolute top-0 -left-full w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent group-hover/btn:animate-shimmer" />
-            </button>
-          </div>
-        </BentoCard>
-
-        {/* ANALYTICS (2x1) */}
-        <BentoCard
-          title="Reportes"
-          description="Análisis del negocio"
-          icon={BarChart3}
-          href="/reports"
-          colSpan="col-span-2"
-          iconBackground="bg-orange-500/20"
-          iconColor="text-orange-400"
-        >
-          <div className="mt-2 flex items-center gap-6">
-             <div className="flex flex-col">
-                <p className="text-[20px] font-black text-white tracking-tighter">Stockia Insights</p>
-                <div className="flex items-center gap-1.5 mt-0.5">
-                   <CheckCircle2 className="w-3 h-3 text-white/20" />
-                   <p className="text-[9px] text-white/20 uppercase tracking-widest font-bold">Datos sincronizados</p>
+            <div className="flex-1 flex flex-col justify-center gap-3">
+              <button 
+                onClick={(e) => { e.stopPropagation(); navigate('/pos') }}
+                className="group/btn relative w-full h-16 rounded-[2rem] bg-green-500 text-slate-950 hover:bg-green-400 transition-all font-black flex items-center justify-between px-8 overflow-hidden"
+              >
+                <div className="flex flex-col items-start leading-none">
+                  <span className="text-[9px] uppercase tracking-widest opacity-60 mb-0.5">Terminal</span>
+                  <span className="text-sm uppercase tracking-widest">Nueva Venta</span>
                 </div>
-             </div>
-             <div className="flex-1 h-8 flex items-end gap-1 px-2">
-                {[4,7,5,9,6,8,10].map((h, i) => (
-                  <div key={i} className="flex-1 bg-orange-500/20 rounded-t-sm" style={{ height: `${h * 10}%` }} />
-                ))}
-             </div>
+                <ArrowRight className="w-5 h-5 group-hover/btn:translate-x-1 transition-transform" />
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover/btn:animate-shimmer" />
+              </button>
+              
+              <div className="grid grid-cols-2 gap-2">
+                <div className="p-3 rounded-2xl bg-white/[0.03] border border-white/5 text-center">
+                  <p className="text-[8px] text-white/20 uppercase tracking-widest mb-0.5">Ticket Prom.</p>
+                  <p className="text-xs font-bold text-white">
+                    {stats?.todayCount ? formatCurrency(stats.todaySales / stats.todayCount) : '--'}
+                  </p>
+                </div>
+                <div className="p-3 rounded-2xl bg-white/[0.03] border border-white/5 text-center">
+                   <p className="text-[8px] text-white/20 uppercase tracking-widest mb-0.5">Estado</p>
+                   <p className="text-xs font-bold text-green-400 uppercase">Activo</p>
+                </div>
+              </div>
+            </div>
           </div>
         </BentoCard>
 
-        {/* INVENTORY (2x1) */}
+        {/* INVENTORY (2x2) */}
         <BentoCard
           title="Stock"
-          description="Inventario"
+          description="Inventario Crítico"
           icon={Package}
           href="/products"
-          colSpan="col-span-2"
+          colSpan="col-span-2 md:col-span-2"
+          rowSpan="row-span-2"
           iconBackground="bg-violet-500/20"
           iconColor="text-violet-400"
           badge={stats?.lowStockCount}
         >
-          <div className="mt-4 flex flex-col h-full">
-            <p className="text-[9px] text-white/20 uppercase tracking-[0.2em] font-black mb-3">Alertas Stock</p>
-            <div className="space-y-3 flex-1">
+          <div className="mt-4 flex flex-col h-full bg-slate-950/20 rounded-[2rem] p-4 border border-white/5">
+            <p className="text-[9px] text-white/20 uppercase tracking-[0.2em] font-black mb-3 text-center">Alertas de Stock</p>
+            <div className="space-y-2 flex-1 overflow-auto custom-scrollbar pr-1">
               {stats?.lowStockItems && stats.lowStockItems.length > 0 ? (
                 stats.lowStockItems.map((item, i) => (
-                  <div key={i} className="flex items-center justify-between gap-2 p-2 rounded-xl bg-white/[0.02] border border-white/5">
+                  <div key={i} className="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-white/[0.02] border border-white/5">
                     <div className="min-w-0">
                       <p className="text-[11px] font-bold text-white truncate">{item.name}</p>
-                      <p className="text-[9px] text-amber-500/70 font-black">Ref: {item.stock} u.</p>
+                      <p className="text-[10px] text-amber-500/70 font-black">Stock: {item.stock}</p>
                     </div>
+                    <AlertTriangle className="w-3 h-3 text-amber-500/50" />
                   </div>
                 ))
               ) : (
@@ -223,57 +230,102 @@ export default function MenuLauncher() {
                 </div>
               )}
             </div>
-            <GlassButton size="sm" className="w-full mt-4" onClick={() => navigate('/products')}>Gestionar</GlassButton>
+            <GlassButton size="sm" className="w-full mt-4 h-10 rounded-2xl" onClick={() => navigate('/products')}>Gestionar</GlassButton>
           </div>
         </BentoCard>
 
-        {/* MUSICA / AMBIENTE (2x1) */}
+        {/* ANALYTICS (3x1) */}
         <BentoCard
-          title="Stockia Music"
-          description={isPlaying ? "Sonando ahora" : "Ambientación"}
-          icon={Headphones}
-          href="/music"
-          colSpan="col-span-2"
-          iconBackground="bg-amber-500/20"
-          iconColor="text-amber-400"
-          className={cn("bg-gradient-to-r transition-all duration-700", isPlaying ? "from-amber-500/10 to-transparent border-amber-500/20" : "")}
+          title="Reportes"
+          description="Crecimiento y Análisis"
+          icon={BarChart3}
+          href="/reports"
+          colSpan="col-span-2 md:col-span-3"
+          iconBackground="bg-orange-500/20"
+          iconColor="text-orange-400"
         >
-          <div className="mt-2 flex items-center justify-between gap-4">
-             {currentTrack ? (
-               <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-9 h-9 rounded-xl bg-amber-500/20 flex items-center justify-center shrink-0">
-                     <PlayCircle className={cn("w-5 h-5 text-amber-500", isPlaying && "animate-spin-slow")} />
-                  </div>
-                  <div className="min-w-0">
-                     <p className="text-xs font-black text-white truncate leading-tight">{currentTrack.title}</p>
-                     <p className="text-[10px] text-white/30 truncate uppercase tracking-widest">{currentTrack.artist}</p>
-                  </div>
-               </div>
-             ) : (
-               <p className="text-[11px] text-white/30 font-medium italic">Seleccioná una playlist para empezar</p>
-             )}
-             <GlassButton size="sm" onClick={() => navigate('/music')}>
-               <ArrowRight className="w-3.5 h-3.5" />
-             </GlassButton>
+          <div className="mt-2 flex items-center justify-between gap-6 px-2">
+             <div className="flex flex-col">
+                <p className="text-lg font-black text-white tracking-tighter">Stockia Insights</p>
+                <div className="flex items-center gap-1.5 mt-0.5">
+                   <Activity className="w-3 h-3 text-white/20" />
+                   <p className="text-[8px] text-white/20 uppercase tracking-widest font-bold">Datos en tiempo real</p>
+                </div>
+             </div>
+             <div className="flex-1 h-10 flex items-end gap-1 px-4 max-w-[150px]">
+                {[4,7,5,9,6,8,10,7,5].map((h, i) => (
+                  <div key={i} className="flex-1 bg-orange-500/30 rounded-t-[2px] hover:bg-orange-400/50 transition-colors" style={{ height: `${h * 10}%` }} />
+                ))}
+             </div>
           </div>
         </BentoCard>
 
-        {/* CAJA (2x1) */}
+        {/* CAJA (3x1) */}
         <BentoCard
           title="Caja"
+          description="Estado de fondos"
           icon={Wallet}
           href="/cash-register"
-          colSpan="col-span-2"
+          colSpan="col-span-2 md:col-span-3"
           iconBackground={stats?.cajaOpen ? "bg-emerald-500/20" : "bg-red-500/20"}
           iconColor={stats?.cajaOpen ? "text-emerald-400" : "text-red-400"}
         >
-          <div className="mt-2 text-center">
+          <div className="mt-2 flex items-center justify-between px-2">
+             <div className="flex flex-col">
+                <p className="text-xs font-bold text-white/60">Sesión Actual</p>
+                <p className="text-sm font-black text-white">{stats?.cajaOpen ? 'OPERATIVA' : 'CERRADA'}</p>
+             </div>
              <div className={cn(
-                "inline-flex items-center gap-1.5 px-2 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest",
-                stats?.cajaOpen ? "bg-emerald-500/10 text-emerald-400" : "bg-red-500/10 text-red-400"
+                "inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border",
+                stats?.cajaOpen ? "bg-emerald-500/5 text-emerald-400 border-emerald-500/20" : "bg-red-500/5 text-red-400 border-red-500/20"
              )}>
-                <div className={cn("w-1.5 h-1.5 rounded-full", stats?.cajaOpen ? "bg-emerald-500 animate-pulse" : "bg-red-500")} />
-                {stats?.cajaOpen ? 'Abierta' : 'Cerrada'}
+                <div className={cn("w-2 h-2 rounded-full", stats?.cajaOpen ? "bg-emerald-500 animate-pulse" : "bg-red-500")} />
+                {stats?.cajaOpen ? 'Disponible' : 'Cerrada'}
+             </div>
+          </div>
+        </BentoCard>
+
+        {/* MUSICA / AMBIENTE (6x1) - Full Wide sleek bar */}
+        <BentoCard
+          title="Stockia Music"
+          description={isPlaying ? "Sonando ahora" : "Ambientación musical"}
+          icon={Headphones}
+          href="/music"
+          colSpan="col-span-full md:col-span-6"
+          iconBackground="bg-amber-500/20"
+          iconColor="text-amber-400"
+          className={cn("bg-gradient-to-r transition-all duration-700 h-24", isPlaying ? "from-amber-500/10 via-transparent to-transparent border-amber-500/20" : "")}
+        >
+          <div className="mt-1 flex items-center justify-between gap-6 pr-2">
+             {currentTrack ? (
+               <div className="flex items-center gap-4 min-w-0">
+                  <div className="w-12 h-12 rounded-2xl bg-amber-500/20 flex items-center justify-center shrink-0 border border-amber-500/10">
+                     <PlayCircle className={cn("w-6 h-6 text-amber-500", isPlaying && "animate-spin-slow")} />
+                  </div>
+                  <div className="min-w-0">
+                     <p className="text-sm font-black text-white truncate leading-tight">{currentTrack.title}</p>
+                     <p className="text-[10px] text-white/30 truncate uppercase tracking-widest font-bold">{currentTrack.artist}</p>
+                  </div>
+               </div>
+             ) : (
+               <div className="flex items-center gap-3 opacity-30">
+                  <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center">
+                    <Headphones className="w-5 h-5" />
+                  </div>
+                  <p className="text-xs font-medium italic">Seleccioná una playlist para empezar</p>
+               </div>
+             )}
+             
+             <div className="flex items-center gap-2">
+               <div className="hidden md:flex items-center gap-1 mr-4">
+                  {[1,2,3,4,5,6].map(i => (
+                    <div key={i} className={cn("w-1 rounded-full bg-amber-500/40", isPlaying ? "animate-pulse" : "h-1")} style={{ height: isPlaying ? `${Math.random() * 20 + 4}px` : '4px', animationDelay: `${i * 100}ms` }} />
+                  ))}
+               </div>
+               <GlassButton size="sm" className="h-10 px-6 rounded-2xl" onClick={() => navigate('/music')}>
+                 <span className="text-[10px] uppercase tracking-widest font-black mr-2">Abrir</span>
+                 <ArrowRight className="w-3.5 h-3.5" />
+               </GlassButton>
              </div>
           </div>
         </BentoCard>
