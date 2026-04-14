@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Music, Plus, Play, Clock, LayoutGrid, ListMusic, CalendarClock, Star, Sparkles, Upload, Zap } from 'lucide-react'
+import { Music, Plus, Play, Clock, LayoutGrid, ListMusic, CalendarClock, Star, Sparkles, Upload, Zap, PlayCircle } from 'lucide-react'
 import { usePremiumAccess } from '@/hooks/usePremiumAccess'
 import PremiumMusicLock from '@/components/music/PremiumMusicLock'
 import { useAuthStore } from '@/stores/authStore'
