@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS businesses (
   email TEXT NOT NULL,
   phone TEXT,
   logo_url TEXT,
-  plan TEXT NOT NULL DEFAULT 'basic' CHECK (plan IN ('basic', 'pro')),
+  plan TEXT NOT NULL DEFAULT 'free' CHECK (plan IN ('basic', 'pro', 'premium', 'vip', 'free')),
   subscription_status TEXT NOT NULL DEFAULT 'trial' CHECK (subscription_status IN ('active', 'expired', 'trial')),
   tax_rate NUMERIC(5,2) NOT NULL DEFAULT 21.00,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
