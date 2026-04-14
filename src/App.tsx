@@ -105,7 +105,7 @@ export default function App() {
 
   // ── VERSION-BASED CACHE CLEAR ──
   // Increment this version to force all clients to reload and clear local caches
-  const APP_VERSION = '1.3.1-pos-compact' 
+  const APP_VERSION = '1.3.2-music-fix-v2' 
   
   useEffect(() => {
     const storedVersion = localStorage.getItem('app_version')
