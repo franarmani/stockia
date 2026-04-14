@@ -103,6 +103,31 @@ export default function App() {
   const { setUser, setLoading, setProfile } = useAuthStore()
   const { fetchBusiness, setBusiness } = useBusinessStore()
 
+  // ── VERSION-BASED CACHE CLEAR ──
+  // Increment this version to force all clients to reload and clear local caches
+  const APP_VERSION = '1.3.1-pos-compact' 
+  
+  useEffect(() => {
+    const storedVersion = localStorage.getItem('app_version')
+    if (storedVersion !== APP_VERSION) {
+      console.log(`[Version] Updating from ${storedVersion} to ${APP_VERSION}`)
+      localStorage.clear()
+      sessionStorage.clear()
+      localStorage.setItem('app_version', APP_VERSION)
+      
+      // Unregister all service workers to be sure
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(registrations => {
+          for (const registration of registrations) {
+            registration.unregister()
+          }
+        })
+      }
+      
+      window.location.reload()
+    }
+  }, [APP_VERSION])
+
   useEffect(() => {
     // ── BULLETPROOF AUTH WITH LOCALSTORAGE CACHE ──
     // The Supabase free tier has server-side query timeouts.
