@@ -69,6 +69,7 @@ async function handleAnalyzeProduct(params: any, headers: any) {
 
 /**
  * Smart Scrape: Universal Pattern Extractor
+ */
 async function smartScrapeML(term: string) {
   const query = term.normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim()
   const cleanQuery = query.replace(/\s+/g, '-')
@@ -89,14 +90,11 @@ async function smartScrapeML(term: string) {
       const response = await fetch(url, {
         headers: {
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
-          'Accept-Language': 'es-AR,es;q=0.9,en-US;q=0.8,en;q=0.7',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+          'Accept-Language': 'es-AR,es;q=0.9,en;q=0.8',
           'Referer': 'https://www.google.com/',
           'Cache-Control': 'no-cache',
           'Connection': 'keep-alive',
-          'Sec-Ch-Ua': '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
-          'Sec-Ch-Ua-Mobile': '?0',
-          'Sec-Ch-Ua-Platform': '"Windows"',
           'Sec-Fetch-Dest': 'document',
           'Sec-Fetch-Mode': 'navigate',
           'Sec-Fetch-Site': 'cross-site',
