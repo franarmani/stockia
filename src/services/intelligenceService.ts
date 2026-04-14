@@ -1,11 +1,26 @@
 import { supabase } from '@/lib/supabase'
 
+export interface MarketSample {
+  title: string;
+  price: number;
+  permalink?: string;
+  source?: string;
+}
+
 export interface MarketData {
-  avg: number
-  min: number
-  max: number
-  sample_size: number
-  samples: { title: string; price: number; permalink: string }[]
+  avg: number;
+  min: number;
+  max: number;
+  sample_size: number;
+  samples: MarketSample[];
+  sources?: { name: string; ok: boolean }[];
+}
+
+export interface IntelligenceAnalysis {
+  productName: string;
+  price: number;
+  marketData: MarketData;
+  analysis: string;
 }
 
 export interface AnalysisResult {
