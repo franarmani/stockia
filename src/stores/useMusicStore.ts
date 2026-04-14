@@ -12,6 +12,7 @@ interface MusicStore {
   duration: number
   isExpanded: boolean
   shuffle: boolean
+  playbackSource: 'file' | 'youtube'
 
   // Internal Audio Element
   audio: HTMLAudioElement | null
@@ -38,6 +39,7 @@ export const useMusicStore = create<MusicStore>((set, get) => ({
   duration: 0,
   isExpanded: false,
   shuffle: false,
+  playbackSource: 'file',
   audio: null,
 
   initAudio: () => {
@@ -61,37 +63,43 @@ export const useMusicStore = create<MusicStore>((set, get) => ({
     set({ audio })
   },
 
-  setPlaylist: (playlist, tracks) => {
+  setPlaylist: (playlist, tracks, shouldPlay = true) => {
     set({ currentPlaylist: playlist, queue: tracks })
-    if (tracks.length > 0) {
+    if (shouldPlay && tracks.length > 0) {
       get().playTrack(tracks[0])
     }
   },
 
   playTrack: (track) => {
     const { audio, initAudio } = get()
-    if (!audio) {
-      initAudio()
-      // Re-fetch audio after init
-      const newAudio = get().audio!
-      newAudio.src = track.file_url
-      newAudio.play()
+    const source = track.youtube_id ? 'youtube' : 'file'
+    set({ playbackSource: source, currentTrack: track, isPlaying: true })
+
+    if (source === 'file') {
+      if (!audio) {
+        initAudio()
+        const newAudio = get().audio!
+        newAudio.src = track.file_url
+        newAudio.play()
+      } else {
+        audio.src = track.file_url
+        audio.play()
+      }
     } else {
-      audio.src = track.file_url
-      audio.play()
+      // YouTube source: The YouTubePlayer component will react to store changes
+      // Ensure local audio is paused
+      if (audio) audio.pause()
     }
-    set({ currentTrack: track, isPlaying: true })
   },
 
   togglePlay: () => {
-    const { audio, isPlaying } = get()
-    if (!audio) return
-
-    if (isPlaying) {
-      audio.pause()
-    } else {
-      audio.play()
+    const { audio, isPlaying, playbackSource } = get()
+    
+    if (playbackSource === 'file' && audio) {
+      if (isPlaying) audio.pause()
+      else audio.play()
     }
+    
     set({ isPlaying: !isPlaying })
   },
 
@@ -105,11 +113,11 @@ export const useMusicStore = create<MusicStore>((set, get) => ({
   },
 
   prevTrack: () => {
-    const { queue, currentTrack, audio } = get()
+    const { queue, currentTrack, audio, playbackSource } = get()
     if (queue.length === 0 || !currentTrack) return
 
     // If more than 3 seconds in, restart track
-    if (audio && audio.currentTime > 3) {
+    if (playbackSource === 'file' && audio && audio.currentTime > 3) {
       audio.currentTime = 0
       return
     }
@@ -126,8 +134,10 @@ export const useMusicStore = create<MusicStore>((set, get) => ({
   },
 
   seekTo: (time) => {
-    const { audio } = get()
-    if (audio) audio.currentTime = time
+    const { audio, playbackSource } = get()
+    if (playbackSource === 'file' && audio) {
+      audio.currentTime = time
+    }
     set({ currentTime: time })
   },
 

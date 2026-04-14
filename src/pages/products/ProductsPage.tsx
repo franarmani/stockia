@@ -2,13 +2,14 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/authStore'
-import { formatCurrency } from '@/lib/utils'
+import { cn, formatCurrency } from '@/lib/utils'
 import { isDecimalUnit } from '@/stores/posStore'
 import { UNIT_SHORT, UNIT_LABELS, type ProductUnit } from '@/types/database'
 import { toast } from 'sonner'
 import Button from '@/components/ui/Button'
 import Badge from '@/components/ui/Badge'
 import Modal from '@/components/ui/Modal'
+import { GlassCard, GlassPanel, GlassButton } from '@/components/ui/GlassCard'
 import ImportProductsModal from '@/components/ImportProductsModal'
 import ExportProductsModal from '@/components/ExportProductsModal'
 import type { Product, Category, Supplier } from '@/types/database'
@@ -119,12 +120,24 @@ export default function ProductsPage() {
     }
     if (editingProduct) {
       const { error } = await supabase.from('products').update(payload).eq('id', editingProduct.id)
-      if (error) toast.error('Error al actualizar'); else toast.success('Producto actualizado')
+      if (error) {
+        toast.error('Error al actualizar')
+      } else {
+        toast.success('Producto actualizado')
+        setShowProductModal(false)
+        fetchAll()
+      }
     } else {
       const { error } = await supabase.from('products').insert(payload)
-      if (error) toast.error('Error al crear'); else toast.success('Producto creado')
+      if (error) {
+        toast.error('Error al crear')
+      } else {
+        toast.success('Producto creado')
+        setShowProductModal(false)
+        fetchAll()
+      }
     }
-    setSaving(false); setShowProductModal(false); fetchAll()
+    setSaving(false)
   }
 
   async function handleDelete(p: Product) {
@@ -214,239 +227,429 @@ export default function ProductsPage() {
   if (loading) return <div className="flex items-center justify-center h-96"><div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full" /></div>
 
   return (
-    <div className="animate-fade-in space-y-6">
+    <div className="animate-fade-in flex flex-col gap-6 max-w-6xl mx-auto w-full pb-12">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 px-1">
         <div>
-          <h1 className="text-lg font-bold text-foreground">Productos</h1>
-          <p className="text-sm text-muted-foreground">{products.length} productos activos</p>
+          <p className="text-[11px] text-white/35 uppercase tracking-widest font-black">Inventario</p>
+          <h1 className="text-3xl font-black text-white mt-1 tracking-tight">Productos</h1>
+          <div className="flex items-center gap-2 mt-1">
+             <Package className="w-3.5 h-3.5 text-violet-500/50" />
+             <p className="text-[11px] text-white/50 font-bold uppercase tracking-wider">{products.length} productos activos</p>
+          </div>
         </div>
-        <div className="flex gap-2 flex-wrap">
-          <Button variant="outline" size="sm" onClick={() => setShowExportModal(true)}>
-            <Download className="w-4 h-4" /> Exportar
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => setShowImportModal(true)}>
-            <Upload className="w-4 h-4" /> Importar
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => { setShowBulkUnitsModal(true); setBulkConfirmed(false); setBulkUnitsQty('10') }}>
-            <Layers className="w-4 h-4" /> Unidades masivas
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => setShowSupplierModal(true)}>
-            <Truck className="w-4 h-4" /> Proveedores
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => setShowCategoryModal(true)}>
-            <Tag className="w-4 h-4" /> Categorías
-          </Button>
-          <Button size="sm" onClick={openNew}>
-            <Plus className="w-4 h-4" /> Nuevo
-          </Button>
+        <div className="flex gap-2 flex-wrap sm:justify-end">
+          <GlassButton size="sm" onClick={() => setShowExportModal(true)} className="bg-white/5">
+            <Download className="w-3.5 h-3.5" /> Exportar
+          </GlassButton>
+          <GlassButton size="sm" onClick={() => setShowImportModal(true)} className="bg-white/5">
+            <Upload className="w-3.5 h-3.5" /> Importar
+          </GlassButton>
+          <GlassButton size="sm" onClick={openNew} className="bg-violet-500 text-slate-950 hover:bg-violet-400 border-none font-black shadow-lg shadow-violet-500/20">
+            <Plus className="w-4 h-4" /> Nuevo Producto
+          </GlassButton>
         </div>
       </div>
 
-      {/* Low stock alert */}
-      {lowStockProducts.length > 0 && (
-        <div className="bg-amber-50 rounded-2xl p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <AlertTriangle className="w-4 h-4 text-amber-600" />
-            <span className="text-sm font-semibold text-amber-800">{lowStockProducts.length} productos con stock bajo</span>
+      {/* Admin Actions Bar */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 px-1">
+        <button 
+          onClick={() => { setShowBulkUnitsModal(true); setBulkConfirmed(false); setBulkUnitsQty('10') }}
+          className="flex items-center gap-3 p-4 rounded-2xl bg-white/[0.03] border border-white/5 hover:bg-white/10 transition-all text-left group"
+        >
+          <div className="w-10 h-10 rounded-xl bg-blue-500/20 flex items-center justify-center text-blue-400 group-hover:scale-110 transition-transform">
+            <Layers className="w-5 h-5" />
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            {lowStockProducts.slice(0, 4).map(p => (
-              <div key={p.id} className="flex items-center justify-between bg-white rounded-xl px-3 py-2">
-                <div className="min-w-0">
-                  <p className="text-sm font-medium truncate">{p.name}</p>
-                  <p className="text-xs text-amber-600">{isDecimalUnit(p.unit) ? p.stock.toFixed(2) : p.stock} de {p.stock_min} mín</p>
-                </div>
-                <div className="flex items-center gap-1 shrink-0">
-                  <button onClick={() => handleQuickStock(p, -1)} className="w-7 h-7 flex items-center justify-center text-amber-600 hover:text-amber-800 active:scale-90 transition">
-                    <MinusCircle className="w-5 h-5" />
-                  </button>
-                  <span className="text-sm font-bold w-8 text-center">{isDecimalUnit(p.unit) ? p.stock.toFixed(1) : p.stock}</span>
-                  <button onClick={() => handleQuickStock(p, 1)} className="w-7 h-7 flex items-center justify-center text-green-600 hover:text-green-800 active:scale-90 transition">
-                    <PlusCircle className="w-5 h-5" />
-                  </button>
-                </div>
+          <div>
+            <p className="text-[10px] font-black text-white/30 uppercase tracking-widest">Stock</p>
+            <p className="text-[11px] font-bold text-white group-hover:text-blue-400 transition-colors">Unidades masivas</p>
+          </div>
+        </button>
+
+        <button 
+          onClick={() => setShowSupplierModal(true)}
+          className="flex items-center gap-3 p-4 rounded-2xl bg-white/[0.03] border border-white/5 hover:bg-white/10 transition-all text-left group"
+        >
+          <div className="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center text-amber-400 group-hover:scale-110 transition-transform">
+            <Truck className="w-5 h-5" />
+          </div>
+          <div>
+            <p className="text-[10px] font-black text-white/30 uppercase tracking-widest">Logística</p>
+            <p className="text-[11px] font-bold text-white group-hover:text-amber-400 transition-colors">Proveedores</p>
+          </div>
+        </button>
+
+        <button 
+          onClick={() => setShowCategoryModal(true)}
+          className="flex items-center gap-3 p-4 rounded-2xl bg-white/[0.03] border border-white/5 hover:bg-white/10 transition-all text-left group"
+        >
+          <div className="w-10 h-10 rounded-xl bg-purple-500/20 flex items-center justify-center text-purple-400 group-hover:scale-110 transition-transform">
+            <Tag className="w-5 h-5" />
+          </div>
+          <div>
+            <p className="text-[10px] font-black text-white/30 uppercase tracking-widest">Filtros</p>
+            <p className="text-[11px] font-bold text-white group-hover:text-purple-400 transition-colors">Categorías</p>
+          </div>
+        </button>
+
+        <div className="hidden md:flex items-center gap-3 p-4 rounded-2xl bg-white/[0.01] border border-white/5 opacity-50">
+           <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-white/20">
+             <Zap className="w-5 h-5" />
+           </div>
+           <div>
+             <p className="text-[10px] font-black text-white/20 uppercase tracking-widest">AI Radar</p>
+             <p className="text-[11px] font-bold text-white/20">Próximamente</p>
+           </div>
+        </div>
+      </div>
+
+      {/* Low stock alert - Bento Style */}
+      {lowStockProducts.length > 0 && (
+        <div className="px-1">
+          <div className="bg-amber-500/10 border border-amber-500/20 rounded-[2rem] p-6 relative overflow-hidden group">
+            <div className="absolute top-0 right-0 p-8 opacity-5 pointer-events-none group-hover:scale-110 transition-transform duration-1000">
+               <AlertTriangle className="w-24 h-24 text-amber-500" />
+            </div>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2 rounded-xl bg-amber-500/20 border border-amber-500/30">
+                <AlertTriangle className="w-5 h-5 text-amber-500" />
               </div>
-            ))}
+              <span className="text-sm font-black text-white uppercase tracking-widest leading-none">{lowStockProducts.length} Alertas de Stock Bajo</span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 relative z-10">
+              {lowStockProducts.slice(0, 4).map(p => (
+                <div key={p.id} className="flex items-center justify-between bg-black/20 border border-white/5 rounded-2xl p-4 backdrop-blur-sm">
+                  <div className="min-w-0">
+                    <p className="text-xs font-black text-white truncate uppercase tracking-tight">{p.name}</p>
+                    <p className="text-[10px] text-amber-500 font-bold uppercase tracking-wider mt-0.5">
+                      {isDecimalUnit(p.unit) ? p.stock.toFixed(2) : p.stock} / {p.stock_min} mín
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-1 shrink-0 bg-white/5 rounded-xl p-1">
+                    <button onClick={() => handleQuickStock(p, -1)} className="w-8 h-8 flex items-center justify-center text-white/30 hover:text-white transition">
+                      <MinusCircle className="w-4 h-4" />
+                    </button>
+                    <span className="text-xs font-black w-6 text-center text-white">{isDecimalUnit(p.unit) ? p.stock.toFixed(0) : p.stock}</span>
+                    <button onClick={() => handleQuickStock(p, 1)} className="w-8 h-8 flex items-center justify-center text-green-500 hover:scale-110 transition">
+                      <PlusCircle className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       )}
 
       {/* Search + Filter */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <input type="text" placeholder="Buscar producto, código, marca..." value={search} onChange={(e) => setSearch(e.target.value)}
-            className="w-full h-10 pl-10 pr-3 rounded-xl border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
+      <div className="flex flex-col sm:flex-row gap-3 px-1">
+        <div className="relative flex-1 group">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20 group-focus-within:text-violet-500 transition-colors" />
+          <input 
+            type="text" 
+            placeholder="Buscar producto, código, marca..." 
+            value={search} 
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full h-12 pl-12 pr-4 rounded-2xl border border-white/10 bg-white/[0.03] text-white text-sm focus:outline-none focus:ring-4 focus:ring-violet-500/10 focus:border-violet-500/30 transition-all placeholder:text-white/20" 
+          />
         </div>
-        <select value={filterCategory} onChange={(e) => setFilterCategory(e.target.value)}
-          className="h-10 px-3 rounded-xl border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/30">
-          <option value="">Todas las categorías</option>
-          {categories.map(c => (<option key={c.id} value={c.id}>{c.name}</option>))}
+        <select 
+          value={filterCategory} 
+          onChange={(e) => setFilterCategory(e.target.value)}
+          className="h-12 px-4 rounded-2xl border border-white/10 bg-white/[0.03] text-white text-sm focus:outline-none focus:ring-4 focus:ring-violet-500/10 focus:border-violet-500/30 transition-all appearance-none cursor-pointer min-w-[180px]"
+        >
+          <option value="" className="bg-slate-900">Todas las categorías</option>
+          {categories.map(c => (<option key={c.id} value={c.id} className="bg-slate-900">{c.name}</option>))}
         </select>
       </div>
 
       {/* Products grid */}
-      {filtered.length === 0 ? (
-        <div className="text-center py-16 text-muted-foreground">
-          <Package className="w-12 h-12 mx-auto mb-3 opacity-15" />
-          <p className="font-medium">No se encontraron productos</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {filtered.map((p) => (
-            <div 
-              key={p.id} 
-              className="bg-white rounded-2xl p-4 shadow-sm group cursor-pointer hover:shadow-md transition-all active:scale-[0.99]"
-              onClick={() => navigate(`/products/${p.id}`)}
-            >
-              <div className="flex items-start justify-between mb-2">
-                <div className="min-w-0 flex-1">
-                  <h3 className="font-semibold text-foreground">{p.name}</h3>
-                  {(p.brand || p.model) && (
-                    <p className="text-[11px] text-muted-foreground">
-                      {p.brand}{p.model ? ` · ${p.model}` : ''}{p.size_label ? ` · ${p.size_label}` : ''}{p.presentation ? ` · ${p.presentation}` : ''}
-                    </p>
-                  )}
-                  {p.barcode && (
-                    <div className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5">
-                      <Barcode className="w-3 h-3" /> {p.barcode}
-                    </div>
-                  )}
-                </div>
-                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition shrink-0 ml-2">
-                  <button onClick={() => openEdit(p)} className="w-7 h-7 rounded-xl flex items-center justify-center hover:bg-muted text-muted-foreground hover:text-foreground">
-                    <Edit3 className="w-3.5 h-3.5" />
-                  </button>
-                  <button onClick={() => handleDelete(p)} className="w-7 h-7 rounded-xl flex items-center justify-center hover:bg-red-50 text-muted-foreground hover:text-destructive">
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              </div>
+      <div className="px-1">
+        {filtered.length === 0 ? (
+          <div className="text-center py-24 bg-white/[0.01] border border-white/5 rounded-[3rem]">
+            <Package className="w-16 h-16 mx-auto mb-4 text-white/5" />
+            <p className="text-white/30 font-black uppercase tracking-[0.2em] text-xs">No se encontraron productos</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filtered.map((p) => (
+              <div 
+                key={p.id} 
+                className="bg-white/[0.03] border border-white/5 rounded-[2rem] p-6 group cursor-pointer hover:bg-white/[0.06] hover:border-white/10 transition-all active:scale-[0.98] relative overflow-hidden"
+                onClick={() => navigate(`/products/${p.id}`)}
+              >
+                {/* Status glow */}
+                <div className={cn(
+                  "absolute -top-12 -right-12 w-24 h-24 blur-[40px] opacity-10 group-hover:opacity-20 transition-opacity",
+                  p.stock === 0 ? "bg-red-500" : p.stock <= p.stock_min ? "bg-amber-500" : "bg-green-500"
+                )} />
 
-              <div className="flex items-end justify-between">
-                <div>
-                  <p className="text-base font-bold text-primary">{formatCurrency(p.sale_price)}<span className="text-xs font-normal text-muted-foreground ml-1">/{getUnitLabel(p)}</span></p>
-                  {p.purchase_price > 0 && <p className="text-xs text-muted-foreground">Costo: {formatCurrency(p.avg_cost || p.purchase_price)}</p>}
-                  <div className="flex items-center gap-1.5 mt-1.5">
-                    {p.category_id && <Badge variant="default" className="text-[10px]">{categories.find(c => c.id === p.category_id)?.name}</Badge>}
-                    {p.unit && p.unit !== 'u' && <Badge variant="outline" className="text-[10px]">{UNIT_SHORT[p.unit as ProductUnit]}</Badge>}
+                <div className="flex items-start justify-between mb-4">
+                  <div className="min-w-0 flex-1">
+                    <h3 className="text-base font-black text-white tracking-tight leading-tight group-hover:text-primary transition-colors">{p.name}</h3>
+                    {(p.brand || p.model) && (
+                      <p className="text-[10px] text-white/30 font-bold uppercase tracking-widest mt-1">
+                        {p.brand}{p.model ? ` · ${p.model}` : ''}
+                      </p>
+                    )}
+                    {p.barcode && (
+                      <div className="flex items-center gap-1 text-[10px] text-white/20 mt-1.5 font-mono">
+                        <Barcode className="w-3 h-3" /> {p.barcode}
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition shrink-0 ml-2">
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); openEdit(p) }} 
+                      className="w-10 h-10 rounded-xl flex items-center justify-center bg-white/5 hover:bg-white/10 text-white/40 hover:text-white transition"
+                    >
+                      <Edit3 className="w-4 h-4" />
+                    </button>
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); handleDelete(p) }} 
+                      className="w-10 h-10 rounded-xl flex items-center justify-center bg-white/5 hover:bg-red-500/20 text-white/40 hover:text-red-400 transition"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
                   </div>
                 </div>
-              </div>
 
-              <div className="flex items-center justify-between pt-4 mt-4 border-t border-slate-50">
-                <button 
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    navigate(`/products/${p.id}`)
-                  }}
-                  className="flex items-center gap-1.5 text-xs font-bold text-primary hover:text-primary-dark transition-colors"
-                >
-                  <Zap className="w-3.5 h-3.5" /> Analizar con IA
-                  <ChevronRight className="w-3.5 h-3.5" />
-                </button>
+                <div className="flex items-end justify-between items-center bg-white/[0.02] border border-white/5 rounded-2xl p-4">
+                  <div>
+                    <p className="text-xl font-black text-white tracking-tighter">
+                      {formatCurrency(p.sale_price)}
+                      <span className="text-[10px] font-bold text-white/20 ml-1 uppercase">/{getUnitLabel(p)}</span>
+                    </p>
+                    {p.purchase_price > 0 && (
+                      <p className="text-[10px] text-white/25 font-bold uppercase tracking-wider mt-0.5">
+                        Costo: {formatCurrency(p.avg_cost || p.purchase_price)}
+                      </p>
+                    )}
+                  </div>
+                  <div className="flex flex-col items-end gap-1.5">
+                    {p.category_id && (
+                      <span className="px-2 py-0.5 rounded-lg bg-white/5 border border-white/5 text-[9px] font-black text-white/40 uppercase tracking-widest">
+                        {categories.find(c => c.id === p.category_id)?.name}
+                      </span>
+                    )}
+                  </div>
+                </div>
 
-                <div className="flex items-center gap-1">
-                  <button onClick={(e) => { e.stopPropagation(); handleQuickStock(p, -1) }} className="w-8 h-8 flex items-center justify-center rounded-xl text-muted-foreground hover:text-amber-600 hover:bg-amber-50 active:scale-90 transition">
-                    <MinusCircle className="w-5 h-5" />
-                  </button>
-                  <button onClick={(e) => { e.stopPropagation(); openStockModal(p) }} className={`min-w-9 h-8 px-2 rounded-xl text-sm font-bold text-center transition cursor-pointer ${
-                    p.stock === 0 ? 'bg-red-100 text-red-700' :
-                    p.stock <= p.stock_min ? 'bg-amber-100 text-amber-700' :
-                    'bg-green-50 text-green-700'
-                  }`}>{isDecimalUnit(p.unit) ? p.stock.toFixed(1) : p.stock}</button>
-                  <button onClick={(e) => { e.stopPropagation(); handleQuickStock(p, 1) }} className="w-8 h-8 flex items-center justify-center rounded-xl text-muted-foreground hover:text-green-600 hover:bg-green-50 active:scale-90 transition">
-                    <PlusCircle className="w-5 h-5" />
+                <div className="flex items-center justify-between pt-5 mt-5 border-t border-white/5">
+                  <div className="flex items-center gap-1">
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); handleQuickStock(p, -1) }} 
+                      className="w-9 h-9 flex items-center justify-center rounded-xl bg-white/5 text-white/20 hover:text-amber-500 hover:bg-amber-500/10 transition"
+                    >
+                      <MinusCircle className="w-4 h-4" />
+                    </button>
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); openStockModal(p) }} 
+                      className={cn(
+                        "h-9 px-4 rounded-xl text-xs font-black transition cursor-pointer flex items-center gap-2",
+                        p.stock === 0 ? "bg-red-500 text-slate-950" :
+                        p.stock <= p.stock_min ? "bg-amber-500 text-slate-950" :
+                        "bg-white/5 text-white"
+                      )}
+                    >
+                      {isDecimalUnit(p.unit) ? p.stock.toFixed(1) : p.stock}
+                      <span className="opacity-40 uppercase text-[8px]">{getUnitLabel(p)}</span>
+                    </button>
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); handleQuickStock(p, 1) }} 
+                      className="w-9 h-9 flex items-center justify-center rounded-xl bg-white/5 text-white/20 hover:text-green-500 hover:bg-green-500/10 transition"
+                    >
+                      <PlusCircle className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); navigate(`/products/${p.id}`) }}
+                    className="flex items-center gap-1.5 h-9 px-3 rounded-xl bg-violet-500/10 text-violet-400 group/ai transition-all hover:bg-violet-500 hover:text-slate-950"
+                  >
+                    <Zap className="w-3.5 h-3.5 fill-current" />
+                    <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">IA</span>
                   </button>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
-      )}
+            ))}
+          </div>
+        )}
+      </div>
 
       {/* Product Modal */}
       <Modal open={showProductModal} onClose={() => setShowProductModal(false)} title={editingProduct ? 'Editar producto' : 'Nuevo producto'} size="md">
-        <div className="space-y-3 max-h-[70vh] overflow-auto pr-1">
-          <div>
-            <label className="block text-sm font-medium mb-1">Nombre *</label>
-            <input type="text" value={form.name} onChange={(e) => setForm({...form, name: e.target.value})} className="w-full h-10 px-3 rounded-xl border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
-          </div>
-          <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-4 max-h-[70vh] overflow-auto pr-2 custom-scrollbar">
+          <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium mb-1">Precio venta *</label>
-              <input type="number" value={form.sale_price} onChange={(e) => setForm({...form, sale_price: e.target.value})} className="w-full h-10 px-3 rounded-xl border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
+              <label className="block text-[10px] font-black text-white/40 uppercase tracking-widest mb-1.5 ml-1">Nombre *</label>
+              <input 
+                type="text" 
+                value={form.name} 
+                onChange={(e) => setForm({...form, name: e.target.value})} 
+                className="w-full h-11 px-4 rounded-xl border border-white/10 bg-white/5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-violet-500/30 focus:border-violet-500/50 transition-all placeholder:text-white/20"
+                placeholder="Nombre del producto"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-[10px] font-black text-white/40 uppercase tracking-widest mb-1.5 ml-1">Precio venta *</label>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30 text-sm">$</span>
+                  <input 
+                    type="number" 
+                    value={form.sale_price} 
+                    onChange={(e) => setForm({...form, sale_price: e.target.value})} 
+                    className="w-full h-11 pl-8 pr-4 rounded-xl border border-white/10 bg-white/5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-violet-500/30 focus:border-violet-500/50 transition-all"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-[10px] font-black text-white/40 uppercase tracking-widest mb-1.5 ml-1">Costo</label>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30 text-sm">$</span>
+                  <input 
+                    type="number" 
+                    value={form.purchase_price} 
+                    onChange={(e) => setForm({...form, purchase_price: e.target.value})} 
+                    className="w-full h-11 pl-8 pr-4 rounded-xl border border-white/10 bg-white/5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-violet-500/30 focus:border-violet-500/50 transition-all"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <label className="block text-[10px] font-black text-white/40 uppercase tracking-widest mb-1.5 ml-1">Unidad</label>
+                <select 
+                  value={form.unit} 
+                  onChange={(e) => setForm({...form, unit: e.target.value})}
+                  className="w-full h-11 px-3 rounded-xl border border-white/10 bg-white/5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-violet-500/30 focus:border-violet-500/50 transition-all appearance-none cursor-pointer"
+                >
+                  {UNIT_OPTIONS.map(u => <option key={u.value} value={u.value} className="bg-slate-900">{u.label}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-[10px] font-black text-white/40 uppercase tracking-widest mb-1.5 ml-1">Stock</label>
+                <input 
+                  type="number" 
+                  step={isDecimalUnit(form.unit) ? '0.01' : '1'} 
+                  value={form.stock} 
+                  onChange={(e) => setForm({...form, stock: e.target.value})} 
+                  className="w-full h-11 px-4 rounded-xl border border-white/10 bg-white/5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-violet-500/30 focus:border-violet-500/50 transition-all"
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] font-black text-white/40 uppercase tracking-widest mb-1.5 ml-1">Stock mín</label>
+                <input 
+                  type="number" 
+                  step={isDecimalUnit(form.unit) ? '0.01' : '1'} 
+                  value={form.stock_min} 
+                  onChange={(e) => setForm({...form, stock_min: e.target.value})} 
+                  className="w-full h-11 px-4 rounded-xl border border-white/10 bg-white/5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-violet-500/30 focus:border-violet-500/50 transition-all"
+                />
+              </div>
+            </div>
+
+            <div className="pt-2">
+              <p className="text-[10px] font-black text-violet-400 uppercase tracking-[0.2em] mb-3 ml-1">Detalles de Variante</p>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[10px] font-black text-white/40 uppercase tracking-widest mb-1.5 ml-1">Marca</label>
+                  <input 
+                    type="text" 
+                    value={form.brand} 
+                    onChange={(e) => setForm({...form, brand: e.target.value})} 
+                    placeholder="Ej: Stanley" 
+                    className="w-full h-11 px-4 rounded-xl border border-white/10 bg-white/5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-violet-500/30 focus:border-violet-500/50 transition-all placeholder:text-white/10" 
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black text-white/40 uppercase tracking-widest mb-1.5 ml-1">Modelo</label>
+                  <input 
+                    type="text" 
+                    value={form.model} 
+                    onChange={(e) => setForm({...form, model: e.target.value})} 
+                    placeholder="Ej: FatMax" 
+                    className="w-full h-11 px-4 rounded-xl border border-white/10 bg-white/5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-violet-500/30 focus:border-violet-500/50 transition-all placeholder:text-white/10" 
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black text-white/40 uppercase tracking-widest mb-1.5 ml-1">Medida</label>
+                  <input 
+                    type="text" 
+                    value={form.size_label} 
+                    onChange={(e) => setForm({...form, size_label: e.target.value})} 
+                    placeholder="Ej: 3/4, 10mm" 
+                    className="w-full h-11 px-4 rounded-xl border border-white/10 bg-white/5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-violet-500/30 focus:border-violet-500/50 transition-all placeholder:text-white/10" 
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black text-white/40 uppercase tracking-widest mb-1.5 ml-1">Presentación</label>
+                  <input 
+                    type="text" 
+                    value={form.presentation} 
+                    onChange={(e) => setForm({...form, presentation: e.target.value})} 
+                    placeholder="Ej: x6 unids" 
+                    className="w-full h-11 px-4 rounded-xl border border-white/10 bg-white/5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-violet-500/30 focus:border-violet-500/50 transition-all placeholder:text-white/10" 
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-[10px] font-black text-white/40 uppercase tracking-widest mb-1.5 ml-1">Código de barras</label>
+                <div className="relative">
+                  <Barcode className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20 w-4 h-4" />
+                  <input 
+                    type="text" 
+                    value={form.barcode} 
+                    onChange={(e) => setForm({...form, barcode: e.target.value})} 
+                    className="w-full h-11 pl-11 pr-4 rounded-xl border border-white/10 bg-white/5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-violet-500/30 focus:border-violet-500/50 transition-all"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-[10px] font-black text-white/40 uppercase tracking-widest mb-1.5 ml-1">Categoría</label>
+                <select 
+                  value={form.category_id} 
+                  onChange={(e) => setForm({...form, category_id: e.target.value})} 
+                  className="w-full h-11 px-4 rounded-xl border border-white/10 bg-white/5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-violet-500/30 focus:border-violet-500/50 transition-all appearance-none cursor-pointer"
+                >
+                  <option value="" className="bg-slate-900">Sin categoría</option>
+                  {categories.map(c => (<option key={c.id} value={c.id} className="bg-slate-900">{c.name}</option>))}
+                </select>
+              </div>
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Costo</label>
-              <input type="number" value={form.purchase_price} onChange={(e) => setForm({...form, purchase_price: e.target.value})} className="w-full h-10 px-3 rounded-xl border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
-            </div>
-          </div>
-          <div className="grid grid-cols-3 gap-3">
-            <div>
-              <label className="block text-sm font-medium mb-1">Unidad</label>
-              <select value={form.unit} onChange={(e) => setForm({...form, unit: e.target.value})}
-                className="w-full h-10 px-3 rounded-xl border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/30">
-                {UNIT_OPTIONS.map(u => <option key={u.value} value={u.value}>{u.label}</option>)}
+              <label className="block text-[10px] font-black text-white/40 uppercase tracking-widest mb-1.5 ml-1">Proveedor</label>
+              <select 
+                value={form.supplier_id} 
+                onChange={(e) => setForm({...form, supplier_id: e.target.value})} 
+                className="w-full h-11 px-4 rounded-xl border border-white/10 bg-white/5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-violet-500/30 focus:border-violet-500/50 transition-all appearance-none cursor-pointer"
+              >
+                <option value="" className="bg-slate-900">Sin proveedor</option>
+                {suppliers.map(s => (<option key={s.id} value={s.id} className="bg-slate-900">{s.name}</option>))}
               </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Stock</label>
-              <input type="number" step={isDecimalUnit(form.unit) ? '0.01' : '1'} value={form.stock} onChange={(e) => setForm({...form, stock: e.target.value})} className="w-full h-10 px-3 rounded-xl border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Stock mín</label>
-              <input type="number" step={isDecimalUnit(form.unit) ? '0.01' : '1'} value={form.stock_min} onChange={(e) => setForm({...form, stock_min: e.target.value})} className="w-full h-10 px-3 rounded-xl border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
             </div>
           </div>
 
-          {/* Variant fields */}
-          <div className="border-t border-slate-200 pt-3 mt-1">
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Variante / Detalle</p>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-sm font-medium mb-1">Marca</label>
-                <input type="text" value={form.brand} onChange={(e) => setForm({...form, brand: e.target.value})} placeholder="Ej: Stanley" className="w-full h-10 px-3 rounded-xl border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Modelo</label>
-                <input type="text" value={form.model} onChange={(e) => setForm({...form, model: e.target.value})} placeholder="Ej: FatMax" className="w-full h-10 px-3 rounded-xl border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Medida</label>
-                <input type="text" value={form.size_label} onChange={(e) => setForm({...form, size_label: e.target.value})} placeholder="Ej: 3/4, 10mm, 5L" className="w-full h-10 px-3 rounded-xl border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Presentación</label>
-                <input type="text" value={form.presentation} onChange={(e) => setForm({...form, presentation: e.target.value})} placeholder="Ej: x6 unids, 25kg" className="w-full h-10 px-3 rounded-xl border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
-              </div>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-sm font-medium mb-1">Código de barras</label>
-              <input type="text" value={form.barcode} onChange={(e) => setForm({...form, barcode: e.target.value})} className="w-full h-10 px-3 rounded-xl border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Categoría</label>
-              <select value={form.category_id} onChange={(e) => setForm({...form, category_id: e.target.value})} className="w-full h-10 px-3 rounded-xl border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/30">
-                <option value="">Sin categoría</option>
-                {categories.map(c => (<option key={c.id} value={c.id}>{c.name}</option>))}
-              </select>
-            </div>
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">Proveedor</label>
-            <select value={form.supplier_id} onChange={(e) => setForm({...form, supplier_id: e.target.value})} className="w-full h-10 px-3 rounded-xl border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/30">
-              <option value="">Sin proveedor</option>
-              {suppliers.map(s => (<option key={s.id} value={s.id}>{s.name}</option>))}
-            </select>
-          </div>
-          <div className="flex gap-3 pt-2">
-            <Button variant="outline" className="flex-1" onClick={() => setShowProductModal(false)}>Cancelar</Button>
-            <Button className="flex-1" onClick={handleSaveProduct} disabled={saving}>{saving ? 'Guardando...' : 'Guardar'}</Button>
+          <div className="flex gap-3 pt-4 border-t border-white/5">
+            <button 
+              onClick={() => setShowProductModal(false)}
+              className="flex-1 h-12 rounded-2xl border border-white/10 bg-white/5 text-white/70 font-black text-[11px] uppercase tracking-widest hover:bg-white/10 transition-all"
+            >
+              Cancelar
+            </button>
+            <button 
+              onClick={handleSaveProduct} 
+              disabled={saving}
+              className="flex-1 h-12 rounded-2xl bg-violet-600 text-white font-black text-[11px] uppercase tracking-widest hover:bg-violet-500 disabled:opacity-50 transition-all shadow-lg shadow-violet-500/20"
+            >
+              {saving ? 'Guardando...' : 'Guardar Cambios'}
+            </button>
           </div>
         </div>
       </Modal>

@@ -10,6 +10,7 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
+      injectRegister: 'auto',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png'],
       manifest: {
         name: 'STOCKIA',
@@ -28,25 +29,27 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+        cleanupOutdatedCaches: true,
         skipWaiting: true,
         clientsClaim: true,
         runtimeCaching: [
           {
-            // Cache POS and dashboard pages for offline
-            urlPattern: /^https:\/\/.*\/(pos|dashboard|products)/,
+            // Cache POS and dashboard pages for offline - Network First to ensure update but keep offline fallback
+            urlPattern: /^https:\/\/.*\/(pos|dashboard|products|menu)/,
             handler: 'NetworkFirst',
             options: {
               cacheName: 'pages-cache',
-              expiration: { maxEntries: 20, maxAgeSeconds: 86400 },
+              expiration: { maxEntries: 30, maxAgeSeconds: 86400 },
+              networkTimeoutSeconds: 5
             },
           },
           {
             // Cache Supabase REST API calls (products list etc.)
-            urlPattern: /^https:\/\/.*\.supabase\.co\/rest\/v1\/(products|categories)/,
-            handler: 'StaleWhileRevalidate',
+            urlPattern: /^https:\/\/.*\.supabase\.co\/rest\/v1\//,
+            handler: 'NetworkFirst', // Changed from StaleWhileRevalidate to NetworkFirst for core data
             options: {
-              cacheName: 'api-cache',
-              expiration: { maxEntries: 50, maxAgeSeconds: 3600 },
+              cacheName: 'api-data-cache',
+              expiration: { maxEntries: 100, maxAgeSeconds: 3600 },
             },
           },
         ],

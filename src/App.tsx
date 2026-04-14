@@ -8,6 +8,7 @@ import { useBusinessStore } from '@/stores/businessStore'
 // Layouts
 import AppShellLauncher from '@/components/layout/AppShellLauncher'
 import TrialExpiredModal from '@/components/TrialExpiredModal'
+import ScrollToTop from '@/components/layout/ScrollToTop'
 
 // ── localStorage cache helpers ──
 const PROFILE_CACHE_KEY = 'stockia_profile'
@@ -271,6 +272,7 @@ export default function App() {
 
   return (
     <Suspense fallback={<LoadingSpinner />}>
+      <ScrollToTop />
       <Routes>
         {/* Public */}
         <Route path="/" element={<LandingPage />} />
@@ -302,6 +304,9 @@ export default function App() {
 
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
+      <div className="fixed bottom-4 left-4 z-50 text-[10px] font-bold text-white/5 uppercase tracking-[0.3em] pointer-events-none">
+        v1.4.3-stockia-music-pro-final
+      </div>
     </Suspense>
   )
 }

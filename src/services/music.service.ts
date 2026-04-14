@@ -92,6 +92,30 @@ export const musicService = {
     return data as MusicTrack
   },
 
+  async createYouTubeTrack(
+    businessId: string,
+    playlistId: string,
+    youtubeId: string,
+    metadata: { title: string, artist?: string }
+  ) {
+    const { data, error } = await supabase
+      .from('music_tracks')
+      .insert({
+        business_id: businessId,
+        playlist_id: playlistId,
+        title: metadata.title,
+        artist: metadata.artist,
+        youtube_id: youtubeId,
+        file_url: `https://www.youtube.com/watch?v=${youtubeId}`,
+        order_index: 0
+      })
+      .select()
+      .single()
+
+    if (error) throw error
+    return data as MusicTrack
+  },
+
   async deleteTrack(track: MusicTrack) {
     // 1. Delete from Storage
     const { error: storageError } = await supabase.storage

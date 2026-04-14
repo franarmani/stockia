@@ -37,10 +37,11 @@ export default function NotificationsPage() {
   }, [business?.id])
 
   const filtered = filter === 'all'
-    ? notifications
-    : notifications.filter(n => n.severity === filter)
+    ? notifications.filter(n => !n.is_read)
+    : notifications.filter(n => n.severity === filter && !n.is_read)
 
   const unread = notifications.filter(n => !n.is_read).length
+  const hasHistory = notifications.some(n => n.is_read)
 
   return (
     <div className="space-y-6">
@@ -114,7 +115,7 @@ export default function NotificationsPage() {
             return (
               <div
                 key={n.id}
-                className={`flex items-start gap-3 p-4 cursor-pointer hover:bg-white/5 transition ${!n.is_read ? 'bg-white/[0.03]' : ''}`}
+                className="flex items-start gap-3 p-4 cursor-pointer hover:bg-white/5 transition bg-white/[0.03]"
                 onClick={() => {
                   if (!n.is_read) markRead(n.id)
                   if (n.action_url) navigate(n.action_url)
@@ -125,7 +126,7 @@ export default function NotificationsPage() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between gap-2">
-                    <p className={`text-[13px] font-semibold leading-tight ${n.is_read ? 'text-white/60' : 'text-white'}`}>
+                    <p className="text-[13px] font-semibold leading-tight text-white">
                       {n.title}
                     </p>
                     <span className="text-[10px] text-white/30 shrink-0 mt-0.5">{timeAgo(n.created_at)}</span>
@@ -135,14 +136,18 @@ export default function NotificationsPage() {
                     <p className="text-[11px] text-primary mt-1">Ver más →</p>
                   )}
                 </div>
-                {!n.is_read && (
-                  <span className="w-2 h-2 rounded-full bg-primary mt-2 shrink-0" />
-                )}
+                <span className="w-2 h-2 rounded-full bg-primary mt-2 shrink-0" />
               </div>
             )
           })
         )}
       </div>
+
+      {hasHistory && (
+        <div className="p-4 text-center">
+          <p className="text-[10px] text-white/20 font-bold uppercase tracking-[0.2em]">Hay notificaciones leídas ocultas</p>
+        </div>
+      )}
     </div>
   )
 }

@@ -53,10 +53,16 @@ export const useNotificationsStore = create<NotificationsState>((set, get) => ({
   },
 
   markAllRead: async (businessId: string) => {
-    await supabase.from('notifications')
+    const { error } = await supabase.from('notifications')
       .update({ is_read: true })
       .eq('business_id', businessId)
       .eq('is_read', false)
+    
+    if (error) {
+      console.error('[Notifications] Error marking all as read:', error)
+      return
+    }
+
     set(s => ({
       notifications: s.notifications.map(n => ({ ...n, is_read: true })),
       unreadCount: 0,

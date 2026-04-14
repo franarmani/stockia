@@ -1,15 +1,16 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/authStore'
-import { formatCurrency } from '@/lib/utils'
+import { cn, formatCurrency } from '@/lib/utils'
 import { toast } from 'sonner'
 import Button from '@/components/ui/Button'
 import Modal from '@/components/ui/Modal'
+import { GlassButton } from '@/components/ui/GlassCard'
 import type { CashSession, CashMovement } from '@/types/database'
 import {
   Wallet, DoorOpen, DoorClosed, ArrowDownCircle, ArrowUpCircle,
   Clock, TrendingUp, TrendingDown, Banknote, Printer,
-  ChevronRight, Plus,
+  ChevronRight, Plus, CalendarDays
 } from 'lucide-react'
 
 export default function CashRegisterPage() {
@@ -30,21 +31,51 @@ export default function CashRegisterPage() {
   const [incomeReason, setIncomeReason] = useState('')
   const [saving, setSaving] = useState(false)
 
-  useEffect(() => { if (profile?.business_id) fetchAll() }, [profile?.business_id])
+  useEffect(() => { 
+    if (profile?.business_id) {
+      fetchAll() 
+    } else {
+      // If profile is loaded but no business_id, stop loading
+      const timeout = setTimeout(() => {
+        if (!profile?.business_id) setLoading(false)
+      }, 2000)
+      return () => clearTimeout(timeout)
+    }
+  }, [profile?.business_id])
 
   async function fetchAll() {
-    setLoading(true)
-    const { data: sessions } = await supabase
-      .from('cash_sessions').select('*').eq('business_id', profile!.business_id).order('opened_at', { ascending: false })
-    const open = sessions?.find(s => s.status === 'open') || null
-    setCurrentSession(open)
-    setHistory(sessions?.filter(s => s.status === 'closed') || [])
-    if (open) {
-      const { data: movs } = await supabase
-        .from('cash_movements').select('*').eq('session_id', open.id).order('created_at', { ascending: false })
-      setMovements(movs || [])
-    } else { setMovements([]) }
-    setLoading(false)
+    try {
+      setLoading(true)
+      const { data: sessions, error: sessionsError } = await supabase
+        .from('cash_sessions')
+        .select('*')
+        .eq('business_id', profile!.business_id)
+        .order('opened_at', { ascending: false })
+      
+      if (sessionsError) throw sessionsError
+
+      const open = sessions?.find(s => s.status === 'open') || null
+      setCurrentSession(open)
+      setHistory(sessions?.filter(s => s.status === 'closed') || [])
+
+      if (open) {
+        const { data: movs, error: movsError } = await supabase
+          .from('cash_movements')
+          .select('*')
+          .eq('session_id', open.id)
+          .order('created_at', { ascending: false })
+        
+        if (movsError) throw movsError
+        setMovements(movs || [])
+      } else {
+        setMovements([])
+      }
+    } catch (error) {
+      console.error('[CashRegister] Error fetching data:', error)
+      toast.error('Error al cargar datos de caja')
+    } finally {
+      setLoading(false)
+    }
   }
 
   async function handleOpen() {
@@ -134,165 +165,208 @@ export default function CashRegisterPage() {
   if (loading) return <div className="flex items-center justify-center h-96"><div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full" /></div>
 
   return (
-    <div className="animate-fade-in space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+    <div className="animate-fade-in flex flex-col gap-6 max-w-6xl mx-auto w-full pb-12">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 px-1">
         <div>
-          <h1 className="text-lg font-bold text-foreground">Caja</h1>
-          <p className="text-sm text-muted-foreground">
-            {currentSession ? 'Caja abierta' : 'Caja cerrada'}
-          </p>
-        </div>
-        {!currentSession ? (
-          <Button onClick={() => setShowOpenModal(true)}>
-            <DoorOpen className="w-4 h-4" /> Abrir caja
-          </Button>
-        ) : (
-          <div className="flex gap-2 flex-wrap">
-            <Button variant="outline" size="sm" onClick={() => setShowIncomeModal(true)}>
-              <ArrowUpCircle className="w-4 h-4" /> Ingreso
-            </Button>
-            <Button variant="outline" size="sm" onClick={() => setShowWithdrawModal(true)}>
-              <ArrowDownCircle className="w-4 h-4" /> Retiro
-            </Button>
-            <Button variant="outline" size="sm" onClick={handlePrintReport}>
-              <Printer className="w-4 h-4" /> Imprimir
-            </Button>
-            <Button variant="outline" size="sm" onClick={() => setShowCloseModal(true)} className="text-red-600 border-red-200 hover:bg-red-50">
-              <DoorClosed className="w-4 h-4" /> Cerrar caja
-            </Button>
+          <p className="text-[11px] text-white/35 uppercase tracking-widest font-black">Operaciones</p>
+          <h1 className="text-3xl font-black text-white mt-1 tracking-tight">Caja</h1>
+          <div className="flex items-center gap-2 mt-1">
+             <div className={cn("w-1.5 h-1.5 rounded-full", currentSession ? "bg-emerald-500 animate-pulse" : "bg-red-500")} />
+             <p className="text-[11px] text-white/50 font-bold uppercase tracking-wider">
+               {currentSession ? 'Sesión Activa' : 'Caja Cerrada'}
+             </p>
           </div>
-        )}
+        </div>
+        <div className="flex gap-2 flex-wrap sm:justify-end">
+          {!currentSession ? (
+            <GlassButton onClick={() => setShowOpenModal(true)} className="bg-emerald-500 text-slate-950 hover:bg-emerald-400 border-none font-black shadow-lg shadow-emerald-500/20 px-6">
+              <DoorOpen className="w-4 h-4" /> Abrir Caja
+            </GlassButton>
+          ) : (
+            <div className="flex gap-2 flex-wrap">
+              <GlassButton size="sm" onClick={() => setShowIncomeModal(true)} className="bg-white/5">
+                <ArrowUpCircle className="w-3.5 h-3.5" /> Ingreso
+              </GlassButton>
+              <GlassButton size="sm" onClick={() => setShowWithdrawModal(true)} className="bg-white/5">
+                <ArrowDownCircle className="w-3.5 h-3.5" /> Retiro
+              </GlassButton>
+              <GlassButton size="sm" onClick={handlePrintReport} className="bg-white/5">
+                <Printer className="w-3.5 h-3.5" /> Imprimir
+              </GlassButton>
+              <GlassButton size="sm" onClick={() => setShowCloseModal(true)} className="bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-slate-950 border-red-500/20">
+                <DoorClosed className="w-3.5 h-3.5" /> Cerrar Caja
+              </GlassButton>
+            </div>
+          )}
+        </div>
       </div>
 
       {currentSession ? (
-        <>
-          {/* Stats */}
-          <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
-            <div className="bg-white rounded-2xl p-4 shadow-sm">
-              <div className="flex items-center gap-2 mb-1.5">
-                <div className="w-9 h-9 rounded-xl bg-blue-100 flex items-center justify-center"><Banknote className="w-4 h-4 text-blue-600" /></div>
-                <span className="text-xs text-muted-foreground font-medium">Apertura</span>
-              </div>
-              <p className="text-base font-bold">{formatCurrency(currentSession.opening_amount)}</p>
+        <div className="space-y-6">
+          {/* Bento Stats Grid */}
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3 p-1">
+            <div className="bg-white/[0.03] border border-white/5 rounded-3xl p-5 relative overflow-hidden group">
+               <div className="absolute -right-4 -top-4 opacity-5 group-hover:scale-110 transition-transform">
+                  <Banknote className="w-16 h-16 text-blue-400" />
+               </div>
+               <p className="text-[10px] text-white/30 uppercase tracking-[0.2em] font-black mb-1">Apertura</p>
+               <p className="text-xl font-black text-white">{formatCurrency(currentSession.opening_amount)}</p>
             </div>
-            <div className="bg-white rounded-2xl p-4 shadow-sm">
-              <div className="flex items-center gap-2 mb-1.5">
-                <div className="w-9 h-9 rounded-xl bg-green-100 flex items-center justify-center"><TrendingUp className="w-4 h-4 text-green-600" /></div>
-                <span className="text-xs text-muted-foreground font-medium">Ventas</span>
-              </div>
-              <p className="text-base font-bold text-green-600">{formatCurrency(totalSales)}</p>
+
+            <div className="bg-emerald-500/[0.03] border border-emerald-500/10 rounded-3xl p-5 relative overflow-hidden group">
+               <div className="absolute -right-4 -top-4 opacity-10 group-hover:scale-110 transition-transform">
+                  <TrendingUp className="w-16 h-16 text-emerald-400" />
+               </div>
+               <p className="text-[10px] text-emerald-500/50 uppercase tracking-[0.2em] font-black mb-1">Ventas</p>
+               <p className="text-xl font-black text-emerald-400">{formatCurrency(totalSales)}</p>
             </div>
-            <div className="bg-white rounded-2xl p-4 shadow-sm">
-              <div className="flex items-center gap-2 mb-1.5">
-                <div className="w-9 h-9 rounded-xl bg-sky-100 flex items-center justify-center"><Plus className="w-4 h-4 text-sky-600" /></div>
-                <span className="text-xs text-muted-foreground font-medium">Ingresos</span>
-              </div>
-              <p className="text-base font-bold text-sky-600">{formatCurrency(totalIncome)}</p>
+
+            <div className="bg-sky-500/[0.03] border border-sky-500/10 rounded-3xl p-5 relative overflow-hidden group">
+               <div className="absolute -right-4 -top-4 opacity-10 group-hover:scale-110 transition-transform">
+                  <Plus className="w-16 h-16 text-sky-400" />
+               </div>
+               <p className="text-[10px] text-sky-500/50 uppercase tracking-[0.2em] font-black mb-1">Ingresos</p>
+               <p className="text-xl font-black text-sky-400">{formatCurrency(totalIncome)}</p>
             </div>
-            <div className="bg-white rounded-2xl p-4 shadow-sm">
-              <div className="flex items-center gap-2 mb-1.5">
-                <div className="w-9 h-9 rounded-xl bg-red-100 flex items-center justify-center"><TrendingDown className="w-4 h-4 text-red-600" /></div>
-                <span className="text-xs text-muted-foreground font-medium">Retiros</span>
-              </div>
-              <p className="text-base font-bold text-red-600">{formatCurrency(totalWithdrawals)}</p>
+
+            <div className="bg-red-500/[0.03] border border-red-500/10 rounded-3xl p-5 relative overflow-hidden group">
+               <div className="absolute -right-4 -top-4 opacity-10 group-hover:scale-110 transition-transform">
+                  <TrendingDown className="w-16 h-16 text-red-400" />
+               </div>
+               <p className="text-[10px] text-red-500/50 uppercase tracking-[0.2em] font-black mb-1">Retiros</p>
+               <p className="text-xl font-black text-red-400">{formatCurrency(totalWithdrawals)}</p>
             </div>
-            <div className="bg-white rounded-2xl p-4 shadow-sm">
-              <div className="flex items-center gap-2 mb-1.5">
-                <div className="w-9 h-9 rounded-xl bg-green-100 flex items-center justify-center"><Wallet className="w-4 h-4 text-green-600" /></div>
-                <span className="text-xs text-muted-foreground font-medium">Esperado</span>
-              </div>
-              <p className="text-base font-bold text-green-600">{formatCurrency(expectedCash)}</p>
+
+            <div className="bg-white/5 border border-white/10 rounded-3xl p-5 col-span-2 lg:col-span-1 relative overflow-hidden group shadow-xl shadow-emerald-500/5 ring-1 ring-white/10">
+               <div className="absolute -right-4 -top-4 opacity-20 group-hover:scale-110 transition-transform">
+                  <Wallet className="w-16 h-16 text-white" />
+               </div>
+               <p className="text-[10px] text-white uppercase tracking-[0.2em] font-black mb-1">Esperado</p>
+               <p className="text-xl font-black text-white">{formatCurrency(expectedCash)}</p>
+               <div className="mt-2 flex items-center gap-1.5">
+                  <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                  <p className="text-[9px] text-emerald-400 font-black uppercase tracking-widest">En Tiempo Real</p>
+               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl shadow-sm">
-            <div className="p-5 pb-3">
-              <h2 className="font-semibold text-foreground">Movimientos del turno</h2>
-            </div>
-            {movements.length === 0 ? (
-              <div className="text-center py-12 text-muted-foreground">
-                <Clock className="w-10 h-10 mx-auto mb-2 opacity-15" />
-                <p className="text-sm">Sin movimientos aún</p>
+          {/* Movement List */}
+          <div className="px-1">
+            <div className="bg-white/[0.03] border border-white/5 rounded-[2.5rem] overflow-hidden">
+              <div className="p-6 pb-2">
+                <p className="text-[10px] text-white/30 font-black uppercase tracking-[0.2em]">Movimientos del turno</p>
               </div>
-            ) : (
-              <div className="divide-y divide-border">
-                {movements.map((m) => {
-                  const isPositive = m.type === 'sale' || m.type === 'income'
-                  const bgColor = m.type === 'sale' ? 'bg-green-50' : m.type === 'income' ? 'bg-sky-50' : 'bg-red-50'
-                  const textColor = m.type === 'sale' ? 'text-green-600' : m.type === 'income' ? 'text-sky-600' : 'text-red-600'
-                  const MIcon = m.type === 'sale' ? TrendingUp : m.type === 'income' ? ArrowUpCircle : TrendingDown
-                  const label = m.description || (m.type === 'sale' ? 'Venta' : m.type === 'income' ? 'Ingreso' : 'Retiro')
-                  return (
-                    <div key={m.id} className="flex items-center justify-between px-4 py-3 hover:bg-muted/30 transition">
-                      <div className="flex items-center gap-3 min-w-0">
-                        <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${bgColor}`}>
-                          <MIcon className={`w-4 h-4 ${textColor}`} />
+              
+              {movements.length === 0 ? (
+                <div className="text-center py-20">
+                  <Clock className="w-16 h-16 mx-auto mb-4 text-white/5" />
+                  <p className="text-white/20 font-black uppercase tracking-widest text-xs">Sin actividad registrada</p>
+                </div>
+              ) : (
+                <div className="divide-y divide-white/[0.03]">
+                  {movements.map((m) => {
+                    const isPositive = m.type === 'sale' || m.type === 'income'
+                    const bgColor = m.type === 'sale' ? 'bg-emerald-500/10' : m.type === 'income' ? 'bg-sky-500/10' : 'bg-red-500/10'
+                    const textColor = m.type === 'sale' ? 'text-emerald-400' : m.type === 'income' ? 'text-sky-400' : 'text-red-400'
+                    const MIcon = m.type === 'sale' ? TrendingUp : m.type === 'income' ? ArrowUpCircle : TrendingDown
+                    const label = m.description || (m.type === 'sale' ? 'Venta' : m.type === 'income' ? 'Ingreso' : 'Retiro')
+                    
+                    return (
+                      <div key={m.id} className="flex items-center justify-between px-6 py-4 hover:bg-white/[0.02] transition-colors group">
+                        <div className="flex items-center gap-4 min-w-0">
+                          <div className={cn("w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 border border-white/5", bgColor)}>
+                            <MIcon className={cn("w-5 h-5", textColor)} />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-sm font-black text-white tracking-tight group-hover:text-primary transition-colors">{label}</p>
+                            <div className="flex items-center gap-2 mt-0.5">
+                               <Clock className="w-3 h-3 text-white/20" />
+                               <p className="text-[10px] text-white/30 font-bold uppercase tracking-widest">
+                                 {new Date(m.created_at).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}
+                               </p>
+                            </div>
+                          </div>
                         </div>
-                        <div className="min-w-0">
-                          <p className="text-sm font-medium truncate">{label}</p>
-                          <p className="text-xs text-muted-foreground">{new Date(m.created_at).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}</p>
+                        <div className="text-right">
+                          <p className={cn("text-base font-black tracking-tight", textColor)}>
+                            {isPositive ? '+' : '-'}{formatCurrency(m.amount)}
+                          </p>
                         </div>
                       </div>
-                      <span className={`text-sm font-bold shrink-0 ${textColor}`}>
-                        {isPositive ? '+' : '-'}{formatCurrency(m.amount)}
-                      </span>
-                    </div>
-                  )
-                })}
-              </div>
-            )}
+                    )
+                  })}
+                </div>
+              )}
+            </div>
           </div>
-        </>
+        </div>
       ) : (
-        <>
-          <div className="bg-white rounded-2xl p-8 shadow-sm text-center">
-            <Wallet className="w-12 h-12 text-muted-foreground mx-auto mb-3 opacity-20" />
-            <h2 className="text-base font-bold text-foreground mb-1">Caja cerrada</h2>
-            <p className="text-[13px] text-muted-foreground mb-4">Abrí la caja para empezar a registrar movimientos</p>
-            <Button onClick={() => setShowOpenModal(true)}>
-              <DoorOpen className="w-4 h-4" /> Abrir caja
-            </Button>
+        <div className="space-y-6">
+          <div className="bg-white/[0.03] border border-white/5 rounded-[3rem] p-12 text-center relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-b from-emerald-500/5 to-transparent pointer-events-none" />
+            <div className="w-20 h-20 rounded-[2.5rem] bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mx-auto mb-6">
+               <Wallet className="w-10 h-10 text-emerald-500" />
+            </div>
+            <h2 className="text-2xl font-black text-white tracking-tight mb-2">La caja está cerrada</h2>
+            <p className="text-sm text-white/40 mb-8 max-w-xs mx-auto">Para comenzar a operar y registrar ventas, iniciá una nueva sesión de caja.</p>
+            <GlassButton onClick={() => setShowOpenModal(true)} size="lg" className="bg-emerald-500 text-slate-950 hover:bg-emerald-400 border-none font-black shadow-xl shadow-emerald-500/20 px-10">
+              <DoorOpen className="w-5 h-5" /> Abrir Caja
+            </GlassButton>
           </div>
 
-          {/* History */}
+          {/* History - Bento Style Grid */}
           {history.length > 0 && (
-            <div className="bg-white rounded-2xl shadow-sm">
-              <div className="p-5 pb-3">
-                <h2 className="font-semibold text-foreground">Cierres anteriores</h2>
-              </div>
-              <div className="divide-y divide-border">
-                {history.slice(0, 10).map((s) => {
+            <div className="px-1 space-y-4">
+              <p className="text-[10px] text-white/30 font-black uppercase tracking-[0.2em] ml-2">Cierres Recientes</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {history.slice(0, 9).map((s) => {
                   const diff = s.closing_amount !== null && s.opening_amount !== null
                     ? s.closing_amount - s.opening_amount : null
                   return (
-                    <div key={s.id} className="flex items-center justify-between px-4 py-3 hover:bg-muted/30 transition">
-                      <div className="min-w-0">
-                        <p className="text-sm font-medium">
-                          {new Date(s.opened_at).toLocaleDateString('es-AR', { day: 'numeric', month: 'short' })}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {new Date(s.opened_at).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}
-                          {s.closed_at && ` — ${new Date(s.closed_at).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}`}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-3 shrink-0">
-                        <div className="text-right">
-                          <p className="text-sm font-bold">{s.closing_amount !== null ? formatCurrency(s.closing_amount) : '-'}</p>
-                          {diff !== null && (
-                            <p className={`text-xs font-medium ${diff >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                              {diff >= 0 ? '+' : ''}{formatCurrency(diff)}
-                            </p>
-                          )}
+                    <div 
+                      key={s.id} 
+                      className="bg-white/[0.03] border border-white/5 rounded-3xl p-5 hover:bg-white/5 transition-all group flex flex-col justify-between"
+                    >
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/5 flex items-center justify-center text-white/30 group-hover:text-white transition-colors">
+                           <CalendarDays className="w-5 h-5" />
                         </div>
-                        <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                        <div className="text-right">
+                           <p className="text-xs font-black text-white">
+                             {new Date(s.opened_at).toLocaleDateString('es-AR', { day: 'numeric', month: 'short' })}
+                           </p>
+                           <p className="text-[10px] text-white/30 font-bold uppercase tracking-widest mt-0.5">
+                             {new Date(s.opened_at).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}
+                           </p>
+                        </div>
                       </div>
+
+                      <div className="space-y-2 bg-black/20 rounded-2xl p-4 border border-white/5">
+                        <div className="flex items-center justify-between">
+                           <p className="text-[10px] text-white/30 font-black uppercase tracking-widest">Saldo Cierre</p>
+                           <p className="text-sm font-black text-white">{s.closing_amount !== null ? formatCurrency(s.closing_amount) : '-'}</p>
+                        </div>
+                        {diff !== null && (
+                          <div className="flex items-center justify-between">
+                             <p className="text-[10px] text-white/30 font-black uppercase tracking-widest">Balance</p>
+                             <p className={cn("text-xs font-black tracking-tight", diff >= 0 ? "text-emerald-400" : "text-red-400")}>
+                               {diff >= 0 ? '+' : ''}{formatCurrency(diff)}
+                             </p>
+                          </div>
+                        )}
+                      </div>
+
+                      <button className="mt-4 w-full h-9 rounded-xl border border-white/5 text-[10px] font-black text-white/20 uppercase tracking-[0.2em] group-hover:text-white group-hover:bg-white/5 transition-all">
+                         Ver Detalles
+                      </button>
                     </div>
                   )
                 })}
               </div>
             </div>
           )}
-        </>
+        </div>
       )}
 
       {/* Open Modal */}

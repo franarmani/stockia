@@ -19,7 +19,8 @@ export interface MusicTrack {
   title: string
   artist: string | null
   file_url: string
-  file_path: string
+  file_path: string | null
+  youtube_id: string | null
   duration: number | null
   order_index: number
   created_at: string

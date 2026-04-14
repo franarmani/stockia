@@ -17,8 +17,10 @@ export default function UploadTrackModal({ onClose, onSuccess, playlistId }: Upl
   const [file, setFile] = useState<File | null>(null)
   const [metadata, setMetadata] = useState({
     title: '',
-    artist: ''
+    artist: '',
+    youtubeUrl: ''
   })
+  const [source, setSource] = useState<'upload' | 'youtube'>('youtube')
   
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -37,23 +39,41 @@ export default function UploadTrackModal({ onClose, onSuccess, playlistId }: Upl
     }
   }
 
+  const extractYoutubeId = (url: string) => {
+    const regExp = /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#&?]*).*/
+    const match = url.match(regExp)
+    return (match && match[7].length === 11) ? match[7] : null
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!profile?.business_id || !file || !playlistId) return
+    if (!profile?.business_id || !playlistId) return
     
     setLoading(true)
     try {
-      await musicService.uploadTrack(
-        profile.business_id,
-        playlistId,
-        file,
-        metadata
-      )
-      toast.success('Track subido exitosamente')
+      if (source === 'upload') {
+        if (!file) throw new Error('Seleccioná un archivo')
+        await musicService.uploadTrack(
+          profile.business_id,
+          playlistId,
+          file,
+          metadata
+        )
+      } else {
+        const ytId = extractYoutubeId(metadata.youtubeUrl)
+        if (!ytId) throw new Error('Link de YouTube inválido')
+        await musicService.createYouTubeTrack(
+          profile.business_id,
+          playlistId,
+          ytId,
+          metadata
+        )
+      }
+      toast.success('Track agregado exitosamente')
       onSuccess()
       onClose()
     } catch (error: any) {
-      toast.error('Error al subir: ' + error.message)
+      toast.error('Error: ' + error.message)
     } finally {
       setLoading(false)
     }
@@ -74,38 +94,73 @@ export default function UploadTrackModal({ onClose, onSuccess, playlistId }: Upl
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
-          {/* File Drop Area */}
-          <div 
-            onClick={() => fileInputRef.current?.click()}
-            className={`
-              relative group cursor-pointer border-2 border-dashed rounded-3xl p-8 transition-all flex flex-col items-center justify-center gap-3
-              ${file 
-                ? 'border-primary/40 bg-primary/5' 
-                : 'border-white/10 hover:border-white/20 bg-white/5 hover:bg-white/10'}
-            `}
+        <div className="p-6 pb-2 flex gap-4 border-b border-white/5">
+          <button 
+            type="button"
+            onClick={() => setSource('youtube')}
+            className={`pb-4 text-xs font-black uppercase tracking-widest border-b-2 transition-all ${source === 'youtube' ? 'text-primary border-primary' : 'text-white/20 border-transparent hover:text-white/40'}`}
           >
-            <input 
-              type="file" 
-              ref={fileInputRef} 
-              onChange={handleFileChange} 
-              accept="audio/*" 
-              className="hidden" 
-            />
-            
-            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all ${file ? 'bg-primary text-slate-950' : 'bg-white/5 text-white/20 group-hover:text-white/40'}`}>
-              {file ? <Check className="w-7 h-7" /> : <FileAudio className="w-7 h-7" />}
-            </div>
+            YouTube Link
+          </button>
+          <button 
+            type="button"
+            onClick={() => setSource('upload')}
+            className={`pb-4 text-xs font-black uppercase tracking-widest border-b-2 transition-all ${source === 'upload' ? 'text-primary border-primary' : 'text-white/20 border-transparent hover:text-white/40'}`}
+          >
+            Subir Archivo
+          </button>
+        </div>
 
-            <div className="text-center">
-              <p className="text-sm font-bold text-white mb-1">
-                {file ? file.name : 'Seleccioná un archivo de audio'}
-              </p>
-              <p className="text-xs text-white/30">
-                {file ? `${(file.size / 1024 / 1024).toFixed(2)} MB` : 'Máximo 20MB por track'}
-              </p>
+        <form onSubmit={handleSubmit} className="p-6 space-y-6">
+          {source === 'upload' ? (
+            <div 
+              onClick={() => fileInputRef.current?.click()}
+              className={`
+                relative group cursor-pointer border-2 border-dashed rounded-3xl p-8 transition-all flex flex-col items-center justify-center gap-3
+                ${file 
+                  ? 'border-primary/40 bg-primary/5' 
+                  : 'border-white/10 hover:border-white/20 bg-white/5 hover:bg-white/10'}
+              `}
+            >
+              <input 
+                type="file" 
+                ref={fileInputRef} 
+                onChange={handleFileChange} 
+                accept="audio/*" 
+                className="hidden" 
+              />
+              
+              <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all ${file ? 'bg-primary text-slate-950' : 'bg-white/5 text-white/20 group-hover:text-white/40'}`}>
+                {file ? <Check className="w-7 h-7" /> : <FileAudio className="w-7 h-7" />}
+              </div>
+
+              <div className="text-center">
+                <p className="text-sm font-bold text-white mb-1">
+                  {file ? file.name : 'Seleccioná un archivo de audio'}
+                </p>
+                <p className="text-xs text-white/30">
+                  {file ? `${(file.size / 1024 / 1024).toFixed(2)} MB` : 'Máximo 20MB por track'}
+                </p>
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="space-y-4">
+               <div className="space-y-2">
+                <label className="text-[11px] font-bold text-white/30 uppercase tracking-widest pl-1">Link de Video / YouTube</label>
+                <div className="relative group">
+                  <input
+                    required
+                    value={metadata.youtubeUrl}
+                    onChange={e => setMetadata({ ...metadata, youtubeUrl: e.target.value })}
+                    placeholder="https://www.youtube.com/watch?v=..."
+                    className="w-full h-12 bg-white/5 border border-white/10 rounded-2xl px-4 text-white focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all font-medium text-sm"
+                  />
+                  <div className="absolute inset-0 rounded-2xl border border-primary/20 opacity-0 group-focus-within:opacity-100 pointer-events-none transition-opacity" />
+                </div>
+                <p className="text-[10px] text-white/20 pl-1 italic">Pegá el link del video y nosotros nos encargamos del audio</p>
+              </div>
+            </div>
+          )}
 
           <div className="space-y-4">
             <div className="space-y-2">
@@ -140,7 +195,7 @@ export default function UploadTrackModal({ onClose, onSuccess, playlistId }: Upl
              </GlassButton>
              <button
                type="submit"
-               disabled={loading || !file}
+               disabled={loading || (source === 'upload' ? !file : !metadata.youtubeUrl.trim())}
                className="flex-[2] h-12 rounded-2xl bg-primary text-slate-950 font-black text-sm shadow-xl shadow-primary/20 hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
              >
                {loading ? (

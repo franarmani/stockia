@@ -1,4 +1,4 @@
-import { Music, Crown, ShieldAlert, ArrowRight, Zap, PlayCircle, Sparkles } from 'lucide-react'
+import { Music, Crown, ShieldAlert, ArrowRight, Zap as ZapIcon, PlayCircle, Sparkles } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
 export default function PremiumMusicLock() {
@@ -46,7 +46,7 @@ export default function PremiumMusicLock() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 py-8 max-w-xl mx-auto">
           {[
             { icon: PlayCircle, text: 'Playlists Inteligentes', desc: 'Diseñadas para tu rubro' },
-            { icon: Zap, text: 'Control Total', desc: 'Reproductor cloud 24/7' },
+            { icon: ZapIcon, text: 'Control Total', desc: 'Reproductor cloud 24/7' },
             { icon: ShieldAlert, text: 'Seguridad', desc: 'Backup offline incluido' },
           ].map((feature, i) => (
             <div key={i} className="group flex flex-col items-center gap-2 p-4 rounded-3xl bg-white/5 border border-white/5 hover:bg-white/10 hover:border-white/20 transition-all cursor-default text-center">

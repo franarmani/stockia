@@ -12,6 +12,16 @@ import {
 import Badge from '@/components/ui/Badge'
 import { getMarketPrices, analyzeProductIntelligence, type AnalysisResult, type MarketData } from '@/services/intelligenceService'
 import { toast } from 'sonner'
+import Modal from '@/components/ui/Modal'
+import { isDecimalUnit } from '@/stores/posStore'
+import { UNIT_SHORT, type Category, type Supplier, type ProductUnit } from '@/types/database'
+
+const UNIT_OPTIONS: { value: ProductUnit; label: string }[] = [
+  { value: 'u', label: 'Unidad (u)' },
+  { value: 'kg', label: 'Kilogramo (kg)' },
+  { value: 'mts', label: 'Metro (mts)' },
+  { value: 'lts', label: 'Litro (lts)' },
+]
 
 export default function ProductDetailPage() {
   const { id } = useParams()
@@ -22,6 +32,17 @@ export default function ProductDetailPage() {
   const [marketData, setMarketData] = useState<MarketData | null>(null)
   const [analysis, setAnalysis] = useState<AnalysisResult | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
+  
+  // Edit logic
+  const [showEditModal, setShowEditModal] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [categories, setCategories] = useState<Category[]>([])
+  const [suppliers, setSuppliers] = useState<Supplier[]>([])
+  const [form, setForm] = useState({
+    name: '', barcode: '', sale_price: '', purchase_price: '',
+    stock: '', stock_min: '3', category_id: '', unit: 'u' as string,
+    brand: '', size_label: '', model: '', presentation: '', supplier_id: '',
+  })
 
   useEffect(() => {
     if (id) fetchProduct()
@@ -41,7 +62,66 @@ export default function ProductDetailPage() {
     }
     setProduct(data)
     setSearchTerm(data.name)
+
+    // Fetch dependencies for edit modal
+    const [{ data: cats }, { data: sups }] = await Promise.all([
+      supabase.from('categories').select('*').eq('business_id', data.business_id).order('name'),
+      supabase.from('suppliers').select('*').eq('business_id', data.business_id).eq('active', true).order('name')
+    ])
+    setCategories(cats || [])
+    setSuppliers(sups || [])
+
     setLoading(false)
+  }
+
+  function openEdit() {
+    if (!product) return
+    setForm({
+      name: product.name,
+      barcode: product.barcode || '',
+      sale_price: String(product.sale_price),
+      purchase_price: String(product.purchase_price),
+      stock: String(product.stock),
+      stock_min: String(product.stock_min),
+      category_id: product.category_id || '',
+      unit: product.unit || 'u',
+      brand: product.brand || '',
+      size_label: product.size_label || '',
+      model: product.model || '',
+      presentation: product.presentation || '',
+      supplier_id: product.supplier_id || '',
+    })
+    setShowEditModal(true)
+  }
+
+  async function handleSave() {
+    if (!product || !form.name || !form.sale_price) return
+    setSaving(true)
+    const payload = {
+      name: form.name,
+      barcode: form.barcode || null,
+      sale_price: Number(form.sale_price),
+      purchase_price: Number(form.purchase_price) || 0,
+      stock: Number(form.stock) || 0,
+      stock_min: Number(form.stock_min) || 3,
+      category_id: form.category_id || null,
+      unit: form.unit || 'u',
+      brand: form.brand || null,
+      size_label: form.size_label || null,
+      model: form.model || null,
+      presentation: form.presentation || null,
+      supplier_id: form.supplier_id || null,
+    }
+
+    const { error } = await supabase.from('products').update(payload).eq('id', product.id)
+    if (error) {
+      toast.error('Error al guardar cambios')
+    } else {
+      toast.success('Producto actualizado exitosamente')
+      setShowEditModal(false)
+      fetchProduct()
+    }
+    setSaving(false)
   }
 
   async function runRadarAnalysis() {
@@ -98,8 +178,8 @@ export default function ProductDetailPage() {
         </button>
         
         <div className="flex gap-2">
-          <Button variant="outline" size="sm">
-            <Settings className="w-4 h-4 mr-2" /> Editar
+          <Button variant="outline" size="sm" onClick={openEdit}>
+            <Settings className="w-4 h-4 mr-2" /> Editar Producto
           </Button>
         </div>
       </div>
@@ -382,6 +462,128 @@ export default function ProductDetailPage() {
           </div>
         </div>
       </div>
+      {/* Edit Modal mirroring ProductsPage */}
+      <Modal open={showEditModal} onClose={() => setShowEditModal(false)} title="Editar Producto" size="md">
+        <div className="space-y-4 max-h-[70vh] overflow-auto pr-2 custom-scrollbar">
+          <div className="space-y-4">
+            <div>
+              <label className="block text-[10px] font-black text-white/40 uppercase tracking-widest mb-1.5 ml-1">Nombre *</label>
+              <input 
+                type="text" 
+                value={form.name} 
+                onChange={(e) => setForm({...form, name: e.target.value})} 
+                className="w-full h-11 px-4 rounded-xl border border-white/10 bg-white/5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-violet-500/30 focus:border-violet-500/50 transition-all placeholder:text-white/20"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-[10px] font-black text-white/40 uppercase tracking-widest mb-1.5 ml-1">Precio venta *</label>
+                <input 
+                  type="number" 
+                  value={form.sale_price} 
+                  onChange={(e) => setForm({...form, sale_price: e.target.value})} 
+                  className="w-full h-11 px-4 rounded-xl border border-white/10 bg-white/5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-violet-500/30 focus:border-violet-500/50 transition-all"
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] font-black text-white/40 uppercase tracking-widest mb-1.5 ml-1">Costo</label>
+                <input 
+                  type="number" 
+                  value={form.purchase_price} 
+                  onChange={(e) => setForm({...form, purchase_price: e.target.value})} 
+                  className="w-full h-11 px-4 rounded-xl border border-white/10 bg-white/5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-violet-500/30 focus:border-violet-500/50 transition-all"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <label className="block text-[10px] font-black text-white/40 uppercase tracking-widest mb-1.5 ml-1">Unidad</label>
+                <select 
+                  value={form.unit} 
+                  onChange={(e) => setForm({...form, unit: e.target.value})}
+                  className="w-full h-11 px-3 rounded-xl border border-white/10 bg-white/5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-violet-500/30 focus:border-violet-500/50 transition-all appearance-none cursor-pointer"
+                >
+                  {UNIT_OPTIONS.map(u => <option key={u.value} value={u.value} className="bg-slate-900">{u.label}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-[10px] font-black text-white/40 uppercase tracking-widest mb-1.5 ml-1">Stock</label>
+                <input 
+                  type="number" 
+                  value={form.stock} 
+                  onChange={(e) => setForm({...form, stock: e.target.value})} 
+                  className="w-full h-11 px-4 rounded-xl border border-white/10 bg-white/5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-violet-500/30 focus:border-violet-500/50 transition-all"
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] font-black text-white/40 uppercase tracking-widest mb-1.5 ml-1">Stock mín</label>
+                <input 
+                  type="number" 
+                  value={form.stock_min} 
+                  onChange={(e) => setForm({...form, stock_min: e.target.value})} 
+                  className="w-full h-11 px-4 rounded-xl border border-white/10 bg-white/5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-violet-500/30 focus:border-violet-500/50 transition-all"
+                />
+              </div>
+            </div>
+
+            <div className="pt-2">
+              <p className="text-[10px] font-black text-violet-400 uppercase tracking-[0.2em] mb-3 ml-1">Variantes</p>
+              <div className="grid grid-cols-2 gap-4">
+                <input 
+                  type="text" 
+                  value={form.brand} 
+                  onChange={(e) => setForm({...form, brand: e.target.value})} 
+                  placeholder="Marca" 
+                  className="w-full h-11 px-4 rounded-xl border border-white/10 bg-white/5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-violet-500/30 focus:border-violet-500/50 transition-all" 
+                />
+                <input 
+                  type="text" 
+                  value={form.model} 
+                  onChange={(e) => setForm({...form, model: e.target.value})} 
+                  placeholder="Modelo" 
+                  className="w-full h-11 px-4 rounded-xl border border-white/10 bg-white/5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-violet-500/30 focus:border-violet-500/50 transition-all" 
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <input 
+                type="text" 
+                value={form.barcode} 
+                onChange={(e) => setForm({...form, barcode: e.target.value})} 
+                placeholder="Código de barras"
+                className="w-full h-11 px-4 rounded-xl border border-white/10 bg-white/5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-violet-500/30 focus:border-violet-500/50 transition-all"
+              />
+              <select 
+                value={form.category_id} 
+                onChange={(e) => setForm({...form, category_id: e.target.value})} 
+                className="w-full h-11 px-4 rounded-xl border border-white/10 bg-white/5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-violet-500/30 focus:border-violet-500/50 transition-all appearance-none cursor-pointer"
+              >
+                <option value="" className="bg-slate-900">Categoría</option>
+                {categories.map(c => (<option key={c.id} value={c.id} className="bg-slate-900">{c.name}</option>))}
+              </select>
+            </div>
+          </div>
+
+          <div className="flex gap-3 pt-4 border-t border-white/5">
+            <button 
+              onClick={() => setShowEditModal(false)}
+              className="flex-1 h-12 rounded-2xl border border-white/10 bg-white/5 text-white/70 font-black text-[11px] uppercase tracking-widest hover:bg-white/10 transition-all"
+            >
+              Cancelar
+            </button>
+            <button 
+              onClick={handleSave} 
+              disabled={saving}
+              className="flex-1 h-12 rounded-2xl bg-violet-600 text-white font-black text-[11px] uppercase tracking-widest hover:bg-violet-500 disabled:opacity-50 transition-all shadow-lg shadow-violet-500/20"
+            >
+              {saving ? 'Guardando...' : 'Guardar Cambios'}
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   )
 }

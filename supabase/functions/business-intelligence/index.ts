@@ -72,25 +72,34 @@ async function handleAnalyzeProduct(params: any, headers: any) {
  */
 async function smartScrapeML(term: string) {
   const query = term.normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim()
-  const url = `https://listado.mercadolibre.com.ar/search?q=${encodeURIComponent(query)}`
+  // Use a more resilient search URL (sometimes the browse subdomain is less sensitive)
+  const url = `https://www.mercadolibre.com.ar/jm/search?as_word=${encodeURIComponent(query)}`
   
   console.log(`[Escáner] Consultando: ${url}`)
   
   const response = await fetch(url, {
     headers: {
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
-      'Accept': 'text/html',
+      'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1',
+      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
       'Accept-Language': 'es-AR,es;q=0.9',
-      'Cache-Control': 'no-cache'
+      'Accept-Encoding': 'gzip, deflate, br',
+      'Cache-Control': 'no-cache',
+      'Connection': 'keep-alive',
+      'Upgrade-Insecure-Requests': '1',
+      'Sec-Fetch-Dest': 'document',
+      'Sec-Fetch-Mode': 'navigate',
+      'Sec-Fetch-Site': 'none',
+      'Sec-Fetch-User': '?1'
     }
   })
 
   const html = await response.text()
   
   // DIAGNÓSTICO: Si es muy corto o contiene bloqueo, avisar.
-  if (html.length < 3000 || html.includes('captcha') || html.includes('Protección contra bots')) {
-     const snippet = html.substring(0, 800).replace(/<[^>]*>/g, ' ').trim()
-     throw new Error(`BLOQUEO DE MERCADO LIBRE: El sitio detectó la IA como un robot. Código recibido: "${snippet}..."`)
+  if (html.length < 3000 || html.includes('captcha') || html.includes('Protección contra bots') || html.includes('suspicious-traffic-frontend')) {
+     const snippet = html.substring(0, 1000).replace(/<[^>]*>/g, ' ').trim()
+     console.error(`[Radar AI] Bloqueo detectado. Snippet: ${snippet}`)
+     throw new Error(`LA IA NO FUNCIONA (Bloqueo de Mercado Libre): El sitio detectó la consulta como automatizada. Fragmento: "${snippet}..."`)
   }
 
   // PATRÓN ULTRA-PERMISIVO DE PRECIOS

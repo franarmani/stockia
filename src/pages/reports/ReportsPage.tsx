@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/authStore'
-import { formatCurrency } from '@/lib/utils'
+import { cn, formatCurrency } from '@/lib/utils'
 import Button from '@/components/ui/Button'
+import { GlassButton } from '@/components/ui/GlassCard'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts'
 import {
   TrendingUp, DollarSign, Package, CreditCard,
   Banknote, ArrowRightLeft, Download, Users,
-  CircleDollarSign, AlertTriangle, User,
+  CircleDollarSign, AlertTriangle, User, BarChart3,
 } from 'lucide-react'
 
 const PAYMENT_LABELS: Record<string, string> = {
@@ -157,123 +158,208 @@ export default function ReportsPage() {
   if (loading) return <div className="flex items-center justify-center h-96"><div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full" /></div>
 
   return (
-    <div className="animate-fade-in space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+    <div className="animate-fade-in flex flex-col gap-6 max-w-6xl mx-auto w-full pb-12">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 px-1">
         <div>
-          <h1 className="text-lg font-bold text-foreground">Reportes</h1>
-          <p className="text-[13px] text-muted-foreground">{sales.length} ventas en el período</p>
-        </div>
-        <div className="flex gap-2">
-          <div className="flex bg-slate-100 rounded-xl p-1 gap-1">
-            <button onClick={() => setPeriod('week')} className={`px-3 py-1.5 rounded-md text-[13px] font-medium transition-colors ${period === 'week' ? 'bg-white shadow-sm text-foreground' : 'text-muted-foreground'}`}>Semana</button>
-            <button onClick={() => setPeriod('month')} className={`px-3 py-1.5 rounded-md text-[13px] font-medium transition-colors ${period === 'month' ? 'bg-white shadow-sm text-foreground' : 'text-muted-foreground'}`}>Mes</button>
+          <p className="text-[11px] text-white/35 uppercase tracking-widest font-black">Inteligencia</p>
+          <h1 className="text-3xl font-black text-white mt-1 tracking-tight">Reportes</h1>
+          <div className="flex items-center gap-2 mt-1">
+             <BarChart3 className="w-3.5 h-3.5 text-orange-500/50" />
+             <p className="text-[11px] text-white/50 font-bold uppercase tracking-wider">{sales.length} ventas en el período</p>
           </div>
-          <Button variant="outline" size="sm" onClick={exportCSV}>
-            <Download className="w-4 h-4" /> CSV
-          </Button>
+        </div>
+        <div className="flex gap-2 flex-wrap sm:justify-end">
+          <div className="flex bg-white/[0.03] border border-white/5 rounded-2xl p-1 gap-1">
+            <button 
+              onClick={() => setPeriod('week')} 
+              className={cn(
+                "px-4 py-1.5 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all",
+                period === 'week' ? "bg-white/10 text-white shadow-lg" : "text-white/30 hover:text-white/50"
+              )}
+            >
+              Semana
+            </button>
+            <button 
+              onClick={() => setPeriod('month')} 
+              className={cn(
+                "px-4 py-1.5 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all",
+                period === 'month' ? "bg-white/10 text-white shadow-lg" : "text-white/30 hover:text-white/50"
+              )}
+            >
+              Mes
+            </button>
+          </div>
+          <GlassButton size="sm" onClick={exportCSV} className="bg-white/5">
+            <Download className="w-3.5 h-3.5" /> Exportar CSV
+          </GlassButton>
         </div>
       </div>
 
-      {/* Big stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div className="gradient-primary rounded-2xl p-4 text-white col-span-2 sm:col-span-1">
-          <div className="flex items-center gap-2 mb-1.5">
-            <DollarSign className="w-4 h-4 opacity-70" />
-            <span className="text-[11px] font-medium opacity-70">Vendido</span>
+      {/* Bento KPI Grid */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 p-1">
+        <div className="bg-orange-500 rounded-[2rem] p-6 text-slate-950 relative overflow-hidden group shadow-xl shadow-orange-500/20 col-span-2 lg:col-span-1">
+          <div className="absolute -right-4 -top-4 opacity-10 group-hover:scale-110 transition-transform">
+            <DollarSign className="w-24 h-24" />
           </div>
-          <p className="text-xl font-bold">{formatCurrency(totalSales)}</p>
+          <p className="text-[10px] font-black uppercase tracking-[0.2em] mb-1 opacity-60">Total Vendido</p>
+          <p className="text-3xl font-black tracking-tighter">{formatCurrency(totalSales)}</p>
+          <div className="mt-4 flex items-center gap-2">
+             <div className="px-2 py-0.5 rounded-lg bg-black/10 text-[9px] font-black uppercase tracking-widest">Bruto</div>
+          </div>
         </div>
-        <div className="bg-white rounded-2xl p-4 shadow-sm">
-          <div className="flex items-center gap-2 mb-1.5">
-            <TrendingUp className="w-4 h-4 text-green-600" />
-            <span className="text-[11px] font-medium text-muted-foreground">Ganancia</span>
+
+        <div className="bg-white/[0.03] border border-white/5 rounded-[2rem] p-6 relative overflow-hidden group">
+          <div className="absolute -right-4 -top-4 opacity-5 group-hover:scale-110 transition-transform">
+            <TrendingUp className="w-20 h-20 text-emerald-400" />
           </div>
-          <p className="text-xl font-bold text-green-600">{formatCurrency(profit)}</p>
-          <p className="text-[11px] text-muted-foreground mt-0.5">Margen {marginPct.toFixed(1)}%</p>
+          <p className="text-[10px] text-white/30 font-black uppercase tracking-[0.2em] mb-1">Ganancia Estimada</p>
+          <p className="text-2xl font-black text-emerald-400 tracking-tighter">{formatCurrency(profit)}</p>
+          <div className="mt-2 flex items-center gap-1.5">
+             <div className="w-1.5 h-1.5 rounded-full bg-emerald-500/50" />
+             <p className="text-[10px] text-white/40 font-bold uppercase tracking-widest">Margen {marginPct.toFixed(1)}%</p>
+          </div>
         </div>
-        <div className="bg-white rounded-2xl p-4 shadow-sm">
-          <div className="flex items-center gap-2 mb-1.5">
-            <Package className="w-4 h-4 text-blue-600" />
-            <span className="text-[11px] font-medium text-muted-foreground">Ventas</span>
+
+        <div className="bg-white/[0.03] border border-white/5 rounded-[2rem] p-6 relative overflow-hidden group">
+          <div className="absolute -right-4 -top-4 opacity-5 group-hover:scale-110 transition-transform">
+            <Package className="w-20 h-20 text-blue-400" />
           </div>
-          <p className="text-xl font-bold">{sales.length}</p>
+          <p className="text-[10px] text-white/30 font-black uppercase tracking-[0.2em] mb-1">Op. Realizadas</p>
+          <p className="text-2xl font-black text-white tracking-tighter">{sales.length}</p>
+          <p className="text-[10px] text-white/20 font-bold uppercase tracking-widest mt-2 px-2 py-0.5 rounded-lg border border-white/5 inline-block">Sincronizado</p>
         </div>
-        <div className="bg-white rounded-2xl p-4 shadow-sm">
-          <div className="flex items-center gap-2 mb-1.5">
-            <Users className="w-4 h-4 text-violet-600" />
-            <span className="text-[11px] font-medium text-muted-foreground">Clientes</span>
+
+        <div className="bg-white/[0.03] border border-white/5 rounded-[2rem] p-6 relative overflow-hidden group">
+          <div className="absolute -right-4 -top-4 opacity-5 group-hover:scale-110 transition-transform">
+            <Users className="w-20 h-20 text-violet-400" />
           </div>
-          <p className="text-xl font-bold">{new Set(sales.filter(s => s.customer_id).map(s => s.customer_id)).size}</p>
+          <p className="text-[10px] text-white/30 font-black uppercase tracking-[0.2em] mb-1">Clientes Únicos</p>
+          <p className="text-2xl font-black text-white tracking-tighter">
+            {new Set(sales.filter(s => s.customer_id).map(s => s.customer_id)).size}
+          </p>
+          <p className="text-[10px] text-white/20 font-bold uppercase tracking-widest mt-2">En el período</p>
         </div>
       </div>
 
-      {/* Chart */}
+      {/* Chart Section */}
       {chartData.length > 0 && (
-        <div className="bg-white rounded-2xl shadow-sm p-4">
-          <h2 className="font-semibold text-sm text-foreground mb-3">Ventas por día</h2>
-          <div className="h-48 sm:h-60">
-            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
-              <BarChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                <XAxis dataKey="name" tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 12 }} axisLine={false} tickLine={false} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
-                <Tooltip formatter={(value) => [formatCurrency(Number(value)), 'Total']} contentStyle={{ borderRadius: 6, border: '1px solid #e2e8f0', fontSize: '12px', boxShadow: '0 2px 8px rgba(0,0,0,.05)' }} />
-                <Bar dataKey="total" fill="#1DB954" radius={[3, 3, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+        <div className="px-1">
+          <div className="bg-white/[0.03] border border-white/5 rounded-[2.5rem] p-8 relative overflow-hidden group">
+            <div className="flex items-center justify-between mb-8">
+              <div>
+                <p className="text-[10px] text-white/30 font-black uppercase tracking-[0.2em]">Rendimiento Temporal</p>
+                <h2 className="text-xl font-black text-white tracking-tight mt-1">Evolución de Ventas</h2>
+              </div>
+              <div className="p-3 rounded-2xl bg-orange-500/10 border border-orange-500/20">
+                 <TrendingUp className="w-5 h-5 text-orange-400" />
+              </div>
+            </div>
+            
+            <div className="h-64 sm:h-80 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={chartData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.03)" />
+                  <XAxis 
+                    dataKey="name" 
+                    tick={{ fontSize: 10, fontWeight: 700, fill: 'rgba(255,255,255,0.2)' }} 
+                    axisLine={false} 
+                    tickLine={false} 
+                    dy={10}
+                  />
+                  <YAxis 
+                    tick={{ fontSize: 10, fontWeight: 700, fill: 'rgba(255,255,255,0.2)' }} 
+                    axisLine={false} 
+                    tickLine={false} 
+                    tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} 
+                  />
+                  <Tooltip 
+                    cursor={{ fill: 'rgba(255,255,255,0.03)' }}
+                    contentStyle={{ 
+                      backgroundColor: 'rgba(15, 23, 42, 0.95)', 
+                      borderRadius: '20px', 
+                      border: '1px solid rgba(255,255,255,0.1)', 
+                      backdropFilter: 'blur(10px)',
+                      padding: '12px 16px',
+                      boxShadow: '0 20px 40px rgba(0,0,0,0.3)'
+                    }} 
+                    labelStyle={{ color: 'rgba(255,255,255,0.4)', fontSize: '10px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '4px' }}
+                    itemStyle={{ color: '#fff', fontSize: '14px', fontWeight: 900 }}
+                    formatter={(value) => [formatCurrency(Number(value))]} 
+                  />
+                  <Bar 
+                    dataKey="total" 
+                    fill="#f97316" 
+                    radius={[12, 12, 4, 4]} 
+                    barSize={window.innerWidth < 640 ? 20 : 35}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
           </div>
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-        <div className="bg-white rounded-2xl shadow-sm">
-          <div className="p-5 pb-3">
-            <h2 className="font-semibold text-foreground">Top productos</h2>
+      {/* Breakdowns Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 px-1">
+        {/* Top Product Card */}
+        <div className="bg-white/[0.03] border border-white/5 rounded-[2.5rem] overflow-hidden">
+          <div className="p-6 pb-2">
+            <p className="text-[10px] text-white/30 font-black uppercase tracking-[0.2em]">Rankings</p>
+            <h2 className="text-base font-black text-white tracking-tight mt-1">Top Productos</h2>
           </div>
           {topProducts.length === 0 ? (
-            <div className="text-center py-10 text-muted-foreground text-sm">Sin datos</div>
+            <div className="text-center py-12 text-white/10 italic text-sm">Sin datos suficientes</div>
           ) : (
-            <div className="divide-y divide-slate-100">
+            <div className="divide-y divide-white/[0.02] mt-4">
               {topProducts.map((p, i) => (
-                <div key={i} className="flex items-center gap-3 px-4 py-3">
-                  <span className={`w-7 h-7 rounded-xl flex items-center justify-center text-xs font-bold shrink-0 ${
-                    i === 0 ? 'bg-amber-100 text-amber-700' : i === 1 ? 'bg-gray-100 text-gray-600' : 'bg-orange-50 text-orange-600'
-                  }`}>{i + 1}</span>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{p.name}</p>
-                    <p className="text-xs text-muted-foreground">{p.quantity} uds — Gan: {formatCurrency(p.total - p.cost)}</p>
+                <div key={i} className="flex items-center gap-4 px-6 py-4 hover:bg-white/[0.02] transition-all group">
+                  <div className={cn(
+                    "w-9 h-9 rounded-xl flex items-center justify-center text-xs font-black shrink-0 border border-white/5 transition-transform group-hover:scale-110",
+                    i === 0 ? "bg-orange-500 text-slate-950 shadow-lg shadow-orange-500/20" : "bg-white/5 text-white/40"
+                  )}>
+                    {i + 1}
                   </div>
-                  <span className="text-sm font-bold shrink-0">{formatCurrency(p.total)}</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[13px] font-black text-white truncate leading-tight transition-colors group-hover:text-orange-400">{p.name}</p>
+                    <p className="text-[10px] text-white/30 font-bold uppercase tracking-widest mt-1">
+                      {p.quantity} uds sold · Gan: {formatCurrency(p.total - p.cost)}
+                    </p>
+                  </div>
+                  <span className="text-sm font-black text-white tracking-tight">{formatCurrency(p.total)}</span>
                 </div>
               ))}
             </div>
           )}
         </div>
 
-        <div className="bg-white rounded-2xl shadow-sm">
-          <div className="p-5 pb-3">
-            <h2 className="font-semibold text-foreground">Medios de pago</h2>
-          </div>
+        {/* Payment Methods Card */}
+        <div className="bg-white/[0.03] border border-white/5 rounded-[2.5rem] p-6 lg:p-8">
+          <p className="text-[10px] text-white/30 font-black uppercase tracking-[0.2em] mb-4">Medios de Pago</p>
           {Object.keys(paymentBreakdown).length === 0 ? (
-            <div className="text-center py-10 text-muted-foreground text-sm">Sin datos</div>
+            <div className="text-center py-12 text-white/10 italic text-sm">Sin datos suficientes</div>
           ) : (
-            <div className="p-4 space-y-3">
+            <div className="space-y-6 mt-6">
               {Object.entries(paymentBreakdown).sort((a, b) => b[1] - a[1]).map(([method, amount]) => {
                 const pct = totalSales > 0 ? (amount / totalSales) * 100 : 0
                 const Icon = PAYMENT_ICONS[method] || ArrowRightLeft
                 return (
-                  <div key={method}>
-                    <div className="flex items-center justify-between text-sm mb-1">
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <Icon className="w-4 h-4" />
-                        <span className="font-medium">{PAYMENT_LABELS[method] || method}</span>
+                  <div key={method} className="group">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-2xl bg-white/5 border border-white/5 flex items-center justify-center text-white/30 group-hover:text-white group-hover:bg-white/10 transition-all">
+                           <Icon className="w-5 h-5" />
+                        </div>
+                        <div>
+                           <p className="text-sm font-black text-white tracking-tight leading-none">{PAYMENT_LABELS[method] || method}</p>
+                           <p className="text-[10px] text-white/30 font-bold uppercase tracking-[0.1em] mt-1">{pct.toFixed(1)}% del total</p>
+                        </div>
                       </div>
-                      <span className="font-bold">{formatCurrency(amount)}</span>
+                      <span className="text-base font-black text-white tracking-tight">{formatCurrency(amount)}</span>
                     </div>
-                    <div className="h-2 bg-muted rounded-full overflow-hidden">
-                      <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${pct}%` }} />
+                    <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
+                      <div className="h-full bg-orange-500 rounded-full transition-all duration-1000 group-hover:bg-white group-hover:shadow-[0_0_10px_rgba(255,255,255,0.3)]" style={{ width: `${pct}%` }} />
                     </div>
-                    <p className="text-[11px] text-muted-foreground mt-0.5">{pct.toFixed(1)}%</p>
                   </div>
                 )
               })}
@@ -281,75 +367,64 @@ export default function ReportsPage() {
           )}
         </div>
 
-        <div className="bg-white rounded-2xl shadow-sm">
-          <div className="p-5 pb-3">
-            <h2 className="font-semibold text-foreground">Ventas por vendedor</h2>
+        {/* Sellers Breakdown */}
+        <div className="bg-white/[0.03] border border-white/5 rounded-[2.5rem] overflow-hidden">
+          <div className="p-6 pb-2">
+            <p className="text-[10px] text-white/30 font-black uppercase tracking-[0.2em]">Rendimiento Equipo</p>
+            <h2 className="text-base font-black text-white tracking-tight mt-1">Ventas por Vendedor</h2>
           </div>
           {sellerBreakdown.length === 0 ? (
-            <div className="text-center py-10 text-muted-foreground text-sm">Sin datos</div>
+            <div className="text-center py-12 text-white/10 italic text-sm">Sin datos registrados</div>
           ) : (
-            <div className="divide-y divide-slate-100">
+            <div className="divide-y divide-white/[0.02] mt-4">
               {sellerBreakdown.map((s, i) => (
-                <div key={i} className="flex items-center gap-3 px-4 py-3">
-                  <div className="w-8 h-8 rounded-xl bg-green-100 flex items-center justify-center shrink-0">
-                    <User className="w-4 h-4 text-green-600" />
+                <div key={i} className="flex items-center gap-4 px-6 py-4 hover:bg-white/[0.02] transition-all group">
+                  <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 border border-emerald-500/10 flex items-center justify-center shrink-0 group-hover:bg-emerald-500 group-hover:text-slate-950 transition-all">
+                    <User className="w-5 h-5" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{s.name}</p>
-                    <p className="text-xs text-muted-foreground">{s.count} ventas</p>
+                    <p className="text-[13px] font-black text-white truncate leading-tight">{s.name}</p>
+                    <p className="text-[10px] text-white/30 font-bold uppercase tracking-widest mt-1">{s.count} transacciones</p>
                   </div>
-                  <span className="text-sm font-bold shrink-0">{formatCurrency(s.total)}</span>
+                  <span className="text-sm font-black text-white tracking-tight">{formatCurrency(s.total)}</span>
                 </div>
               ))}
             </div>
           )}
         </div>
 
-        <div className="bg-white rounded-2xl shadow-sm">
-          <div className="p-5 pb-3">
-            <h2 className="font-semibold text-foreground">Mejores clientes</h2>
-          </div>
-          {topClients.length === 0 ? (
-            <div className="text-center py-10 text-muted-foreground text-sm">Sin datos</div>
-          ) : (
-            <div className="divide-y divide-slate-100">
-              {topClients.map((c, i) => (
-                <div key={i} className="flex items-center gap-3 px-4 py-3">
-                  <span className={`w-7 h-7 rounded-xl flex items-center justify-center text-xs font-bold shrink-0 ${
-                    i === 0 ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-600'
-                  }`}>{i + 1}</span>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{c.name}</p>
-                    <p className="text-xs text-muted-foreground">{c.count} compras</p>
+        {/* Dormant Products Alert */}
+        {dormantProducts.length > 0 && (
+          <div className="bg-amber-500/5 border border-amber-500/10 rounded-[2.5rem] p-6 lg:p-8 relative overflow-hidden group">
+            <div className="absolute top-0 right-0 p-8 opacity-5 pointer-events-none group-hover:scale-110 transition-transform">
+               <AlertTriangle className="w-20 h-20 text-amber-500" />
+            </div>
+            <div className="flex items-center gap-3 mb-6">
+               <div className="w-10 h-10 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">
+                  <AlertTriangle className="w-5 h-5 text-amber-500" />
+               </div>
+               <div>
+                  <h2 className="text-base font-black text-white tracking-tight leading-none">Productos Estancados</h2>
+                  <p className="text-[10px] text-amber-500/60 font-black uppercase tracking-[0.1em] mt-1">Sin movimiento en 30 días</p>
+               </div>
+            </div>
+            
+            <div className="space-y-3">
+              {dormantProducts.map((p) => (
+                <div key={p.id} className="flex items-center justify-between px-5 py-3 rounded-2xl bg-black/20 border border-white/5 hover:border-amber-500/30 transition-all">
+                  <div className="min-w-0">
+                    <p className="text-[11px] font-black text-white truncate uppercase tracking-tight">{p.name}</p>
+                    <p className="text-[9px] text-white/30 font-bold uppercase tracking-widest mt-0.5">{p.stock} en stock físico</p>
                   </div>
-                  <span className="text-sm font-bold shrink-0">{formatCurrency(c.total)}</span>
+                  <div className="text-right">
+                     <p className="text-[11px] font-black text-white/50">{formatCurrency(p.sale_price)}</p>
+                  </div>
                 </div>
               ))}
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
-
-      {/* Dormant products */}
-      {dormantProducts.length > 0 && (
-        <div className="bg-white rounded-2xl shadow-sm">
-          <div className="p-5 pb-3 flex items-center gap-2">
-            <AlertTriangle className="w-4 h-4 text-amber-600" />
-            <h2 className="font-semibold text-foreground">Productos sin movimiento (30 días)</h2>
-          </div>
-          <div className="divide-y divide-slate-100">
-            {dormantProducts.map((p) => (
-              <div key={p.id} className="flex items-center justify-between px-4 py-3">
-                <div className="min-w-0">
-                  <p className="text-sm font-medium truncate">{p.name}</p>
-                  <p className="text-xs text-muted-foreground">{p.stock} en stock</p>
-                </div>
-                <span className="text-sm font-bold text-muted-foreground shrink-0">{formatCurrency(p.sale_price)}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   )
 }
