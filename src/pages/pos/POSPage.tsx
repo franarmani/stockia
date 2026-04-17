@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/authStore'
 import { useBusinessStore } from '@/stores/businessStore'
@@ -203,7 +203,7 @@ export default function POSPage() {
     setProducts(data || [])
     // Sync products cache for offline use
     if (data && data.length > 0) {
-      syncProductsCache(profile!.business_id).catch(() => {})
+      syncProductsCache(data as any).catch(() => {})
     }
   }
   async function fetchCustomers() {
@@ -219,17 +219,22 @@ export default function POSPage() {
     setCategories(data || [])
   }
 
-  const filteredProducts = products.filter((p) => {
-    const matchesSearch = !search || 
-      p.name.toLowerCase().includes(search.toLowerCase()) || 
-      (p.barcode && p.barcode.includes(search)) ||
-      (p.brand && p.brand.toLowerCase().includes(search.toLowerCase())) ||
-      (p.model && p.model.toLowerCase().includes(search.toLowerCase()))
-    
-    const matchesCategory = !selectedCategory || p.category_id === selectedCategory
-    
-    return matchesSearch && matchesCategory
-  })
+  const filteredProducts = useMemo(() => {
+    return products.filter((p) => {
+      const matchesSearch = !search || 
+        p.name.toLowerCase().includes(search.toLowerCase()) || 
+        (p.barcode && p.barcode.includes(search)) ||
+        (p.brand && p.brand.toLowerCase().includes(search.toLowerCase())) ||
+        (p.model && p.model.toLowerCase().includes(search.toLowerCase()))
+      
+      const matchesCategory = !selectedCategory || p.category_id === selectedCategory
+      
+      return matchesSearch && matchesCategory
+    })
+  }, [products, search, selectedCategory])
+
+  // Limit rendered products to improve performance on low-resource devices
+  const visibleProducts = useMemo(() => filteredProducts.slice(0, 48), [filteredProducts])
 
   function handleSearchKeyDown(e: React.KeyboardEvent) {
     if (e.key === 'Enter' && search.trim()) {
@@ -958,7 +963,7 @@ export default function POSPage() {
                 </div>
               ) : (
                 <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))' }}>
-                  {filteredProducts.map((product, idx) => (
+                  {visibleProducts.map((product, idx) => (
                     <button
                       key={product.id}
                       onClick={() => { handleProductClick(product); setSearch('') }}

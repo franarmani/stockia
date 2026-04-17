@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/authStore'
@@ -75,15 +75,19 @@ export default function ProductsPage() {
     setLoading(false)
   }
 
-  const filtered = products.filter((p) => {
-    const q = search.toLowerCase()
-    const matchSearch = !search || p.name.toLowerCase().includes(q) || (p.barcode && p.barcode.includes(q)) ||
-      (p.brand && p.brand.toLowerCase().includes(q)) || (p.model && p.model.toLowerCase().includes(q))
-    const matchCat = !filterCategory || p.category_id === filterCategory
-    return matchSearch && matchCat
-  })
+  const filtered = useMemo(() => {
+    return products.filter((p) => {
+      const q = search.toLowerCase()
+      const matchSearch = !search || p.name.toLowerCase().includes(q) || (p.barcode && p.barcode.includes(q)) ||
+        (p.brand && p.brand.toLowerCase().includes(q)) || (p.model && p.model.toLowerCase().includes(q))
+      const matchCat = !filterCategory || p.category_id === filterCategory
+      return matchSearch && matchCat
+    })
+  }, [products, search, filterCategory])
 
-  const lowStockProducts = products.filter(p => p.stock <= p.stock_min)
+  const visibleProducts = useMemo(() => filtered.slice(0, 30), [filtered])
+
+  const lowStockProducts = useMemo(() => products.filter(p => p.stock <= p.stock_min), [products])
 
   function openNew() {
     setEditingProduct(null)
@@ -372,7 +376,7 @@ export default function ProductsPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filtered.map((p) => (
+            {visibleProducts.map((p) => (
               <div 
                 key={p.id} 
                 className="bg-white/[0.03] border border-white/5 rounded-[2rem] p-6 group cursor-pointer hover:bg-white/[0.06] hover:border-white/10 transition-all active:scale-[0.98] relative overflow-hidden"
@@ -473,6 +477,16 @@ export default function ProductsPage() {
                 </div>
               </div>
             ))}
+          </div>
+        )}
+        {filtered.length > visibleProducts.length && (
+          <div className="mt-8 text-center">
+            <p className="text-white/20 text-[10px] font-black uppercase tracking-widest mb-4">
+              Mostrando {visibleProducts.length} de {filtered.length} productos
+            </p>
+            <GlassButton onClick={() => { /* Real loading logic could go here, but for now we encourage searching */ }} className="bg-white/5 opacity-50 cursor-default">
+               Usá el buscador para encontrar más
+            </GlassButton>
           </div>
         )}
       </div>

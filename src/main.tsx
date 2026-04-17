@@ -18,6 +18,17 @@ registerSW({
   }
 })
 
+// Force cache clear on version change
+const BUILD_ID = '20260417-perf';
+if (localStorage.getItem('stockia_build') !== BUILD_ID) {
+  if ('caches' in window) {
+    caches.keys().then(names => {
+      for (const name of names) caches.delete(name);
+    });
+  }
+  localStorage.setItem('stockia_build', BUILD_ID);
+}
+
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <BrowserRouter>
