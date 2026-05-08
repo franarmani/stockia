@@ -203,6 +203,25 @@ export default function AdminPage() {
       toast.success('📅 +30 días agregados')
       setBusinesses(prev => prev.map(b => b.id === id ? { ...b, trial_ends_at: newDate, subscription_status: 'trial' } : b))
     }
+    setUpdating(id === updating ? null : updating) // Fixed potential state conflict
+    setUpdating(null)
+  }
+
+  async function updateTrialDate(id: string, dateStr: string) {
+    if (!dateStr) return
+    setUpdating(id)
+    const newDate = new Date(dateStr).toISOString()
+    const { error } = await supabase
+      .from('businesses')
+      .update({ trial_ends_at: newDate })
+      .eq('id', id)
+
+    if (error) {
+      toast.error('Error: ' + error.message)
+    } else {
+      toast.success('Fecha actualizada ✅')
+      setBusinesses(prev => prev.map(b => b.id === id ? { ...b, trial_ends_at: newDate } : b))
+    }
     setUpdating(null)
   }
 
@@ -295,10 +314,15 @@ export default function AdminPage() {
 
         {/* Alias banner */}
         <div className="glass-card p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border border-green-500/20 bg-green-500/5">
-          <div>
-            <p className="text-xs text-green-400 font-semibold uppercase tracking-wider mb-0.5">Alias de cobro</p>
-            <p className="text-lg font-black text-white tracking-wide">{ALIAS}</p>
-            <p className="text-xs text-white/35">$50.000 / mes — Plan Negocio</p>
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 rounded-2xl bg-green-500/10 border border-green-500/20 flex items-center justify-center shrink-0">
+              <CreditCard className="w-7 h-7 text-green-400" />
+            </div>
+            <div>
+              <p className="text-[10px] text-green-400 font-black uppercase tracking-[0.2em] mb-1">Alias de cobro principal</p>
+              <p className="text-2xl font-black text-white tracking-tight">{ALIAS}</p>
+              <p className="text-xs text-white/40 font-medium">Sugerido: $50.000 / mes · Plan Negocio</p>
+            </div>
           </div>
           <div className="flex items-center gap-2">
             <button
@@ -319,21 +343,22 @@ export default function AdminPage() {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           {[
-            { label: 'Total negocios', val: total, icon: Users, color: 'text-white' },
-            { label: 'Activos', val: activos, icon: CheckCircle2, color: 'text-green-400' },
-            { label: 'En trial', val: trials, icon: Clock, color: 'text-blue-400' },
-            { label: 'Vencidos', val: vencidos, icon: XCircle, color: 'text-red-400' },
+            { label: 'Total negocios', val: total, icon: Users, color: 'text-white', bg: 'bg-white/5' },
+            { label: 'Activos', val: activos, icon: CheckCircle2, color: 'text-green-400', bg: 'bg-green-500/10' },
+            { label: 'En trial', val: trials, icon: Clock, color: 'text-blue-400', bg: 'bg-blue-500/10' },
+            { label: 'Vencidos', val: vencidos, icon: XCircle, color: 'text-red-400', bg: 'bg-red-500/10' },
           ].map((s, i) => (
-            <div key={i} className="glass-card p-4 flex items-center gap-3">
-              <div className={`w-9 h-9 rounded-xl bg-white/5 flex items-center justify-center shrink-0`}>
-                <s.icon className={`w-4 h-4 ${s.color}`} />
+            <div key={i} className="glass-card p-5 flex flex-col gap-3 relative overflow-hidden group hover:border-white/20 transition-all">
+              <div className={`w-10 h-10 rounded-xl ${s.bg} border border-white/5 flex items-center justify-center shrink-0 transition-transform group-hover:scale-110`}>
+                <s.icon className={`w-5 h-5 ${s.color}`} />
               </div>
               <div>
-                <p className={`text-xl font-black ${s.color}`}>{s.val}</p>
-                <p className="text-[11px] text-white/35">{s.label}</p>
+                <p className={`text-2xl font-black ${s.color} tracking-tight`}>{s.val}</p>
+                <p className="text-[11px] text-white/30 font-bold uppercase tracking-widest">{s.label}</p>
               </div>
+              <div className={`absolute -right-4 -bottom-4 w-20 h-20 ${s.bg} rounded-full blur-3xl opacity-50`} />
             </div>
           ))}
         </div>
@@ -539,10 +564,14 @@ export default function AdminPage() {
                             </span>
                           )}
                         </td>
-                        <td className="px-4 py-3 text-xs text-white/40">
-                          {b.trial_ends_at
-                            ? format(new Date(b.trial_ends_at), "d MMM yyyy", { locale: es })
-                            : '—'}
+                        <td className="px-4 py-3">
+                          <input
+                            type="date"
+                            defaultValue={b.trial_ends_at ? b.trial_ends_at.split('T')[0] : ''}
+                            onChange={(e) => updateTrialDate(b.id, e.target.value)}
+                            disabled={updating === b.id}
+                            className="bg-white/5 border border-white/10 rounded-lg text-[11px] font-bold px-2 py-1.5 text-white focus:outline-none focus:border-blue-500/50 w-[120px] transition-all hover:bg-white/10"
+                          />
                         </td>
                         <td className="px-4 py-3 text-xs text-white/40">
                           {format(new Date(b.created_at), "d MMM yyyy", { locale: es })}
