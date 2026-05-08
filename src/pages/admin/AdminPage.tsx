@@ -521,7 +521,7 @@ export default function AdminPage() {
                     <th className="text-left px-4 py-3 text-[11px] font-semibold text-white/35 uppercase tracking-wider">Contacto</th>
                     <th className="text-left px-4 py-3 text-[11px] font-semibold text-white/35 uppercase tracking-wider">Estado</th>
                     <th className="text-left px-4 py-3 text-[11px] font-semibold text-white/35 uppercase tracking-wider">Plan</th>
-                    <th className="text-left px-4 py-3 text-[11px] font-semibold text-white/35 uppercase tracking-wider">Trial hasta</th>
+                    <th className="text-left px-4 py-3 text-[11px] font-semibold text-white/35 uppercase tracking-wider">Activo hasta</th>
                     <th className="text-left px-4 py-3 text-[11px] font-semibold text-white/35 uppercase tracking-wider">Registro</th>
                     <th className="text-right px-4 py-3 text-[11px] font-semibold text-white/35 uppercase tracking-wider">Acciones</th>
                   </tr>

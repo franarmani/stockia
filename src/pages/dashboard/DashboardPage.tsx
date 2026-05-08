@@ -57,9 +57,7 @@ export default function DashboardPage() {
   const { business } = useBusinessStore()
 
   useEffect(() => {
-    if (business?.subscription_status === 'trial') {
-      setShowPaymentModal(true)
-    }
+    // Relying on global blocker in App.tsx
   }, [business?.subscription_status])
 
   useEffect(() => {

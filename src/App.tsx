@@ -8,11 +8,12 @@ import { useBusinessStore } from '@/stores/businessStore'
 // Layouts
 import AppShellLauncher from '@/components/layout/AppShellLauncher'
 import TrialExpiredModal from '@/components/TrialExpiredModal'
+import PaymentNotificationModal from '@/components/modals/PaymentNotificationModal'
 import ScrollToTop from '@/components/layout/ScrollToTop'
 import UpdateNotificationModal from '@/components/modals/UpdateNotificationModal'
 
 // ── VERSIONING ──
-const APP_VERSION = '1.5.2-bento-pro' // Local version
+const APP_VERSION = '1.5.3-bento-pro' // Local version
 
 // ── localStorage cache helpers ──
 const PROFILE_CACHE_KEY = 'stockia_profile'
@@ -88,7 +89,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
     return (
       <>
         {children}
-        <TrialExpiredModal />
+        <PaymentNotificationModal />
       </>
     )
   }
