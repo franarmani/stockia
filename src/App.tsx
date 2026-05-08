@@ -7,13 +7,13 @@ import { useBusinessStore } from '@/stores/businessStore'
 
 // Layouts
 import AppShellLauncher from '@/components/layout/AppShellLauncher'
-import TrialExpiredModal from '@/components/TrialExpiredModal'
 import PaymentNotificationModal from '@/components/modals/PaymentNotificationModal'
 import ScrollToTop from '@/components/layout/ScrollToTop'
+import { calculateRemainingDays } from '@/lib/subscription'
 import UpdateNotificationModal from '@/components/modals/UpdateNotificationModal'
 
 // ── VERSIONING ──
-const APP_VERSION = '1.5.4-bento-pro' // Local version
+const APP_VERSION = '1.5.5-bento-pro' // Local version
 
 // ── localStorage cache helpers ──
 const PROFILE_CACHE_KEY = 'stockia_profile'
@@ -80,16 +80,24 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   // No session at all → login
   if (!user) return <Navigate to="/login" replace />
 
-  const isTrialExpired =
-    business?.subscription_status === 'trial' &&
-    !!business?.trial_ends_at &&
-    new Date(business.trial_ends_at) < new Date()
+  const daysLeft = calculateRemainingDays(business?.trial_ends_at, business?.subscription_status ?? 'trial')
+  const isExpired = business?.subscription_status === 'expired' || (business?.subscription_status === 'trial' && daysLeft === 0)
+  
+  // Check if it was closed in this session
+  const [sessionClosed, setSessionClosed] = useState(() => !!sessionStorage.getItem('payment_modal_closed'))
+  
+  const shouldShowPaymentReminder = business?.subscription_status === 'trial' && daysLeft <= 29 && !sessionClosed
 
-  if (business?.subscription_status === 'expired' || isTrialExpired) {
+  if (isExpired || shouldShowPaymentReminder) {
     return (
       <>
         {children}
-        <PaymentNotificationModal />
+        <PaymentNotificationModal 
+          onClose={isExpired ? undefined : () => {
+            sessionStorage.setItem('payment_modal_closed', 'true')
+            setSessionClosed(true)
+          }} 
+        />
       </>
     )
   }
