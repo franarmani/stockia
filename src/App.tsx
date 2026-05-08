@@ -12,7 +12,7 @@ import ScrollToTop from '@/components/layout/ScrollToTop'
 import UpdateNotificationModal from '@/components/modals/UpdateNotificationModal'
 
 // ── VERSIONING ──
-const APP_VERSION = '1.5.0-bento-pro' // Local version
+const APP_VERSION = '1.5.1-bento-pro' // Local version
 
 // ── localStorage cache helpers ──
 const PROFILE_CACHE_KEY = 'stockia_profile'
@@ -120,6 +120,18 @@ export default function App() {
         
         if (data.version && data.version !== APP_VERSION) {
           console.log(`[Update] New version detected: ${data.version}`)
+          
+          // ── FORCE CACHE PURGE ──
+          // 1. Clear our app's localStorage cache
+          clearCache()
+          
+          // 2. Try to clear browser cache API if supported
+          if ('caches' in window) {
+            caches.keys().then((names) => {
+              for (const name of names) caches.delete(name)
+            })
+          }
+
           setShowUpdateModal(true)
         }
       } catch (err) {

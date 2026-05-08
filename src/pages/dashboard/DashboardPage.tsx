@@ -31,6 +31,7 @@ import Button from '@/components/ui/Button'
 import { getGlobalCopilotInsight, type AnalysisResult } from '@/services/intelligenceService'
 import { Zap, Loader2, CheckCircle2, Info, ChevronRight } from 'lucide-react'
 import { toast } from 'sonner'
+import PaymentNotificationModal from '@/components/modals/PaymentNotificationModal'
 
 interface DashboardData {
   todaySales: number
@@ -51,6 +52,15 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true)
   const [analyzing, setAnalyzing] = useState(false)
   const [insight, setInsight] = useState<AnalysisResult | null>(null)
+  const [showPaymentModal, setShowPaymentModal] = useState(false)
+
+  const { business } = useBusinessStore()
+
+  useEffect(() => {
+    if (business?.subscription_status === 'trial') {
+      setShowPaymentModal(true)
+    }
+  }, [business?.subscription_status])
 
   useEffect(() => {
     if (profile?.business_id) fetchDashboard()
@@ -355,6 +365,10 @@ export default function DashboardPage() {
           </div>
         )}
       </div>
+
+      {showPaymentModal && (
+        <PaymentNotificationModal onClose={() => setShowPaymentModal(false)} />
+      )}
     </div>
   )
 }

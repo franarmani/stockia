@@ -400,6 +400,26 @@ export default function SettingsPage() {
           <Crown className="w-5 h-5 text-amber-500" />
           <h2 className="font-semibold text-foreground">Tu Plan y Suscripción</h2>
         </div>
+
+        {business?.subscription_status === 'trial' && (
+          <div className="mx-5 mb-4 p-4 bg-amber-50 border border-amber-200 rounded-2xl flex items-start gap-4">
+            <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center shrink-0">
+              <AlertCircle className="w-5 h-5 text-amber-600" />
+            </div>
+            <div className="flex-1">
+              <p className="text-sm font-bold text-amber-900">Activación pendiente</p>
+              <p className="text-[12px] text-amber-700 leading-relaxed">
+                Tu cuenta se encuentra en período de prueba. Para activarla de forma permanente y evitar interrupciones, debés realizar el pago de la suscripción y enviar el comprobante.
+              </p>
+              <button 
+                onClick={() => window.open('https://wa.me/5492915716099?text=Hola,%20quisiera%20activar%20mi%20plan%20en%20Stockia.', '_blank')}
+                className="mt-2 text-xs font-bold text-amber-900 underline underline-offset-2 hover:no-underline transition-all"
+              >
+                Hablar con soporte por WhatsApp →
+              </button>
+            </div>
+          </div>
+        )}
         
         <div className="p-4 sm:p-5">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -463,6 +483,16 @@ export default function SettingsPage() {
                     />
                   </div>
                 </div>
+
+                {business?.subscription_status === 'trial' && (
+                  <button 
+                    onClick={() => window.open('https://wa.me/5492915716099?text=Hola,%20quisiera%20enviar%20el%20comprobante%20para%20activar%20mi%20plan.', '_blank')}
+                    className="mt-4 w-full py-2.5 rounded-xl bg-primary text-slate-950 font-black text-xs hover:bg-primary-dark transition-all shadow-lg shadow-primary/20 flex items-center justify-center gap-2"
+                  >
+                    <CreditCard className="w-3.5 h-3.5" />
+                    Pagar y Activar Ahora
+                  </button>
+                )}
               </div>
             </div>
 
