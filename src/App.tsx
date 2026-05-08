@@ -12,7 +12,7 @@ import ScrollToTop from '@/components/layout/ScrollToTop'
 import UpdateNotificationModal from '@/components/modals/UpdateNotificationModal'
 
 // ── VERSIONING ──
-const APP_VERSION = '1.5.1-bento-pro' // Local version
+const APP_VERSION = '1.5.2-bento-pro' // Local version
 
 // ── localStorage cache helpers ──
 const PROFILE_CACHE_KEY = 'stockia_profile'
