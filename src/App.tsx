@@ -13,7 +13,7 @@ import { calculateRemainingDays } from '@/lib/subscription'
 import UpdateNotificationModal from '@/components/modals/UpdateNotificationModal'
 
 // ── VERSIONING ──
-const APP_VERSION = '1.5.6-bento-pro' // Local version
+const APP_VERSION = '1.5.7-bento-pro' // Local version
 
 // ── localStorage cache helpers ──
 const PROFILE_CACHE_KEY = 'stockia_profile'
@@ -64,6 +64,7 @@ const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'))
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading, profile } = useAuthStore()
   const { business } = useBusinessStore()
+  const [sessionClosed, setSessionClosed] = useState(() => !!sessionStorage.getItem('payment_modal_closed'))
 
   // Loading OR (user exists but profile hasn't loaded yet) → show spinner
   if (loading || (user && !profile)) {
@@ -82,9 +83,6 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
   const daysLeft = calculateRemainingDays(business?.trial_ends_at, business?.subscription_status ?? 'trial')
   const isExpired = business?.subscription_status === 'expired' || (business?.subscription_status === 'trial' && daysLeft === 0)
-  
-  // Check if it was closed in this session
-  const [sessionClosed, setSessionClosed] = useState(() => !!sessionStorage.getItem('payment_modal_closed'))
   
   const shouldShowPaymentReminder = business?.subscription_status === 'trial' && daysLeft <= 29 && !sessionClosed
 
