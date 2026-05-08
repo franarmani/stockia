@@ -10,7 +10,7 @@
       ]
     },
     {
-      "source": "/(index.html|sw.js|manifest.webmanifest|manifest.json)",
+      "source": "/(index.html|sw.js|manifest.webmanifest|manifest.json|version.json)",
       "headers": [
         { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate, proxy-revalidate, max-age=0" },
         { "key": "Pragma", "value": "no-cache" },
