@@ -13,7 +13,7 @@ import { calculateRemainingDays } from '@/lib/subscription'
 import UpdateNotificationModal from '@/components/modals/UpdateNotificationModal'
 
 // ── VERSIONING ──
-const APP_VERSION = '1.5.9-bento-pro' // Local version
+const APP_VERSION = '1.6.1-bento-pro' // Local version
 
 // ── localStorage cache helpers ──
 const PROFILE_CACHE_KEY = 'stockia_profile'
@@ -81,11 +81,17 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   // No session at all → login
   if (!user) return <Navigate to="/login" replace />
 
+  const isSuperAdmin = profile?.is_superadmin
   const daysLeft = calculateRemainingDays(business?.trial_ends_at, business?.subscription_status ?? 'trial')
-  const isExpired = business?.subscription_status === 'expired' || (business?.subscription_status === 'trial' && daysLeft === 0)
   
-  // Check if it was closed in this session
-  const shouldShowPaymentReminder = business?.subscription_status === 'trial' && daysLeft <= 30 && !sessionClosed
+  // Bloqueo total si está expirado o llegó a 0 días (excepto superadmin)
+  const isExpired = !isSuperAdmin && (business?.subscription_status === 'expired' || daysLeft === 0)
+  
+  // Recordatorio si está en trial o activo y le quedan 29 días o menos (excepto superadmin)
+  const shouldShowPaymentReminder = !isSuperAdmin && 
+    (business?.subscription_status === 'trial' || business?.subscription_status === 'active') && 
+    daysLeft <= 29 && 
+    !sessionClosed
 
   if (isExpired || shouldShowPaymentReminder) {
     return (
