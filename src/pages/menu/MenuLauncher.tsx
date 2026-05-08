@@ -345,7 +345,14 @@ export default function MenuLauncher() {
                  </div>
                ))}
             </div>
-            {(business?.plan === 'pro' || !business?.plan) && <div className="text-center py-1 rounded-lg bg-blue-500/20 text-blue-400 text-[8px] font-black uppercase tracking-[0.2em]">Suscripción Activa</div>}
+            {(business?.plan === 'pro' || !business?.plan) && (
+              <div className={cn(
+                "text-center py-1 rounded-lg text-[8px] font-black uppercase tracking-[0.2em]",
+                business?.subscription_status === 'trial' ? "bg-amber-500/20 text-amber-500 animate-pulse" : "bg-blue-500/20 text-blue-400"
+              )}>
+                {business?.subscription_status === 'trial' ? 'Abonar Activación' : 'Suscripción Activa'}
+              </div>
+            )}
           </div>
 
           {/* Plan Premium */}
