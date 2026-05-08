@@ -149,7 +149,12 @@ function SidebarContent({
                   {(!business.plan || business.plan === 'free') ? 'Plan Negocio' : business.plan === 'premium' ? 'Plan Premium' : 'Plan Negocio'}
                 </p>
               </div>
-              <p className="text-[13px] font-bold text-white mb-0.5">Suscripción activa</p>
+              <p className={cn(
+                "text-[13px] font-bold mb-0.5",
+                business.subscription_status === 'trial' ? "text-amber-400" : "text-white"
+              )}>
+                {business.subscription_status === 'trial' ? 'Abonar activación' : 'Suscripción activa'}
+              </p>
               <p className="text-[10px] text-white/30 truncate mb-2">
                 ${business.plan === 'premium' ? '100.000' : '50.000'}/mes
               </p>
@@ -162,8 +167,16 @@ function SidebarContent({
                 </div>
                 <span className="text-[9px] font-bold text-primary shrink-0">
                   {calculateRemainingDays(business.trial_ends_at, business.subscription_status)} días
-                </span>
               </div>
+
+              {business.subscription_status === 'trial' && (
+                <button 
+                  onClick={() => window.open('https://wa.me/5492915716099?text=Hola,%20quisiera%20enviar%20el%20comprobante%20para%20activar%20mi%20cuenta.', '_blank')}
+                  className="mt-3 w-full py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-[10px] font-black uppercase tracking-wider transition-all shadow-lg shadow-amber-500/20"
+                >
+                  Pagar Ahora
+                </button>
+              )}
             </div>
           </div>
         )}
