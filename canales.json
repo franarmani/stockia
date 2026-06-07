@@ -1,0 +1,32 @@
+[
+    {
+    "id": "telefe_argentina_1",
+    "name": "Telefe",
+    "image": "https://bestleague.world/img/telefe.png",
+    "iframe_url": "[\"https://tvlibree.com/html/fl/?get=VGVsZWZlSEQ=\", \"https://tvlibree.com/en-vivo/telefe/hl.html\", \"https://tvlibree.com/html/fl/?get=Q2FuYWxfOF9DQkE\", \"https://tvlibree.com/html/fl/?get=Q2FuYWxfOF9UdWN1bWFu\", \"https://tvlibree.com/html/fl/?get=Q2FuYWxfNV9Sb3Nhcmlv\", \"https://tvlibree.com/html/fl/?get=VGVsZWZlX1NhbHRh\", \"https://tvlibree.com/html/fl/?get=VGVsZWZlX05ldXF1ZW4=\"]",
+    "category": "Argentina",
+    "country": "Unknown",
+    "quality": "HD",
+    "is_active": true
+  },
+  {
+    "id": "eltrece_argentina_2",
+    "name": "El Trece",
+    "image": "https://bestleague.world/img/eltrece.webp",
+    "iframe_url": "[\"https://tvlibree.com/html/fl/?get=QXJ0ZWFySEQ\"]",
+    "category": "Argentina",
+    "country": "Unknown",
+    "quality": "HD",
+    "is_active": true
+  },
+  {
+    "id": "elnueve_argentina_3",
+    "name": "El Nueve",
+    "image": "https://bestleague.world/img/nueve.webp",
+    "iframe_url": "[\"https://tvlibree.com/html/fl/?get=Q2FuYWw5&lang=1\", \"https://player.twitch.tv/?channel=elnueveenvivo&parent=tvlibree.com\"]",
+    "category": "Argentina",
+    "country": "Unknown",
+    "quality": "HD",
+    "is_active": true
+  }
+]

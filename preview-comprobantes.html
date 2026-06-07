@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Preview – Ticket & Factura</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: #f1f5f9;
+      padding: 32px 16px;
+      min-height: 100vh;
+    }
+
+    h1 {
+      text-align: center;
+      color: #1e293b;
+      font-size: 22px;
+      margin-bottom: 8px;
+    }
+    .subtitle {
+      text-align: center;
+      color: #64748b;
+      font-size: 13px;
+      margin-bottom: 36px;
+    }
+
+    /* Controls */
+    .controls {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 36px;
+    }
+    .controls label { font-size: 13px; color: #475569; font-weight: 600; display: flex; align-items: center; gap: 6px; }
+    .controls input[type=color] { width: 36px; height: 36px; border: none; cursor: pointer; border-radius: 8px; }
+    .controls input[type=text] {
+      height: 36px; padding: 0 10px; border: 1px solid #cbd5e1;
+      border-radius: 8px; font-size: 13px; width: 200px;
+    }
+    .controls input[type=url] {
+      height: 36px; padding: 0 10px; border: 1px solid #cbd5e1;
+      border-radius: 8px; font-size: 13px; width: 240px;
+    }
+    .btn {
+      height: 36px; padding: 0 18px; background: #1DB954; color: white;
+      border: none; border-radius: 8px; font-weight: 700; cursor: pointer;
+      font-size: 13px;
+    }
+    .btn:hover { background: #18a347; }
+
+    /* Layout */
+    .row {
+      display: flex;
+      gap: 40px;
+      justify-content: center;
+      align-items: flex-start;
+      flex-wrap: wrap;
+    }
+    .col { display: flex; flex-direction: column; gap: 12px; align-items: center; }
+    .col-label { font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; }
+
+    /* ---------- TICKET THERMAL ---------- */
+    .ticket {
+      background: white;
+      width: 300px;
+      padding: 14px 12px;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      line-height: 1.4;
+      color: #000;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.12);
+      border-radius: 4px;
+      position: relative;
+    }
+    .ticket::before, .ticket::after {
+      content: '';
+      display: block;
+      height: 10px;
+      background: repeating-linear-gradient(90deg, #f1f5f9 0, #f1f5f9 8px, white 8px, white 16px);
+      margin: 0 -12px;
+    }
+    .ticket::before { margin-bottom: 10px; }
+    .ticket::after  { margin-top: 10px; }
+
+    .t-center { text-align: center; }
+    .t-bold { font-weight: bold; }
+    .t-sep { border-top: 1px dashed #999; margin: 6px 0; }
+    .t-row { display: flex; justify-content: space-between; }
+    .t-small { font-size: 10px; }
+    .t-big { font-size: 15px; }
+    .t-biz { font-size: 13px; font-weight: bold; }
+    .t-logo { max-width: 100px; max-height: 44px; object-fit: contain; display: block; margin: 0 auto 4px; }
+
+    /* ---------- INVOICE A4 ---------- */
+    .invoice {
+      background: white;
+      width: 680px;
+      padding: 28px 32px;
+      font-family: 'Segoe UI', Arial, sans-serif;
+      font-size: 13px;
+      line-height: 1.5;
+      color: #1f2937;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.12);
+      border-radius: 8px;
+    }
+    .inv-header { display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 16px; border-bottom: 2px solid #e5e7eb; position: relative; min-height: 80px; }
+    .inv-left { flex: 1; }
+    .inv-right { flex: 1; text-align: right; }
+    .inv-logo { max-width: 130px; max-height: 60px; object-fit: contain; margin-bottom: 6px; display: block; }
+    .inv-biz-name { font-size: 18px; font-weight: 700; color: #111827; }
+    .inv-biz-detail { font-size: 11px; color: #6b7280; }
+    .letter-box {
+      position: absolute; left: 50%; top: 0; transform: translateX(-50%);
+      width: 60px; height: 60px; display: flex; align-items: center; justify-content: center;
+      font-size: 34px; font-weight: 900; background: white; z-index: 1;
+    }
+    .inv-type { font-size: 16px; font-weight: 700; }
+    .inv-number { font-size: 22px; font-weight: 800; color: #111827; }
+    .inv-section { margin-top: 16px; }
+    .inv-section-title { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #9ca3af; margin-bottom: 6px; }
+    .inv-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 24px; font-size: 12px; }
+    .inv-grid dt { color: #6b7280; }
+    .inv-grid dd { font-weight: 600; }
+    table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+    thead th { background: #f9fafb; padding: 8px; text-align: left; font-size: 11px; font-weight: 700; text-transform: uppercase; color: #6b7280; border-bottom: 2px solid #e5e7eb; }
+    thead th:nth-child(2), thead th:nth-child(3), thead th:nth-child(4) { text-align: right; }
+    thead th:nth-child(2) { text-align: center; }
+    td { padding: 6px 8px; border-bottom: 1px solid #e5e7eb; font-size: 13px; }
+    td:nth-child(2) { text-align: center; }
+    td:nth-child(3), td:nth-child(4) { text-align: right; }
+    td:nth-child(4) { font-weight: 600; }
+    .inv-totals { margin-top: 14px; display: flex; justify-content: flex-end; }
+    .inv-totals-box { width: 280px; }
+    .inv-total-row { display: flex; justify-content: space-between; padding: 4px 0; font-size: 13px; }
+    .inv-total-main { font-size: 20px; font-weight: 800; padding-top: 8px; margin-top: 4px; }
+    .inv-cae { margin-top: 20px; padding: 12px 16px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; }
+    .inv-cae-label { font-size: 11px; color: #6b7280; }
+    .inv-cae-value { font-size: 16px; font-weight: 800; color: #111827; letter-spacing: 0.05em; }
+    .inv-footer { margin-top: 24px; text-align: center; font-size: 10px; color: #9ca3af; border-top: 1px solid #e5e7eb; padding-top: 12px; }
+  </style>
+</head>
+<body>
+
+<h1>🎨 Preview de Comprobantes — STOCKIA</h1>
+<p class="subtitle">Así se ven los tickets y facturas con tu logo y color de marca</p>
+
+<div class="controls">
+  <label>Color de marca: <input type="color" id="colorPicker" value="#1DB954" oninput="applyBranding()" /></label>
+  <label>Hex: <input type="text" id="colorHex" value="#1DB954" oninput="hexChanged()" style="width:90px;" /></label>
+  <label>Logo URL: <input type="url" id="logoUrl" placeholder="https://..." oninput="applyBranding()" /></label>
+  <button class="btn" onclick="applyBranding()">Actualizar preview</button>
+</div>
+
+<div class="row">
+
+  <!-- ===== TICKET ===== -->
+  <div class="col">
+    <span class="col-label">🧾 Ticket Térmico 80mm</span>
+    <div class="ticket" id="ticketPreview">
+
+      <div class="t-center" style="margin-bottom:6px;">
+        <img id="tLogo" src="" alt="" class="t-logo" style="display:none;" />
+        <p class="t-biz" id="tBizName" style="color:#1DB954;">La Ferretería del Sur</p>
+        <p class="t-small">Av. Belgrano 1234, Mendoza</p>
+        <p class="t-small">Tel: (261) 555-0001</p>
+        <p class="t-small">CUIT: 20-31456789-0</p>
+      </div>
+
+      <div class="t-sep"></div>
+      <div class="t-center">
+        <p class="t-bold">TICKET</p>
+        <p class="t-small">01/03/2026 14:32</p>
+      </div>
+      <div class="t-sep"></div>
+
+      <div style="margin:4px 0;">
+        <div class="t-row"><span class="truncate" style="max-width:60%;overflow:hidden;white-space:nowrap;">Llave Stilson 12"</span><span class="t-bold">$3.500,00</span></div>
+        <p class="t-small" style="color:#666;padding-left:6px;">1 un x $3.500,00</p>
+
+        <div class="t-row"><span style="max-width:60%;overflow:hidden;white-space:nowrap;">Pintura Látex 20L blanco</span><span class="t-bold">$18.200,00</span></div>
+        <p class="t-small" style="color:#666;padding-left:6px;">2 un x $9.100,00</p>
+
+        <div class="t-row"><span>Cinta aisladora x5</span><span class="t-bold">$1.250,00</span></div>
+        <p class="t-small" style="color:#666;padding-left:6px;">5 un x $250,00</p>
+      </div>
+
+      <div class="t-sep"></div>
+
+      <div>
+        <div class="t-row"><span>Desc. 5%</span><span>-$1.147,50</span></div>
+        <div class="t-row t-bold t-big" id="tTotal" style="color:#1DB954;">
+          <span>TOTAL</span><span>$21.802,50</span>
+        </div>
+      </div>
+
+      <div class="t-sep"></div>
+
+      <div class="t-small" style="margin:2px 0;">
+        <div class="t-row"><span>Pago:</span><span>Efectivo</span></div>
+        <div class="t-row"><span>Cliente:</span><span>Juan García</span></div>
+        <div class="t-row"><span>Vendedor:</span><span>María López</span></div>
+      </div>
+
+      <div class="t-sep"></div>
+
+      <div class="t-center t-small" style="color:#555;margin-top:4px;">
+        ¡Gracias por su compra!
+      </div>
+
+    </div><!-- /ticket -->
+  </div>
+
+  <!-- ===== FACTURA A4 ===== -->
+  <div class="col">
+    <span class="col-label">📄 Factura B (A4)</span>
+    <div class="invoice" id="invoicePreview">
+
+      <div class="inv-header">
+        <div class="inv-left">
+          <img id="iLogo" src="" alt="" class="inv-logo" style="display:none;" />
+          <p class="inv-biz-name">La Ferretería del Sur</p>
+          <p class="inv-biz-detail">Av. Belgrano 1234, Mendoza</p>
+          <p class="inv-biz-detail">CUIT: 20-31456789-0</p>
+          <p class="inv-biz-detail">Cond. IVA: Responsable Inscripto</p>
+          <p class="inv-biz-detail">IIBB: 901-23456789-0</p>
+          <p class="inv-biz-detail">Inicio Act.: 01/01/2015</p>
+        </div>
+        <div class="letter-box" id="iLetterBox" style="border:3px solid #1DB954;color:#1DB954;">B</div>
+        <div class="inv-right">
+          <p class="inv-type" id="iInvType" style="color:#1DB954;">FACTURA</p>
+          <p class="inv-number">Nro. 00001-00000042</p>
+          <p class="inv-biz-detail" style="margin-top:4px;">Fecha: 01/03/2026</p>
+          <p class="inv-biz-detail">Pto. Venta: 00001</p>
+        </div>
+      </div>
+
+      <div class="inv-section">
+        <p class="inv-section-title">Datos del cliente</p>
+        <dl class="inv-grid">
+          <dt>Nombre / Razón Social</dt><dd>Juan García</dd>
+          <dt>DNI</dt><dd>32.145.678</dd>
+          <dt>Cond. IVA</dt><dd>Consumidor Final</dd>
+          <dt>Forma de pago</dt><dd>Tarjeta Débito</dd>
+        </dl>
+      </div>
+
+      <div class="inv-section">
+        <p class="inv-section-title">Detalle</p>
+        <table>
+          <thead>
+            <tr>
+              <th>Descripción</th><th>Cant.</th><th>P. Unitario</th><th>Subtotal</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Llave Stilson 12"</td><td>1</td><td>$3.500,00</td><td>$3.500,00</td>
+            </tr>
+            <tr>
+              <td>Pintura Látex 20L Blanco</td><td>2</td><td>$9.100,00</td><td>$18.200,00</td>
+            </tr>
+            <tr>
+              <td>Cinta aisladora (pack x5)</td><td>5</td><td>$250,00</td><td>$1.250,00</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="inv-totals">
+        <div class="inv-totals-box">
+          <div class="inv-total-row"><span>Descuento 5%</span><span>-$1.147,50</span></div>
+          <div class="inv-total-row inv-total-main" id="iTotalRow" style="color:#1DB954;border-top:2px solid #1DB954;">
+            <span>TOTAL</span><span>$21.802,50</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="inv-cae" id="iCaeBox" style="border:2px solid #1DB954;">
+        <div>
+          <p class="inv-cae-label">CAE (Código de Autorización Electrónico)</p>
+          <p class="inv-cae-value">74123456789012</p>
+          <p class="inv-cae-label" style="margin-top:4px;">Fecha Vto. CAE</p>
+          <p style="font-size:14px;font-weight:700;">11/03/2026</p>
+        </div>
+        <div style="text-align:center;">
+          <img
+            src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=https://www.afip.gob.ar/fe/qr/?p=eyJ2ZXIiOjEsImZlY2hhIjoiMjAyNi0wMy0wMSIsImN1aXQiOjIwMzE0NTY3ODkwLCJwdG9WdGEiOjEsInRpcG9DbXAiOjYsIm5yb0NtcCI6NDIsImltcG9ydGUiOjIxODAyLjUsIm1vbmVkYSI6IlBFUyIsImN0eiI6MSwidGlwb0RvY1JlYyI6OTksIm5yb0RvY1JlYyI6MCwidGlwb0NvZEF1dCI6IkUiLCJjb2RBdXQiOjc0MTIzNDU2Nzg5MDEyfQ=="
+            alt="QR AFIP"
+            style="width:100px;height:100px;"
+          />
+          <p style="font-size:9px;color:#9ca3af;margin-top:2px;">Comprobante válido como factura</p>
+        </div>
+      </div>
+
+      <div class="inv-footer">
+        <p>Comprobante electrónico emitido según RG AFIP 4004</p>
+      </div>
+
+    </div><!-- /invoice -->
+  </div>
+
+</div><!-- /row -->
+
+<script>
+  function applyBranding() {
+    const color = document.getElementById('colorPicker').value
+    document.getElementById('colorHex').value = color
+
+    const logoUrl = document.getElementById('logoUrl').value.trim()
+
+    // ---- Ticket ----
+    const tBiz = document.getElementById('tBizName')
+    tBiz.style.color = color
+
+    const tTotal = document.getElementById('tTotal')
+    tTotal.style.color = color
+
+    const tLogo = document.getElementById('tLogo')
+    if (logoUrl) {
+      tLogo.src = logoUrl
+      tLogo.style.display = 'block'
+      tLogo.onerror = () => { tLogo.style.display = 'none' }
+    } else {
+      tLogo.style.display = 'none'
+    }
+
+    // ---- Invoice ----
+    const iLetterBox = document.getElementById('iLetterBox')
+    iLetterBox.style.borderColor = color
+    iLetterBox.style.color = color
+
+    const iInvType = document.getElementById('iInvType')
+    iInvType.style.color = color
+
+    const iTotalRow = document.getElementById('iTotalRow')
+    iTotalRow.style.color = color
+    iTotalRow.style.borderTopColor = color
+
+    const iCaeBox = document.getElementById('iCaeBox')
+    iCaeBox.style.borderColor = color
+
+    const iLogo = document.getElementById('iLogo')
+    if (logoUrl) {
+      iLogo.src = logoUrl
+      iLogo.style.display = 'block'
+      iLogo.onerror = () => { iLogo.style.display = 'none' }
+    } else {
+      iLogo.style.display = 'none'
+    }
+
+    // Update page accent button
+    document.querySelector('.btn').style.background = color
+  }
+
+  function hexChanged() {
+    const hex = document.getElementById('colorHex').value
+    if (/^#[0-9a-fA-F]{6}$/.test(hex)) {
+      document.getElementById('colorPicker').value = hex
+      applyBranding()
+    }
+  }
+</script>
+</body>
+</html>
