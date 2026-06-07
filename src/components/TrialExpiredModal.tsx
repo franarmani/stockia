@@ -86,7 +86,7 @@ export default function TrialExpiredModal() {
                 <Clock className="w-5 h-5 text-amber-500" />
               </div>
               <div>
-                <h2 className="text-[15px] font-bold text-white">Tu prueba gratuita terminó</h2>
+                <h2 className="text-[15px] font-bold text-white">Tu mensualidad terminó</h2>
                 <p className="text-[12px] text-slate-500">Activá tu cuenta para seguir usando STOCKIA</p>
               </div>
             </div>
