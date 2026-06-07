@@ -14,7 +14,7 @@ import SubscriptionGuard from '@/features/subscription/components/SubscriptionGu
 import UpdateNotificationModal from '@/components/modals/UpdateNotificationModal'
 
 // ── VERSIONING ──
-const APP_VERSION = '1.8.0-redesign' // Local version
+const APP_VERSION = '1.8.1-redesign' // Local version
 
 // ── localStorage cache helpers ──
 const PROFILE_CACHE_KEY = 'stockia_profile'

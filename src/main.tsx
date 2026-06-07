@@ -19,7 +19,7 @@ registerSW({
 })
 
 // Force cache clear on version change
-const BUILD_ID = '20260531-cache-bust';
+const BUILD_ID = '20260607-cache-bust';
 if (localStorage.getItem('stockia_build') !== BUILD_ID) {
   if ('caches' in window) {
     caches.keys().then(names => {
