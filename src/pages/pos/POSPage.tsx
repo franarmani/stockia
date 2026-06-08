@@ -755,7 +755,7 @@ export default function POSPage() {
                         onClick={() => { handleProductClick(product); setSearch('') }}
                         disabled={product.stock <= 0}
                         style={{ animationDelay: `${idx * 12}ms` }}
-                        className={`group relative flex flex-col rounded-xl p-3.5 text-left transition-all duration-150 active:scale-[0.97] disabled:cursor-not-allowed min-h-[112px] overflow-hidden bg-[#122238] border ${
+                        className={`group relative flex flex-col rounded-xl p-3.5 text-left transition-all duration-150 active:scale-[0.97] disabled:cursor-not-allowed min-h-[112px] bg-[#122238] border ${
                           product.stock === 0
                             ? 'border-red-500/10 opacity-40'
                             : product.stock <= (product.stock_min || 0)
@@ -764,7 +764,7 @@ export default function POSPage() {
                         }`}
                       >
                         <div className="flex items-start justify-between gap-2 relative z-[1]">
-                          <h3 className="text-[13px] font-semibold text-white leading-snug whitespace-normal flex-1 text-left">
+                          <h3 className="text-[13px] font-semibold text-white leading-snug whitespace-normal flex-1 text-left break-words">
                             {product.name}
                           </h3>
                           <span className={`text-[9px] font-bold px-2 py-0.5 rounded-md shrink-0 ${
@@ -820,7 +820,7 @@ export default function POSPage() {
                           key={product.id}
                           onClick={() => handleProductClick(product)}
                           disabled={product.stock <= 0}
-                          className={`group relative flex flex-col rounded-xl p-3.5 text-left transition-all duration-150 active:scale-[0.97] disabled:cursor-not-allowed min-h-[112px] overflow-hidden bg-[#122238] border ${
+                          className={`group relative flex flex-col rounded-xl p-3.5 text-left transition-all duration-150 active:scale-[0.97] disabled:cursor-not-allowed min-h-[112px] bg-[#122238] border ${
                             product.stock === 0
                               ? 'border-red-500/10 opacity-40'
                               : product.stock <= (product.stock_min || 0)
@@ -829,7 +829,7 @@ export default function POSPage() {
                           }`}
                         >
                           <div className="flex items-start justify-between gap-2 relative z-[1]">
-                            <h3 className="text-[13px] font-semibold text-white leading-snug whitespace-normal flex-1 text-left">
+                            <h3 className="text-[13px] font-semibold text-white leading-snug whitespace-normal flex-1 text-left break-words">
                               {product.name}
                             </h3>
                             <span className={`text-[9px] font-bold px-2 py-0.5 rounded-md shrink-0 ${
@@ -999,23 +999,17 @@ export default function POSPage() {
                     </div>
                     <div className="flex items-center justify-between mt-3 pt-2.5 border-t border-white/8">
                       <div className="flex items-center gap-1 bg-white/5 rounded-lg p-0.5 border border-white/8">
-                        {decimal ? (
-                          <input type="number" step="0.1" min="0.1" value={item.quantity}
-                            onChange={(e) => updateQuantity(item.product.id, parseFloat(e.target.value) || 0)}
-                            className="w-14 h-7 text-center text-xs font-bold bg-transparent text-white focus:outline-none" />
-                        ) : (
-                          <>
-                            <button onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
-                              className="w-7 h-7 rounded-md flex items-center justify-center text-slate-400 hover:text-red-400 hover:bg-white/8 transition-colors active:scale-90">
-                              <Minus className="w-3 h-3" />
-                            </button>
-                            <span className="w-7 text-center text-sm font-bold text-white tabular-nums">{item.quantity}</span>
-                            <button onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
-                              className="w-7 h-7 rounded-md flex items-center justify-center text-slate-400 hover:text-primary hover:bg-primary/10 transition-colors active:scale-90">
-                              <Plus className="w-3 h-3" />
-                            </button>
-                          </>
-                        )}
+                        <button onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
+                          className="w-7 h-7 rounded-md flex items-center justify-center text-slate-400 hover:text-red-400 hover:bg-white/8 transition-colors active:scale-90">
+                          <Minus className="w-3 h-3" />
+                        </button>
+                        <input type="number" step={decimal ? "0.1" : "1"} min="0.1" value={item.quantity}
+                          onChange={(e) => updateQuantity(item.product.id, parseFloat(e.target.value) || 0)}
+                          className="w-14 h-7 text-center text-xs font-bold bg-transparent text-white focus:outline-none [-moz-appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none" />
+                        <button onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
+                          className="w-7 h-7 rounded-md flex items-center justify-center text-slate-400 hover:text-primary hover:bg-primary/10 transition-colors active:scale-90">
+                          <Plus className="w-3 h-3" />
+                        </button>
                       </div>
                       <span className="text-sm font-bold text-white tabular-nums">
                         {formatCurrency(itemSubtotal)}
@@ -1245,7 +1239,9 @@ export default function POSPage() {
                               className="w-7 h-7 rounded-md flex items-center justify-center text-slate-400 hover:text-red-400 transition-colors">
                               <Minus className="w-3 h-3" />
                             </button>
-                            <span className="w-7 text-center text-sm font-bold text-white">{item.quantity}</span>
+                            <input type="number" step={decimal ? "0.1" : "1"} min="0.1" value={item.quantity}
+                              onChange={(e) => updateQuantity(item.product.id, parseFloat(e.target.value) || 0)}
+                              className="w-14 h-7 text-center text-xs font-bold bg-transparent text-white focus:outline-none [-moz-appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none" />
                             <button onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
                               className="w-7 h-7 rounded-md flex items-center justify-center text-slate-400 hover:text-primary transition-colors">
                               <Plus className="w-3 h-3" />
