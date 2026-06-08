@@ -9,7 +9,7 @@ import { formatCurrency } from '@/lib/utils'
 import { UNIT_SHORT, DOC_TIPOS, type ProductUnit } from '@/types/database'
 import { requestCAE, calculateIVA, getCbteTipo } from '@/lib/afipService'
 import { queueSale } from '@/lib/offlineQueue'
-import { syncProductsCache, getCachedProducts, updateCachedStock } from '@/lib/offlineProductsCache'
+import { syncProductsCache, getCachedProducts, updateCachedStock, clearProductsCache } from '@/lib/offlineProductsCache'
 import { toast } from 'sonner'
 import Button from '@/components/ui/Button'
 import Badge from '@/components/ui/Badge'
@@ -211,7 +211,10 @@ export default function POSPage() {
     }
     const { data } = await supabase.from('products').select('*').eq('business_id', profile!.business_id).eq('active', true).order('name')
     setProducts(data || [])
-    if (data && data.length > 0) syncProductsCache(data as any).catch(() => {})
+    if (data && data.length > 0) {
+      try { await clearProductsCache() } catch {}
+      syncProductsCache(data as any).catch(() => {})
+    }
   }
   async function fetchCustomers() {
     const { data } = await supabase.from('customers').select('*').eq('business_id', profile!.business_id).order('name')
@@ -250,14 +253,10 @@ export default function POSPage() {
   }
 
   function handleProductClick(product: Product) {
-    if (isDecimalUnit(product.unit)) {
-      setQtyInputProduct(product)
-      setQtyInputValue('1')
-    } else {
-      addItem(product)
-      playBeep()
-      searchRef.current?.focus()
-    }
+    // Always open the quantity input so the user can type a manual amount
+    // or confirm the default 1 unit. This enables fully manual entries like "pioner 30".
+    setQtyInputProduct(product)
+    setQtyInputValue('1')
   }
 
   function handleConfirmQtyInput() {
@@ -765,7 +764,7 @@ export default function POSPage() {
                         }`}
                       >
                         <div className="flex items-start justify-between gap-2 relative z-[1]">
-                          <h3 className="text-[13px] font-semibold text-white leading-snug line-clamp-2 flex-1 text-left">
+                          <h3 className="text-[13px] font-semibold text-white leading-snug whitespace-normal flex-1 text-left">
                             {product.name}
                           </h3>
                           <span className={`text-[9px] font-bold px-2 py-0.5 rounded-md shrink-0 ${
@@ -830,7 +829,7 @@ export default function POSPage() {
                           }`}
                         >
                           <div className="flex items-start justify-between gap-2 relative z-[1]">
-                            <h3 className="text-[13px] font-semibold text-white leading-snug line-clamp-2 flex-1 text-left">
+                            <h3 className="text-[13px] font-semibold text-white leading-snug whitespace-normal flex-1 text-left">
                               {product.name}
                             </h3>
                             <span className={`text-[9px] font-bold px-2 py-0.5 rounded-md shrink-0 ${

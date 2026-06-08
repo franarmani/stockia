@@ -138,3 +138,15 @@ export async function getCachedProductsCount(): Promise<number> {
     req.onerror = () => reject(req.error)
   })
 }
+
+/** Clear all cached products (used to reset cache before syncing fresh data) */
+export async function clearProductsCache(): Promise<void> {
+  const db = await openDB()
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(PRODUCTS_STORE, 'readwrite')
+    const store = tx.objectStore(PRODUCTS_STORE)
+    const req = store.clear()
+    req.onsuccess = () => resolve()
+    req.onerror = () => reject(req.error)
+  })
+}
