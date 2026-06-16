@@ -20,13 +20,15 @@ export function useSubscription() {
     daysRemaining: 0,
     daysElapsed: 0,
     totalDays: 30,
-    isExpired: !isActive,
+    isExpired: false,
     expiresToday: false,
     expirationDate: new Date(),
   }
 
-  if (!isActive && trialEndsAt) {
+  if (trialEndsAt) {
     dateState = getSubscriptionDateState(trialEndsAt)
+  } else if (!isActive) {
+    dateState.isExpired = true
   }
 
   const planName = plan === 'vip' ? 'Plan Negocio' : 'Plan Inicial'

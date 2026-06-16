@@ -25,7 +25,7 @@ export default function MenuLauncher() {
   const navigate = useNavigate()
   const { profile } = useAuthStore()
   const { business } = useBusinessStore()
-  const { planName, daysRemaining, isExpired, dateState } = useSubscription()
+  const { planName, daysRemaining, isExpired, dateState, status } = useSubscription()
   const [stats, setStats] = useState<QuickStats | null>(null)
   const [weeklySales, setWeeklySales] = useState<number[]>([])
   const [lastSaleTime, setLastSaleTime] = useState<string | null>(null)
@@ -323,7 +323,9 @@ export default function MenuLauncher() {
                     ? 'Suscripción vencida'
                     : daysRemaining > 0
                       ? `${daysRemaining} día${daysRemaining !== 1 ? 's' : ''} restantes`
-                      : 'Vence hoy'
+                      : status === 'active' && !dateState.expiresToday
+                        ? 'Activo'
+                        : 'Vence hoy'
                   }
                 </p>
               </div>
