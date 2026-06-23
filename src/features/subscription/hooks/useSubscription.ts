@@ -45,8 +45,8 @@ export function useSubscription() {
         daysRemaining: 0,
         endDate: dateState.expirationDate,
         message: trialEndsAt
-          ? `Tu suscripción está vencida desde el ${formatSubscriptionDate(trialEndsAt)}. Para continuar usando Stockia, regularizá el pago del Plan Negocio.`
-          : 'Tu suscripción se encuentra vencida. Para continuar usando Stockia, regularizá el pago del Plan Negocio.',
+          ? `Tu suscripción está vencida desde el ${formatSubscriptionDate(trialEndsAt)}. Para continuar usando Stockia Hub, regularizá el pago del Plan Negocio.`
+          : 'Tu suscripción se encuentra vencida. Para continuar usando Stockia Hub, regularizá el pago del Plan Negocio.',
         actionLabel: 'Informar pago',
         actionPath: '/settings',
       }

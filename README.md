@@ -1,6 +1,6 @@
 ## Sistema de Gestión Comercial SaaS para Negocios de Argentina
 
-**Stockia** es un sistema de ventas y gestión comercial online, simple, rápido y profesional, diseñado para ayudar a negocios argentinos a controlar su stock, vender más y tomar decisiones con datos reales.
+**Stockia Hub** es un sistema de ventas y gestión comercial online, simple, rápido y profesional, diseñado para ayudar a negocios argentinos a controlar su stock, vender más y tomar decisiones con datos reales.
 
 ---
 

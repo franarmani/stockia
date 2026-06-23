@@ -1,5 +1,5 @@
 -- ============================================================
--- STOCKIA - Fix: businesses_plan_check constraint
+-- STOCKIA HUB - Fix: businesses_plan_check constraint
 -- Adds support for 'premium', 'vip', and 'free' plans
 -- ============================================================
 

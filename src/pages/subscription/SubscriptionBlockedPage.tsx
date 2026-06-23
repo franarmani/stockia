@@ -24,7 +24,7 @@ export default function SubscriptionBlockedPage() {
   }
 
   function sendWA() {
-    const msg = `Hola Fran! Acabo de hacer la transferencia de ${PRECIO} al alias ${ALIAS} para activar mi cuenta en STOCKIA. Mi email es: ${user?.email ?? ''} — ${business?.name ?? ''}. Quedo a la espera, gracias!`
+    const msg = `Hola Fran! Acabo de hacer la transferencia de ${PRECIO} al alias ${ALIAS} para activar mi cuenta en STOCKIA HUB. Mi email es: ${user?.email ?? ''} — ${business?.name ?? ''}. Quedo a la espera, gracias!`
     window.open(`https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(msg)}`, '_blank')
   }
 
@@ -42,8 +42,8 @@ export default function SubscriptionBlockedPage() {
         </h1>
         <p className="text-[13px] text-muted-foreground mb-6">
           {isTrialExpired
-            ? 'Los 7 días gratuitos llegaron a su fin. Suscribite para seguir usando STOCKIA y no perder tu historial de ventas y datos.'
-            : 'Tu suscripción ha vencido. Para seguir usando STOCKIA y registrar nuevas ventas, necesitás renovar tu plan.'
+            ? 'Los 7 días gratuitos llegaron a su fin. Suscribite para seguir usando STOCKIA HUB y no perder tu historial de ventas y datos.'
+            : 'Tu suscripción ha vencido. Para seguir usando STOCKIA HUB y registrar nuevas ventas, necesitás renovar tu plan.'
           }
         </p>
 

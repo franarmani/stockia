@@ -1,5 +1,5 @@
 /**
- * Profit / margin utilities for STOCKIA
+ * Profit / margin utilities for STOCKIA HUB
  */
 
 export function grossMarginPct(salePrice: number, cost: number): number {

@@ -77,10 +77,10 @@ function SidebarContent({
           collapsed ? 'justify-center' : 'gap-3'
         )}
       >
-        <img src={logoSolo} alt="STOCKIA" className="w-8 h-8 shrink-0" />
+        <img src={logoSolo} alt="STOCKIA HUB" className="w-8 h-8 shrink-0" />
         {!collapsed && (
           <div className="overflow-hidden text-left">
-            <p className="text-sm font-bold text-white leading-none tracking-tight">STOCKIA</p>
+            <p className="text-sm font-bold text-white leading-none tracking-tight">STOCKIA HUB</p>
             {business?.name && (
               <p className="text-[11px] text-white/40 truncate mt-0.5 max-w-[160px]">{business.name}</p>
             )}

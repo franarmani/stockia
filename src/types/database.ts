@@ -1,5 +1,5 @@
 /* ================================================================
-   STOCKIA – Supabase Database Types
+   STOCKIA HUB – Supabase Database Types
    Aligned with schema.sql + migration_v3.sql
    ================================================================ */
 

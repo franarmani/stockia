@@ -13,8 +13,8 @@ export default defineConfig({
       injectRegister: 'auto',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png'],
       manifest: {
-        name: 'STOCKIA',
-        short_name: 'STOCKIA',
+        name: 'STOCKIA HUB',
+        short_name: 'STOCKIA HUB',
         description: 'Sistema de gestión y facturación para negocios',
         theme_color: '#059669',
         background_color: '#f8fafc',

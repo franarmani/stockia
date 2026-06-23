@@ -1,5 +1,5 @@
 -- ============================================================
--- STOCKIA — Superadmin panel migration
+-- STOCKIA HUB — Superadmin panel migration
 -- Run in Supabase SQL Editor
 -- ============================================================
 

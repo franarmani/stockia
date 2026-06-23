@@ -169,7 +169,7 @@ async function smartScrapeVtex(domain: string, term: string) {
 
 async function analyzeWithGroq(apiKey: string, data: any) {
   const prompt = `PRODUCTO: ${data.productName}
-PRECIO STOCKIA: $${data.price}
+PRECIO STOCKIA HUB: $${data.price}
 COMPETENCIA: Promedio $${data.market.avg}, Min $${data.market.min}, Max $${data.market.max}
 
 Responde en español con este formato exacto:

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
+import { fetchAllProductsInBatches } from '@/lib/productService'
 import { useAuthStore } from '@/stores/authStore'
 import { cn, formatCurrency } from '@/lib/utils'
 import Button from '@/components/ui/Button'
@@ -41,12 +42,12 @@ export default function ReportsPage() {
     }
     const thirtyDaysAgo = new Date(now.getTime() - 30 * 86400000).toISOString()
 
-    const [salesRes, sellersRes, dormantRes] = await Promise.all([
+    const [salesRes, sellersRes, dormantResData] = await Promise.all([
       supabase.from('sales').select('*, sale_items(*, product:products(*)), seller:users!sales_seller_id_fkey(name), customer:customers(name)')
         .eq('business_id', profile!.business_id).gte('created_at', start).order('created_at', { ascending: false }),
       supabase.from('users').select('id, name').eq('business_id', profile!.business_id),
       // Products with no sale items in 30 days
-      supabase.from('products').select('id, name, stock, sale_price').eq('business_id', profile!.business_id).eq('active', true),
+      fetchAllProductsInBatches(profile!.business_id),
     ])
 
     setSales(salesRes.data || [])
@@ -57,7 +58,7 @@ export default function ReportsPage() {
       .from('sale_items').select('product_id, sale:sales!inner(created_at, business_id)')
       .gte('sale.created_at', thirtyDaysAgo).eq('sale.business_id', profile!.business_id)
     const soldIds = new Set((recentSaleItems || []).map((si: any) => si.product_id))
-    setDormantProducts((dormantRes.data || []).filter((p: any) => !soldIds.has(p.id)).slice(0, 10))
+    setDormantProducts((dormantResData || []).filter((p: any) => !soldIds.has(p.id)).slice(0, 10))
 
     setLoading(false)
   }

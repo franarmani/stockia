@@ -51,7 +51,7 @@ export default function NotFoundPage() {
 
         {/* Footer brand */}
         <p className="mt-16 text-white/20 text-xs font-medium tracking-wider uppercase">
-          STOCKIA
+          STOCKIA HUB
         </p>
       </div>
     </div>

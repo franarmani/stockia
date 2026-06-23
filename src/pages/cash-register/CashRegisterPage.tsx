@@ -150,7 +150,7 @@ export default function CashRegisterPage() {
       <div class="sep"></div>
       ${movements.map(m => `<div class="row"><span>${m.type === 'sale' ? 'VTA' : m.type === 'income' ? 'ING' : 'RET'} ${new Date(m.created_at).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}</span><span>${m.type === 'withdrawal' ? '-' : '+'}$${m.amount.toFixed(2)}</span></div><div style="font-size:10px;color:#666">${m.description || ''}</div>`).join('')}
       <div class="sep"></div>
-      <div style="text-align:center;font-size:10px;color:#666;margin-top:8px">STOCKIA - Reporte automático</div>
+      <div style="text-align:center;font-size:10px;color:#666;margin-top:8px">STOCKIA HUB - Reporte automático</div>
       </body></html>`)
     w.document.close()
     w.focus()

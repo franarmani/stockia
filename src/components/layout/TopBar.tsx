@@ -48,7 +48,7 @@ export default function TopBar({ onMenuClick }: TopBarProps) {
         </button>
 
         {/* Logo - mobile only (desktop shows in sidebar) */}
-        <img src={logo} alt="STOCKIA" className="w-7 h-7 shrink-0 lg:hidden" />
+        <img src={logo} alt="STOCKIA HUB" className="w-7 h-7 shrink-0 lg:hidden" />
 
         {/* Breadcrumb */}
         <div className="hidden sm:flex items-center gap-1.5 text-[13px] min-w-0">

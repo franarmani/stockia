@@ -76,7 +76,7 @@ export default function RegisterPage() {
       {/* ─── Desktop left brand panel ─── */}
       <div className="hidden lg:flex lg:w-[46%] relative flex-col justify-between p-12 overflow-hidden">
         <div className="relative z-10">
-          <img src={logo} alt="STOCKIA" className="h-8 w-fit" />
+          <img src={logo} alt="STOCKIA HUB" className="h-8 w-fit" />
         </div>
         <div className="relative z-10">
           <h1 className="text-3xl font-black text-white leading-tight mb-3">
@@ -96,14 +96,14 @@ export default function RegisterPage() {
             ))}
           </div>
         </div>
-        <p className="relative z-10 text-white/20 text-xs">© {new Date().getFullYear()} STOCKIA</p>
+        <p className="relative z-10 text-white/20 text-xs">© {new Date().getFullYear()} STOCKIA HUB</p>
       </div>
 
       {/* ─── Right column / mobile full screen ─── */}
       <div className="flex-1 flex flex-col min-h-screen">
         {/* Mobile header */}
         <div className="lg:hidden flex flex-col px-6 pt-14 pb-8">
-          <img src={logo} alt="STOCKIA" className="h-7 w-fit mb-10" />
+          <img src={logo} alt="STOCKIA HUB" className="h-7 w-fit mb-10" />
           <h1 className="text-3xl font-black text-white leading-tight">Crear cuenta</h1>
           <p className="text-white/50 text-sm mt-2">7 días gratis, sin compromiso</p>
         </div>

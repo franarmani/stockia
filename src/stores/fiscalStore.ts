@@ -1,5 +1,5 @@
 /**
- * STOCKIA – Fiscal Settings Store (Zustand)
+ * STOCKIA HUB – Fiscal Settings Store (Zustand)
  * Manages fiscal_settings state per business + environment
  */
 

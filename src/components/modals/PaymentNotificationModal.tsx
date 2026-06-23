@@ -27,7 +27,7 @@ export default function PaymentNotificationModal({ onClose }: { onClose?: () => 
   }
 
   function sendWA() {
-    const msg = `Hola! Quisiera activar mi cuenta en STOCKIA. Ya realicé el pago de ${PRECIO} al alias ${ALIAS}. Mi email es: ${user?.email ?? ''} — Negocio: ${business?.name ?? ''}. Adjunto el comprobante, gracias!`
+    const msg = `Hola! Quisiera activar mi cuenta en STOCKIA HUB. Ya realicé el pago de ${PRECIO} al alias ${ALIAS}. Mi email es: ${user?.email ?? ''} — Negocio: ${business?.name ?? ''}. Adjunto el comprobante, gracias!`
     window.open(`https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(msg)}`, '_blank')
   }
 

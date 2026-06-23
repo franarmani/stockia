@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { supabase } from '@/lib/supabase'
+import { fetchAllProductsInBatches } from '@/lib/productService'
 import { useAuthStore } from '@/stores/authStore'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import { isDecimalUnit } from '@/stores/posStore'
@@ -45,8 +46,8 @@ export default function PurchasesPage() {
 
   async function fetchAll() {
     setLoading(true)
-    const [{ data: prods }, { data: sups }, { data: purch }] = await Promise.all([
-      supabase.from('products').select('*').eq('business_id', profile!.business_id).eq('active', true).order('name'),
+    const [prods, { data: sups }, { data: purch }] = await Promise.all([
+      fetchAllProductsInBatches(profile!.business_id),
       supabase.from('suppliers').select('*').eq('business_id', profile!.business_id).eq('active', true).order('name'),
       supabase.from('purchases').select('*, supplier:suppliers(name), user:users!purchases_user_id_fkey(name), purchase_items(*, product:products(name, unit))')
         .eq('business_id', profile!.business_id).order('created_at', { ascending: false }).limit(50),

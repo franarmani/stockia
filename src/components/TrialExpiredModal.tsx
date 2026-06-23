@@ -28,7 +28,7 @@ export default function TrialExpiredModal() {
   }
 
   function sendWA() {
-    const msg = `Hola Fran! Acabo de hacer la transferencia de ${PRECIO} al alias ${ALIAS} para activar mi cuenta en STOCKIA. Mi email es: ${user?.email ?? ''} — ${business?.name ?? ''}. Quedo a la espera, gracias!`
+    const msg = `Hola Fran! Acabo de hacer la transferencia de ${PRECIO} al alias ${ALIAS} para activar mi cuenta en STOCKIA HUB. Mi email es: ${user?.email ?? ''} — ${business?.name ?? ''}. Quedo a la espera, gracias!`
     window.open(`https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(msg)}`, '_blank')
   }
 
@@ -87,7 +87,7 @@ export default function TrialExpiredModal() {
               </div>
               <div>
                 <h2 className="text-[15px] font-bold text-white">Tu mensualidad terminó</h2>
-                <p className="text-[12px] text-slate-500">Activá tu cuenta para seguir usando STOCKIA</p>
+                <p className="text-[12px] text-slate-500">Activá tu cuenta para seguir usando STOCKIA HUB</p>
               </div>
             </div>
             <button

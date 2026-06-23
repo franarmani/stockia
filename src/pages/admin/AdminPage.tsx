@@ -227,8 +227,8 @@ export default function AdminPage() {
 
   function openWA(business: BusinessRow, type: 'activar' | 'vencido') {
     const msg = type === 'activar'
-      ? `Hola! Tu cuenta en STOCKIA ha sido activada ✅. Ya podés ingresar en https://stockia-two.vercel.app — Cualquier consulta avisame. Saludos, Fran`
-      : `Hola! Tu período de prueba en STOCKIA ha vencido 📅. Para seguir usando el sistema transferí $70.000 al alias *${ALIAS}* y avisame por acá. Saludos, Fran`
+      ? `Hola! Tu cuenta en STOCKIA HUB ha sido activada ✅. Ya podés ingresar en https://stockia-two.vercel.app — Cualquier consulta avisame. Saludos, Fran`
+      : `Hola! Tu período de prueba en STOCKIA HUB ha vencido 📅. Para seguir usando el sistema transferí $70.000 al alias *${ALIAS}* y avisame por acá. Saludos, Fran`
 
     const phone = business.phone?.replace(/\D/g, '') || ''
     const url = phone
@@ -281,7 +281,7 @@ export default function AdminPage() {
               <Building2 className="w-4 h-4 text-green-400" />
             </div>
             <div>
-              <h1 className="text-sm font-bold text-white">Panel Admin — STOCKIA</h1>
+              <h1 className="text-sm font-bold text-white">Panel Admin — STOCKIA HUB</h1>
               <p className="text-[10px] text-white/35">{user?.email}</p>
             </div>
           </div>

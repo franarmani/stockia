@@ -115,10 +115,10 @@ export default function AppShellLauncher() {
         'flex items-center h-16 px-4 border-b border-white/5 shrink-0',
         sidebarCollapsed ? 'justify-center' : 'gap-3'
       )}>
-        <img src={logoSolo} alt="STOCKIA" className="w-8 h-8 shrink-0" />
+        <img src={logoSolo} alt="STOCKIA HUB" className="w-8 h-8 shrink-0" />
         {!sidebarCollapsed && (
           <div className="overflow-hidden">
-            <p className="text-sm font-bold text-white leading-none tracking-tight">STOCKIA</p>
+            <p className="text-sm font-bold text-white leading-none tracking-tight">STOCKIA HUB</p>
             {business?.name && (
               <p className="text-[11px] text-white/40 truncate mt-0.5 max-w-[160px]">{business.name}</p>
             )}
@@ -205,7 +205,7 @@ export default function AppShellLauncher() {
         <header className="fixed top-0 inset-x-0 z-40 h-14 flex items-center px-4 bg-[#07111f] border-b border-white/5">
           <div className="flex items-center gap-3">
             <button onClick={() => navigate('/menu')} className="flex items-center gap-2">
-              <img src={logoSolo} alt="STOCKIA" className="w-7 h-7" />
+              <img src={logoSolo} alt="STOCKIA HUB" className="w-7 h-7" />
             </button>
             <div className="w-px h-5 bg-white/10" />
             <span className="text-[11px] font-bold text-white/40 uppercase tracking-widest">Nueva venta</span>
@@ -274,7 +274,7 @@ export default function AppShellLauncher() {
               <Menu className="w-5 h-5" />
             </button>
             <div className="hidden sm:flex items-center gap-2 text-sm min-w-0">
-              <span className="font-semibold text-white truncate max-w-[160px]">{business?.name || 'STOCKIA'}</span>
+              <span className="font-semibold text-white truncate max-w-[160px]">{business?.name || 'STOCKIA HUB'}</span>
             </div>
           </div>
 

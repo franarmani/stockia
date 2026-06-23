@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
+import { fetchAllProductsInBatches } from '@/lib/productService'
 import { useAuthStore } from '@/stores/authStore'
 import { useBusinessStore } from '@/stores/businessStore'
 import { usePOSStore, isDecimalUnit, type PaymentMethodType, type ReceiptType, type PaymentSplit } from '@/stores/posStore'
@@ -209,7 +210,7 @@ export default function POSPage() {
         return
       }
     }
-    const { data } = await supabase.from('products').select('*').eq('business_id', profile!.business_id).eq('active', true).order('name')
+    const data = await fetchAllProductsInBatches(profile!.business_id)
     setProducts(data || [])
     if (data && data.length > 0) {
       try { await clearProductsCache() } catch {}

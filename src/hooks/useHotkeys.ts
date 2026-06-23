@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 /**
- * Global hotkeys for STOCKIA launcher:
+ * Global hotkeys for STOCKIA HUB launcher:
  *   ESC  → /menu  (only if no dialog/modal is open)
  *   F2   → /pos
  *

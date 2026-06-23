@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
+import { fetchAllProductsInBatches } from '@/lib/productService'
 import { useAuthStore } from '@/stores/authStore'
 import { cn, formatCurrency } from '@/lib/utils'
 import { isDecimalUnit } from '@/stores/posStore'
@@ -64,8 +65,8 @@ export default function ProductsPage() {
 
   async function fetchAll() {
     setLoading(true)
-    const [{ data: prods }, { data: cats }, { data: sups }] = await Promise.all([
-      supabase.from('products').select('*').eq('business_id', profile!.business_id).eq('active', true).order('name'),
+    const [prods, { data: cats }, { data: sups }] = await Promise.all([
+      fetchAllProductsInBatches(profile!.business_id),
       supabase.from('categories').select('*').eq('business_id', profile!.business_id).order('name'),
       supabase.from('suppliers').select('*').eq('business_id', profile!.business_id).eq('active', true).order('name'),
     ])
