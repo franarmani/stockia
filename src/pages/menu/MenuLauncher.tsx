@@ -191,24 +191,30 @@ export default function MenuLauncher() {
               Ver historial <ChevronRight className="w-3 h-3" />
             </button>
           </div>
-          {weeklySales.length > 0 ? (
-            <div className="flex items-end gap-2 h-32">
+            <div className="flex items-end gap-2 h-32 pt-4">
               {weeklySales.map((value, i) => {
-                const height = Math.max(4, (value / maxWeekly) * 100)
+                const percent = maxWeekly > 0 ? (value / maxWeekly) * 100 : 0
                 const days = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb']
                 const dayIndex = (new Date().getDay() - (6 - i) + 7) % 7
                 return (
-                  <div key={i} className="flex-1 flex flex-col items-center gap-1">
-                    <div className="w-full bg-white/5 rounded-t-md relative" style={{ height: `${height}%` }}>
+                  <div key={i} className="flex-1 flex flex-col items-center h-full">
+                    {/* Track */}
+                    <div className="w-full flex-1 bg-white/5 rounded-t-md flex flex-col justify-end relative overflow-hidden">
+                      {/* Bar */}
                       <div
-                        className="absolute bottom-0 w-full rounded-t-md bg-primary/60 hover:bg-primary/80 transition-all"
-                        style={{ height: `${height}%` }}
+                        className="w-full bg-primary/60 hover:bg-primary/80 transition-all rounded-t-md min-h-[4px]"
+                        style={{ height: `${percent}%` }}
                       />
                     </div>
-                    <span className="text-[9px] text-white/30 font-medium">{days[dayIndex]}</span>
-                    {value > 0 && (
-                      <span className="text-[8px] text-white/50 font-bold">${value.toLocaleString('es-AR')}</span>
-                    )}
+                    {/* Labels container with fixed height so they align at the bottom */}
+                    <div className="flex flex-col items-center justify-start h-8 mt-2">
+                      <span className="text-[9px] text-white/30 font-medium leading-none mb-1">{days[dayIndex]}</span>
+                      {value > 0 ? (
+                        <span className="text-[8px] text-white/50 font-bold leading-none">${value.toLocaleString('es-AR')}</span>
+                      ) : (
+                        <span className="text-[8px] text-transparent font-bold leading-none">-</span>
+                      )}
+                    </div>
                   </div>
                 )
               })}
