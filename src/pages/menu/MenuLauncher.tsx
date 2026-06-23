@@ -191,6 +191,7 @@ export default function MenuLauncher() {
               Ver historial <ChevronRight className="w-3 h-3" />
             </button>
           </div>
+          {weeklySales.length > 0 ? (
             <div className="flex items-end gap-2 h-32 pt-4">
               {weeklySales.map((value, i) => {
                 const percent = maxWeekly > 0 ? (value / maxWeekly) * 100 : 0
