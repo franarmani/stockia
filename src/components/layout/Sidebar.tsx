@@ -98,11 +98,11 @@ function SidebarContent({
             title={collapsed ? item.name : undefined}
             className={({ isActive }) =>
               cn(
-                'flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-medium transition-all duration-150 group',
+                'sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-medium group',
                 collapsed ? 'justify-center' : '',
                 isActive
                   ? 'bg-primary/20 text-primary'
-                  : 'text-white/55 hover:text-white hover:bg-white/5'
+                  : 'text-white/55'
               )
             }
           >
@@ -110,15 +110,15 @@ function SidebarContent({
               <>
                 <item.icon
                   className={cn(
-                    'w-[18px] h-[18px] shrink-0 transition-colors',
-                    isActive ? 'text-primary' : 'text-white/40 group-hover:text-white/80'
+                    'w-[18px] h-[18px] shrink-0',
+                    isActive ? 'text-primary' : 'text-white/40'
                   )}
                 />
                 {!collapsed && (
                   <>
                     <span className="truncate flex-1">{item.name}</span>
                     {item.premium && (
-                      <span className="text-[10px] font-bold text-amber-500 bg-amber-500/10 px-1.5 py-0.5 rounded-lg border border-amber-500/20 mr-1 animate-pulse">
+                      <span className="text-[10px] font-bold text-secondary bg-secondary/10 px-1.5 py-0.5 rounded-lg border border-secondary/20 mr-1 animate-pulse">
                         PREMIUM
                       </span>
                     )}
@@ -160,7 +160,7 @@ function SidebarContent({
                 )}>
                   {isExpired ? 'Suscripción vencida' : business.subscription_status === 'trial' ? 'Abonar activación' : 'Suscripción activa'}
                 </p>
-                <p className="text-[10px] text-white/30 truncate mb-2">
+                <p className="text-[10px] text-white/30 truncate mb-2 font-mono tabular-nums">
                   $70.000/mes
                 </p>
                 <div className="flex items-center gap-1.5 mt-1">
@@ -170,7 +170,7 @@ function SidebarContent({
                       style={{ width: `${progress}%` }}
                     />
                   </div>
-                  <span className={`text-[9px] font-bold shrink-0 ${isExpired ? 'text-red-400' : 'text-primary'}`}>
+                  <span className={`text-[9px] font-bold shrink-0 font-mono tabular-nums ${isExpired ? 'text-red-400' : 'text-primary'}`}>
                     {isExpired ? 'Vencido' : `${daysLeft} días`}
                   </span>
                 </div>

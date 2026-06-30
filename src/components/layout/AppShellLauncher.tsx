@@ -65,6 +65,7 @@ export default function AppShellLauncher() {
     try { return localStorage.getItem(SIDEBAR_KEY) === 'true' } catch { return false }
   })
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false)
+  const [sidebarHovered, setSidebarHovered] = useState(false)
   const { initAudio } = useMusicStore()
   const { expiresToday, isExpired, status } = useSubscription()
 
@@ -108,11 +109,11 @@ export default function AppShellLauncher() {
     return location.pathname.startsWith(href)
   }
 
-  const sidebarContent = (
+  const renderSidebar = (sidebarCollapsed: boolean) => (
     <div className="flex flex-col h-full">
       {/* Logo */}
       <div className={cn(
-        'flex items-center h-16 px-4 border-b border-white/5 shrink-0',
+        'flex items-center h-16 px-4 border-b border-white/10 shrink-0',
         sidebarCollapsed ? 'justify-center' : 'gap-3'
       )}>
         <img src={logoSolo} alt="STOCKIA HUB" className="w-8 h-8 shrink-0" />
@@ -125,7 +126,7 @@ export default function AppShellLauncher() {
           </div>
         )}
       </div>
-      <div className="p-2 border-b border-white/5 shrink-0 hidden lg:flex">
+      <div className="p-2 border-b border-white/10 shrink-0 hidden lg:flex">
         <button
           onClick={(e) => { e.stopPropagation(); handleToggleCollapse() }}
           className="w-full flex items-center justify-center p-2 rounded-xl text-white/20 hover:text-white/60 hover:bg-white/5 transition-all"
@@ -135,23 +136,28 @@ export default function AppShellLauncher() {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto px-2 py-3 space-y-4">
+      <nav key={sidebarCollapsed ? 'collapsed' : 'expanded'} className="flex-1 px-2 py-3 space-y-4">
         {NAV_SECTIONS.map((section) => (
           <div key={section.label}>
-            {!sidebarCollapsed && (
-              <p className="text-[9px] font-bold text-white/20 uppercase tracking-widest px-3 mb-1.5">
+            {!sidebarCollapsed ? (
+              <p className="text-[9px] font-bold text-white/35 uppercase tracking-widest px-3 mb-1.5 h-3 flex items-center">
                 {section.label}
               </p>
+            ) : (
+              <div className="h-3 mb-1.5 flex items-center justify-center">
+                <span className="w-5 h-px bg-white/15 rounded-full" />
+              </div>
             )}
             <div className="space-y-0.5">
-              {section.items.map((item) => (
+              {section.items.map((item, i) => (
                 <NavLink
                   key={item.href}
                   to={item.href}
                   onClick={() => setMobileDrawerOpen(false)}
                   title={sidebarCollapsed ? item.name : undefined}
+                  style={{ animationDelay: `${i * 35}ms` }}
                   className={cn(
-                    'flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-medium transition-all group',
+                    'flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-medium transition-all group animate-pop-3d',
                     sidebarCollapsed ? 'justify-center' : '',
                     isActive(item.href)
                       ? 'bg-primary/15 text-primary'
@@ -163,11 +169,26 @@ export default function AppShellLauncher() {
                     isActive(item.href) ? 'text-primary' : 'text-white/30 group-hover:text-white/60'
                   )} />
                   {!sidebarCollapsed && (
-                    <span className="truncate flex-1">{item.name}</span>
+                    <span className="truncate flex-1 animate-fade-in">{item.name}</span>
                   )}
                   {!sidebarCollapsed && isActive(item.href) && (
                     <span className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
                   )}
+
+                  {/* Floating 3D glassmorphism icon preview on hover (icon only, no text) */}
+                  <span
+                    aria-hidden
+                    className="pointer-events-none absolute left-[calc(100%+26px)] top-1/2 z-[9999]
+                      flex items-center justify-center w-[76px] h-[76px] rounded-[22px]
+                      bg-[radial-gradient(circle_at_30%_20%,rgba(34,197,94,0.24),transparent_45%),linear-gradient(145deg,rgba(12,45,30,0.92),rgba(3,18,12,0.96))]
+                      border border-[rgba(34,197,94,0.38)] backdrop-blur-[16px]
+                      shadow-[0_22px_45px_rgba(0,0,0,0.48),0_0_30px_rgba(34,197,94,0.18),inset_0_1px_0_rgba(255,255,255,0.08)]
+                      opacity-0 [transform:translateY(-50%)_perspective(900px)_translateX(-8px)_rotateY(-22deg)_scale(0.72)]
+                      transition-[opacity,transform] duration-200 ease-out
+                      group-hover:opacity-100 group-hover:[transform:translateY(-50%)_perspective(900px)_translateX(0)_rotateY(0deg)_scale(1)]"
+                  >
+                    <item.icon className="w-[38px] h-[38px] text-primary drop-shadow-[0_0_12px_rgba(34,197,94,0.45)]" />
+                  </span>
                 </NavLink>
               ))}
             </div>
@@ -176,7 +197,7 @@ export default function AppShellLauncher() {
       </nav>
 
       {/* Footer */}
-      <div className="border-t border-white/5 p-3 shrink-0 space-y-2">
+      <div className="border-t border-white/10 p-3 shrink-0 space-y-2">
         {!sidebarCollapsed && profile && (
           <div className="px-3 py-2 text-left">
             <p className="text-[12px] font-medium text-white truncate">{profile.name}</p>
@@ -202,7 +223,7 @@ export default function AppShellLauncher() {
   if (isPOS) {
     return (
       <div className="app-bg dark-shell min-h-screen flex flex-col">
-        <header className="fixed top-0 inset-x-0 z-40 h-14 flex items-center px-4 bg-[#07111f] border-b border-white/5">
+        <header className="fixed top-0 inset-x-0 z-40 h-14 flex items-center px-4 bg-sidebar border-b border-border">
           <div className="flex items-center gap-3">
             <button onClick={() => navigate('/menu')} className="flex items-center gap-2">
               <img src={logoSolo} alt="STOCKIA HUB" className="w-7 h-7" />
@@ -235,19 +256,21 @@ export default function AppShellLauncher() {
     <div className="app-bg dark-shell min-h-screen flex">
       {/* Desktop sidebar */}
       <aside
+        onMouseEnter={() => setSidebarHovered(true)}
+        onMouseLeave={() => setSidebarHovered(false)}
         className={cn(
-          'hidden lg:flex flex-col h-screen sticky top-0 shrink-0 transition-[width] duration-200 bg-[#091525] border-r border-white/5 z-30',
-          sidebarCollapsed ? 'w-[76px]' : 'w-[248px]'
+          'hidden lg:flex flex-col h-screen sticky top-0 shrink-0 transition-[width] duration-300 ease-in-out bg-sidebar border-r border-border z-30',
+          sidebarCollapsed && !sidebarHovered ? 'w-[76px]' : 'w-[248px]'
         )}
       >
-        {sidebarContent}
+        {renderSidebar(sidebarCollapsed && !sidebarHovered)}
       </aside>
 
       {/* Mobile drawer */}
       {mobileDrawerOpen && (
         <div className="fixed inset-0 z-[100] lg:hidden">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setMobileDrawerOpen(false)} />
-          <div className="absolute left-0 top-0 h-full w-72 bg-[#091525] border-r border-white/5 shadow-2xl animate-slide-in-left">
+          <div className="absolute left-0 top-0 h-full w-72 bg-sidebar border-r border-border shadow-2xl animate-slide-in-left">
             <div className="flex justify-end p-2">
               <button
                 onClick={() => setMobileDrawerOpen(false)}
@@ -256,7 +279,7 @@ export default function AppShellLauncher() {
                 <X className="w-4 h-4" />
               </button>
             </div>
-            {sidebarContent}
+            {renderSidebar(false)}
           </div>
         </div>
       )}
@@ -264,7 +287,7 @@ export default function AppShellLauncher() {
       {/* Main area */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Topbar */}
-        <header className="h-16 flex items-center justify-between px-4 md:px-6 border-b border-white/5 bg-[#07111f]/80 backdrop-blur-xl shrink-0 sticky top-0 z-20">
+        <header className="h-16 flex items-center justify-between px-4 md:px-6 border-b border-border bg-sidebar/85 backdrop-blur-xl shrink-0 sticky top-0 z-20">
           <div className="flex items-center gap-3 min-w-0">
             <button
               onClick={() => setMobileDrawerOpen(true)}
@@ -281,7 +304,7 @@ export default function AppShellLauncher() {
           <div className="flex items-center gap-2 shrink-0">
             {/* Offline */}
             {!isOnline && (
-              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-red-500/10 text-red-400 text-[10px] font-bold">
+              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-destructive/10 text-destructive text-[10px] font-bold">
                 <WifiOff className="w-3 h-3" />
                 <span className="hidden sm:inline">Sin conexión</span>
               </div>
@@ -290,7 +313,7 @@ export default function AppShellLauncher() {
             {isOnline && pendingCount > 0 && (
               <button
                 onClick={!syncing ? syncPendingSales : undefined}
-                className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/10 text-amber-400 text-[10px] font-bold hover:bg-amber-500/20"
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-secondary/10 text-secondary text-[10px] font-bold hover:bg-secondary/20"
               >
                 {syncing ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
                 <span>{syncing ? 'Sincronizando' : `${pendingCount}`}</span>

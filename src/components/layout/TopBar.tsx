@@ -35,7 +35,7 @@ export default function TopBar({ onMenuClick }: TopBarProps) {
   const showNewSaleBtn = location.pathname !== '/pos'
 
   return (
-    <header className="h-14 bg-[#07111f] border-b border-white/10 flex items-center justify-between px-4 md:px-5 shrink-0 sticky top-0 z-30">
+    <header className="header h-[54px] flex items-center justify-between px-4 md:px-5 shrink-0 sticky top-0 z-30">
       {/* Left */}
       <div className="flex items-center gap-3 min-w-0">
         {/* Hamburger — mobile only */}
@@ -47,22 +47,18 @@ export default function TopBar({ onMenuClick }: TopBarProps) {
           <Menu className="w-5 h-5" />
         </button>
 
-        {/* Logo - mobile only (desktop shows in sidebar) */}
-        <img src={logo} alt="STOCKIA HUB" className="w-7 h-7 shrink-0 lg:hidden" />
+        {/* Logo - mobile only */}
+        <img src={logo} alt="STOCKIA HUB" className="w-7 h-7 shrink-0 sm:hidden drop-shadow-sm" />
 
-        {/* Breadcrumb */}
-        <div className="hidden sm:flex items-center gap-1.5 text-[13px] min-w-0">
-          {business?.name && (
-            <>
-              <span className="font-semibold text-foreground truncate max-w-[120px]">{business.name}</span>
-              {currentPage && (
-                <>
-                  <span className="text-slate-300">/</span>
-                  <span className="text-muted-foreground">{currentPage}</span>
-                </>
-              )}
-            </>
-          )}
+        {/* Logo and Business Info (Desktop) */}
+        <div className="hidden sm:flex items-center gap-3 min-w-0">
+          <img src={logo} alt="Logo" className="w-8 h-8 shrink-0 drop-shadow-md" />
+          <div className="flex flex-col min-w-0">
+            <span className="font-bold text-[14px] text-foreground whitespace-nowrap">
+              {business?.name || 'STOCKIA HUB'}
+            </span>
+            <span className="text-[11px] text-muted-foreground font-medium">Dashboard comercial</span>
+          </div>
         </div>
 
         {/* Mobile: page title only */}
@@ -76,8 +72,8 @@ export default function TopBar({ onMenuClick }: TopBarProps) {
           className={cn(
             'hidden sm:flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1 rounded-full',
             isOnline
-              ? 'bg-green-50 text-green-600'
-              : 'bg-slate-100 text-slate-400'
+              ? 'bg-primary/15 text-primary'
+              : 'bg-muted text-muted-foreground'
           )}
         >
           {isOnline ? (
@@ -88,6 +84,12 @@ export default function TopBar({ onMenuClick }: TopBarProps) {
           <span className="hidden md:inline">{isOnline ? 'En línea' : 'Sin conexión'}</span>
         </div>
 
+        {/* Caja abierta (simulated state) */}
+        <div className="hidden md:flex items-center px-2.5 py-1 rounded-full bg-primary/10 border border-primary/20">
+          <div className="w-1.5 h-1.5 rounded-full bg-primary mr-1.5 shadow-[0_0_8px_rgba(25,195,125,0.8)] animate-pulse-soft"></div>
+          <span className="text-[11px] font-semibold text-primary">Caja abierta</span>
+        </div>
+
         {/* Subscription badge */}
         <SubscriptionBadge className="hidden md:flex" />
 
@@ -95,9 +97,9 @@ export default function TopBar({ onMenuClick }: TopBarProps) {
         {showNewSaleBtn && (
           <button
             onClick={() => navigate('/pos')}
-            className="hidden sm:flex items-center gap-1.5 h-8 px-3 rounded-xl bg-primary text-white text-[12px] font-semibold hover:brightness-110 transition-all shadow-sm shadow-green-900/15 active:scale-95"
+            className="header-sale-button hidden sm:flex"
           >
-            <Plus className="w-3.5 h-3.5" />
+            <Plus className="w-[18px] h-[18px]" />
             Nueva venta
           </button>
         )}

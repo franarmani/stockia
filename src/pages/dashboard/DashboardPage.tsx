@@ -4,6 +4,7 @@ import { useAuthStore } from '@/stores/authStore'
 import { useBusinessStore } from '@/stores/businessStore'
 import { formatCurrency } from '@/lib/utils'
 import Badge from '@/components/ui/Badge'
+import StatCard from '@/components/ui/StatCard'
 import LoadingSpinner from '@/components/ui/LoadingSpinner'
 import { useNavigate } from 'react-router-dom'
 import {
@@ -181,12 +182,12 @@ export default function DashboardPage() {
         <div className="flex items-center justify-between relative z-10">
           <div>
             <p className="text-white/60 text-xs font-medium mb-1">Facturación hoy</p>
-            <p className="text-3xl font-bold text-white tracking-tight">
+            <p className="text-3xl font-bold text-white tracking-tight font-mono tabular-nums">
               {formatCurrency(data.todaySales)}
             </p>
             {data.todayCount > 0 && (
               <p className="text-white/50 text-[12px] mt-1.5">
-                {data.todayCount} venta{data.todayCount !== 1 && 's'} · Ganancia: {formatCurrency(data.todaySales - data.todayCost)}
+                {data.todayCount} venta{data.todayCount !== 1 && 's'} · Ganancia: <span className="font-mono tabular-nums">{formatCurrency(data.todaySales - data.todayCost)}</span>
               </p>
             )}
           </div>
@@ -199,72 +200,47 @@ export default function DashboardPage() {
 
       {/* Stats grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <div className="bg-white rounded-2xl p-4 shadow-sm">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center shrink-0">
-              <ShoppingCart className="w-5 h-5 text-blue-600" />
-            </div>
-            <div className="min-w-0">
-              <p className="text-xs text-muted-foreground">Ventas</p>
-              <p className="text-lg font-bold">{data.todayCount}</p>
-            </div>
-          </div>
-        </div>
-        <div className="bg-white rounded-2xl p-4 shadow-sm">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-violet-100 flex items-center justify-center shrink-0">
-              <TrendingUp className="w-5 h-5 text-violet-600" />
-            </div>
-            <div className="min-w-0">
-              <p className="text-xs text-muted-foreground">Ticket prom.</p>
-              <p className="text-lg font-bold">{formatCurrency(data.avgTicket)}</p>
+        <StatCard title="Ventas" value={data.todayCount} icon={ShoppingCart} tone="primary" />
+        <StatCard title="Ticket prom." value={formatCurrency(data.avgTicket)} icon={TrendingUp} tone="secondary" />
+        <StatCard title="Margen" value={`${data.todayMargin.toFixed(1)}%`} icon={Percent} tone="secondary" />
+        <div
+          className="bg-surface rounded-2xl p-4 border border-border shadow-sm cursor-pointer"
+          onClick={() => navigate('/cash-register')}
+        >
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">
+              {data.cajaOpen ? 'Caja' : 'Caja cerrada'}
+            </p>
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${data.cajaOpen ? 'bg-primary/10' : 'bg-destructive/10'}`}>
+              <Wallet className={`w-5 h-5 ${data.cajaOpen ? 'text-primary' : 'text-destructive'}`} />
             </div>
           </div>
-        </div>
-        <div className="bg-white rounded-2xl p-4 shadow-sm">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center shrink-0">
-              <Percent className="w-5 h-5 text-amber-600" />
-            </div>
-            <div className="min-w-0">
-              <p className="text-xs text-muted-foreground">Margen</p>
-              <p className="text-lg font-bold">{data.todayMargin.toFixed(1)}%</p>
-            </div>
-          </div>
-        </div>
-        <div className="bg-white rounded-2xl p-4 shadow-sm cursor-pointer" onClick={() => navigate('/cash-register')}>
-          <div className="flex items-center gap-3">
-            <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${data.cajaOpen ? 'bg-green-100' : 'bg-red-100'}`}>
-              <Wallet className={`w-5 h-5 ${data.cajaOpen ? 'text-green-600' : 'text-red-600'}`} />
-            </div>
-            <div className="min-w-0">
-              <p className="text-xs text-muted-foreground">{data.cajaOpen ? 'Caja' : 'Caja cerrada'}</p>
-              <p className="text-lg font-bold">{data.cajaOpen ? formatCurrency(data.cajaExpected) : '—'}</p>
-            </div>
-          </div>
+          <p className="text-xl font-bold text-foreground font-mono tabular-nums">
+            {data.cajaOpen ? formatCurrency(data.cajaExpected) : '—'}
+          </p>
         </div>
       </div>
 
       {/* Low stock */}
       {data.lowStockProducts.length > 0 && (
-        <div className="bg-white rounded-2xl p-5 shadow-sm">
+        <div className="bg-surface rounded-2xl p-5 border border-border shadow-sm">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-red-100 flex items-center justify-center">
-                <AlertTriangle className="w-5 h-5 text-red-600" />
+              <div className="w-10 h-10 rounded-xl bg-destructive/10 flex items-center justify-center">
+                <AlertTriangle className="w-5 h-5 text-destructive" />
               </div>
               <span className="text-sm font-semibold text-foreground">Stock bajo</span>
             </div>
             <button
               onClick={() => navigate('/products')}
-              className="text-xs text-primary hover:text-primary-dark font-semibold flex items-center gap-0.5 transition-colors"
+              className="text-xs text-primary hover:text-primary-hover font-semibold flex items-center gap-0.5 transition-colors"
             >
               Ver todo <ArrowRight className="w-3 h-3" />
             </button>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {data.lowStockProducts.slice(0, 6).map((p) => (
-              <div key={p.id} className="flex items-center justify-between bg-slate-50 rounded-xl px-3 py-2">
+              <div key={p.id} className="flex items-center justify-between bg-muted rounded-xl px-3 py-2">
                 <span className="text-[13px] text-foreground truncate mr-2">{p.name}</span>
                 <Badge variant={p.stock === 0 ? 'destructive' : 'warning'}>
                   {isDecimalUnit(p.unit) ? p.stock.toFixed(1) : p.stock} {UNIT_SHORT[(p.unit || 'u') as ProductUnit]}
@@ -276,19 +252,21 @@ export default function DashboardPage() {
       )}
 
       {/* Chart */}
-      <div className="bg-white rounded-2xl p-5 shadow-sm">
+      <div className="bg-surface rounded-2xl p-5 border border-border shadow-sm">
         <p className="text-sm font-semibold text-foreground mb-4">Últimos 7 días</p>
         {data.chartData.some(d => d.ventas > 0) ? (
           <ResponsiveContainer width="100%" height={180} minWidth={0}>
             <BarChart data={data.chartData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
-              <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(183, 192, 184, 0.1)" vertical={false} />
+              <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#98a39a' }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fontSize: 10, fill: '#98a39a' }} axisLine={false} tickLine={false} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
               <Tooltip
                 formatter={(value) => [formatCurrency(Number(value)), 'Ventas']}
-                contentStyle={{ borderRadius: '12px', border: 'none', fontSize: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}
+                contentStyle={{ borderRadius: '12px', border: '1px solid rgba(183, 192, 184, 0.14)', background: '#182a21', fontSize: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.3)' }}
+                labelStyle={{ color: '#f3f1e7' }}
+                itemStyle={{ color: '#f3f1e7' }}
               />
-              <Bar dataKey="ventas" fill="#1DB954" radius={[6, 6, 0, 0]} />
+              <Bar dataKey="ventas" fill="#1f8a5e" radius={[6, 6, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         ) : (
@@ -338,9 +316,9 @@ export default function DashboardPage() {
 
         {insight && (
           <div className="animate-fade-in grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <div className="glass-card p-6 border-green-500/20 bg-green-500/5">
+            <div className="glass-card p-6 border-primary/20 bg-primary/5">
               <div className="flex items-center gap-2 mb-4">
-                <CheckCircle2 className="w-5 h-5 text-green-400" />
+                <CheckCircle2 className="w-5 h-5 text-primary" />
                 <h3 className="font-bold text-white">Diagnóstico del Copiloto</h3>
               </div>
               <p className="text-sm text-white/80 leading-relaxed">{insight.diagnosis}</p>
@@ -358,7 +336,7 @@ export default function DashboardPage() {
               </div>
               <div className="mt-6 pt-4 border-t border-white/10 flex items-center justify-between">
                 <span className="text-xs text-white/40 uppercase font-bold tracking-widest">Impacto</span>
-                <span className="text-lg font-bold text-green-400">{insight.impact}</span>
+                <span className="text-lg font-bold text-primary">{insight.impact}</span>
               </div>
             </div>
           </div>

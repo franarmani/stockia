@@ -39,7 +39,7 @@ export default function BottomNav() {
   return (
     <>
       {/* ── Bottom bar ── */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#0d1b2d] border-t border-white/10 safe-bottom">
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-surface-elevated border-t border-white/10 safe-bottom">
         <div className="flex items-stretch h-16">
           {MAIN_NAV.map((item) => (
             <NavLink
@@ -80,7 +80,7 @@ export default function BottomNav() {
         >
           <div className="absolute inset-0 bg-black/40" />
           <div
-            className="absolute bottom-0 left-0 right-0 bg-[#0d1b2d] rounded-t-2xl animate-slide-in-up safe-bottom"
+            className="absolute bottom-0 left-0 right-0 bg-surface-elevated rounded-t-2xl animate-slide-in-up safe-bottom"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Handle */}

@@ -7,7 +7,7 @@ interface TableProps {
 
 export function Table({ children, className }: TableProps) {
   return (
-    <div className="w-full overflow-auto rounded-2xl bg-white shadow-sm">
+    <div className="w-full overflow-auto rounded-2xl bg-surface border border-border shadow-sm">
       <table className={cn('w-full text-sm', className)}>{children}</table>
     </div>
   )

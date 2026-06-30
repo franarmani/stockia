@@ -21,6 +21,37 @@ const PAYMENT_ICONS: Record<string, typeof Banknote> = {
   transfer: ArrowRightLeft, account: CircleDollarSign, card: CreditCard,
 }
 
+// Trae todas las ventas del período en lotes de 1000 (límite por defecto de Supabase),
+// para que los totales del reporte no se trunquen en negocios con mucho volumen.
+async function fetchAllSalesInBatches(businessId: string, startISO: string): Promise<any[]> {
+  let allSales: any[] = []
+  let from = 0
+  const batchSize = 1000
+  let hasMore = true
+
+  while (hasMore) {
+    const { data, error } = await supabase
+      .from('sales')
+      .select('*, sale_items(*, product:products(*)), seller:users!sales_seller_id_fkey(name), customer:customers(name)')
+      .eq('business_id', businessId)
+      .gte('created_at', startISO)
+      .order('created_at', { ascending: false })
+      .range(from, from + batchSize - 1)
+
+    if (error) throw error
+
+    if (data && data.length > 0) {
+      allSales = allSales.concat(data)
+      hasMore = data.length === batchSize
+      from += batchSize
+    } else {
+      hasMore = false
+    }
+  }
+
+  return allSales
+}
+
 export default function ReportsPage() {
   const { profile } = useAuthStore()
   const [period, setPeriod] = useState<'month' | 'week'>('month')
@@ -42,15 +73,14 @@ export default function ReportsPage() {
     }
     const thirtyDaysAgo = new Date(now.getTime() - 30 * 86400000).toISOString()
 
-    const [salesRes, sellersRes, dormantResData] = await Promise.all([
-      supabase.from('sales').select('*, sale_items(*, product:products(*)), seller:users!sales_seller_id_fkey(name), customer:customers(name)')
-        .eq('business_id', profile!.business_id).gte('created_at', start).order('created_at', { ascending: false }),
+    const [allSales, sellersRes, dormantResData] = await Promise.all([
+      fetchAllSalesInBatches(profile!.business_id, start),
       supabase.from('users').select('id, name').eq('business_id', profile!.business_id),
       // Products with no sale items in 30 days
       fetchAllProductsInBatches(profile!.business_id),
     ])
 
-    setSales(salesRes.data || [])
+    setSales(allSales)
     setSellers(sellersRes.data || [])
 
     // Find dormant products (no sales in 30 days)

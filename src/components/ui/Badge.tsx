@@ -13,7 +13,7 @@ export default function Badge({ children, variant = 'default', className }: Badg
         'inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold leading-none gap-1',
         {
           'bg-primary/15 text-primary': variant === 'default' || variant === 'success',
-          'bg-amber-500/15 text-amber-400': variant === 'warning',
+          'bg-secondary/15 text-secondary': variant === 'warning',
           'bg-destructive/15 text-destructive': variant === 'destructive',
           'border border-white/10 text-slate-400': variant === 'outline',
         },

@@ -53,19 +53,18 @@ export default function LoginPage() {
   }
 
   /* ─── Shared input class ─── */
-  const inputCls = 'w-full h-11 pl-10 pr-3 rounded-xl text-sm focus:outline-none focus:ring-2 transition-all ' +
-    'bg-white/5 text-white border border-white/10 focus:ring-primary/30 focus:border-primary ' +
-    'lg:bg-white/5 lg:text-white lg:border-white/10 lg:placeholder-white/35 lg:focus:ring-primary/20 lg:focus:border-primary/40'
+  const inputCls = 'w-full h-11 pl-10 pr-3 rounded-xl text-sm bg-white/5 text-foreground placeholder:text-muted-foreground border border-white/10 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all'
 
   return (
-    <div className="min-h-screen flex bg-[#07111f]">
+    <div className="min-h-screen flex bg-background">
       {/* ─── Desktop left brand panel ─── */}
       <div className="hidden lg:flex lg:w-[46%] relative flex-col justify-between p-12 overflow-hidden">
+        <div className="absolute -top-32 -left-32 w-[480px] h-[480px] bg-primary/10 rounded-full blur-3xl pointer-events-none" />
         <div className="relative z-10">
           <img src={logo} alt="STOCKIA HUB" className="h-8 w-fit" />
         </div>
         <div className="relative z-10">
-          <h1 className="text-3xl font-black text-white leading-tight mb-3">
+          <h1 className="font-display text-4xl text-white leading-[0.95] mb-3 uppercase">
             El sistema de ventas<br />que tu negocio necesita
           </h1>
           <p className="text-white/50 text-sm leading-relaxed mb-8">
@@ -74,8 +73,8 @@ export default function LoginPage() {
           <div className="space-y-3">
             {FEATURES.map(({ icon: Icon, label }) => (
               <div key={label} className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center shrink-0">
-                  <Icon className="w-4 h-4 text-indigo-300" />
+                <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                  <Icon className="w-4 h-4 text-primary" />
                 </div>
                 <span className="text-white/70 text-sm">{label}</span>
               </div>
@@ -90,7 +89,7 @@ export default function LoginPage() {
         {/* Mobile header — visible only on mobile */}
         <div className="lg:hidden flex flex-col px-6 pt-14 pb-8">
           <img src={logo} alt="STOCKIA HUB" className="h-7 w-fit mb-10" />
-          <h1 className="text-3xl font-black text-white leading-tight">
+          <h1 className="font-display text-4xl text-white leading-[0.95] uppercase whitespace-pre-line">
             {forgotMode ? 'Recuperar\ncontraseña' : 'Bienvenido\nde vuelta'}
           </h1>
           <p className="text-white/50 text-sm mt-2">
@@ -100,7 +99,7 @@ export default function LoginPage() {
 
         {/* Form area — white card on mobile, transparent panel on desktop */}
         <div className="flex-1 lg:flex lg:items-center lg:justify-center lg:px-12 lg:py-10">
-          <div className="w-full lg:max-w-sm bg-[#0d1b2d] lg:bg-transparent rounded-t-[28px] lg:rounded-none px-6 lg:px-0 pt-8 lg:pt-0 pb-12 lg:pb-0">
+          <div className="w-full lg:max-w-sm bg-surface-elevated lg:bg-transparent rounded-t-[28px] lg:rounded-none px-6 lg:px-0 pt-8 lg:pt-0 pb-12 lg:pb-0">
             {/* Desktop heading */}
             <div className="hidden lg:block mb-7">
               <h2 className="text-2xl font-black text-white">
@@ -120,14 +119,14 @@ export default function LoginPage() {
 
             {/* ─── Reset sent confirmation ─── */}
             {resetSent ? (
-              <div className="rounded-xl p-4 text-center border border-green-500/30 bg-green-500/10">
-                <p className="text-green-400 font-semibold text-sm mb-1">¡Email enviado!</p>
-                <p className="text-green-300/70 text-xs">
+              <div className="rounded-xl p-4 text-center border border-primary/30 bg-primary/10">
+                <p className="text-primary font-semibold text-sm mb-1">¡Email enviado!</p>
+                <p className="text-primary/70 text-xs">
                   Revisá tu bandeja de entrada y seguí el link para restablecer tu contraseña.
                 </p>
                 <button
                   onClick={() => { setForgotMode(false); setResetSent(false) }}
-                  className="mt-3 text-xs text-primary/80 lg:text-primary/80 font-semibold hover:underline"
+                  className="mt-3 text-xs text-primary font-semibold hover:underline"
                 >
                   Volver al inicio de sesión
                 </button>
@@ -137,12 +136,12 @@ export default function LoginPage() {
               /* ─── Forgot password form ─── */
               <form onSubmit={handleForgotPassword} className="space-y-4">
                 <div>
-                  <label className="block text-[13px] font-medium text-slate-300 lg:text-white/70 mb-1.5">Email</label>
+                  <label className="block text-[13px] font-medium text-white/70 mb-1.5">Email</label>
                   <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 lg:text-white/35" />
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/35" />
                     <input
                       type="email" value={email} onChange={(e) => setEmail(e.target.value)}
-                      placeholder="tu@email.com" autoComplete="email"
+                      placeholder="tu@email.com" autoComplete="email" required
                       className={inputCls}
                     />
                   </div>
@@ -150,13 +149,13 @@ export default function LoginPage() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full h-11 rounded-xl font-semibold text-sm text-white flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 transition-all disabled:opacity-60"
+                  className="w-full h-11 rounded-xl font-semibold text-sm text-white flex items-center justify-center gap-2 bg-primary hover:bg-primary-hover transition-all disabled:opacity-60"
                 >
                   {loading ? 'Enviando...' : <>Enviar link de recuperación <ArrowRight className="w-4 h-4" /></>}
                 </button>
                 <button
                   type="button" onClick={() => setForgotMode(false)}
-                  className="w-full text-center text-sm text-slate-400 lg:text-white/40 hover:text-slate-300 lg:hover:text-white/70 transition-colors"
+                  className="w-full text-center text-sm text-white/40 hover:text-white/70 transition-colors"
                 >
                   ← Volver al inicio de sesión
                 </button>
@@ -166,36 +165,37 @@ export default function LoginPage() {
               /* ─── Login form ─── */
               <form onSubmit={handleLogin} className="space-y-4">
                 <div>
-                  <label className="block text-[13px] font-medium text-slate-300 lg:text-white/70 mb-1.5">Email</label>
+                  <label className="block text-[13px] font-medium text-white/70 mb-1.5">Email</label>
                   <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 lg:text-white/35" />
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/35" />
                     <input
                       type="email" value={email} onChange={(e) => setEmail(e.target.value)}
-                      placeholder="tu@email.com" autoComplete="email"
+                      placeholder="tu@email.com" autoComplete="email" required
                       className={inputCls}
                     />
                   </div>
                 </div>
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
-                    <label className="text-[13px] font-medium text-slate-300 lg:text-white/70">Contraseña</label>
+                    <label className="text-[13px] font-medium text-white/70">Contraseña</label>
                     <button
                       type="button" onClick={() => setForgotMode(true)}
-                      className="text-[12px] text-primary lg:text-primary/80 hover:underline font-medium"
+                      className="text-[12px] text-primary hover:underline font-medium"
                     >
                       ¿Olvidaste tu contraseña?
                     </button>
                   </div>
                   <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 lg:text-white/35" />
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/35" />
                     <input
                       type={showPassword ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)}
-                      placeholder="••••••••" autoComplete="current-password"
+                      placeholder="••••••••" autoComplete="current-password" required
                       className={inputCls + ' pr-10'}
                     />
                     <button
                       type="button" onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 lg:text-white/35 hover:text-slate-300 lg:hover:text-white/70 transition-colors"
+                      aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-white/35 hover:text-white/70 transition-colors"
                     >
                       {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
@@ -204,16 +204,16 @@ export default function LoginPage() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full h-11 rounded-xl font-semibold text-sm text-white flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 transition-all disabled:opacity-60"
+                  className="w-full h-11 rounded-xl font-semibold text-sm text-white flex items-center justify-center gap-2 bg-primary hover:bg-primary-hover transition-all disabled:opacity-60"
                 >
                   {loading ? 'Ingresando...' : <>Iniciar sesión <ArrowRight className="w-4 h-4" /></>}
                 </button>
               </form>
             )}
 
-            <p className="text-center text-sm text-slate-400 lg:text-white/40 mt-6">
+            <p className="text-center text-sm text-white/40 mt-6">
               ¿No tenés cuenta?{' '}
-              <Link to="/register" className="text-primary lg:text-primary/80 font-semibold hover:underline">
+              <Link to="/register" className="text-primary font-semibold hover:underline">
                 Crear cuenta
               </Link>
             </p>

@@ -29,6 +29,8 @@ const PAYMENT_ICONS: Record<string, typeof Banknote> = {
   transfer: ArrowRightLeft, account: CircleDollarSign, card: CreditCard,
 }
 
+const PAGE_SIZE = 30
+
 export default function SalesHistoryPage() {
   const { profile } = useAuthStore()
   const [sales, setSales] = useState<SaleWithItems[]>([])
@@ -40,13 +42,32 @@ export default function SalesHistoryPage() {
   const [paymentFilter, setPaymentFilter] = useState('')
   const [selectedSale, setSelectedSale] = useState<SaleWithItems | null>(null)
   const [voiding, setVoiding] = useState(false)
+  const [totalCount, setTotalCount] = useState(0)
+  const [totalAmount, setTotalAmount] = useState(0)
+  const [page, setPage] = useState(1)
+
+  useEffect(() => {
+    setPage(1)
+  }, [period, sellerFilter, paymentFilter])
 
   useEffect(() => {
     if (profile?.business_id) {
       fetchSales()
       fetchSellers()
     }
-  }, [profile?.business_id, period])
+  }, [profile?.business_id, period, sellerFilter, paymentFilter, page])
+
+  useEffect(() => {
+    if (profile?.business_id) fetchSalesTotal()
+  }, [profile?.business_id, period, sellerFilter, paymentFilter])
+
+  function periodStart(): string | null {
+    const now = new Date()
+    if (period === 'today') return new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString()
+    if (period === 'week') return new Date(now.getTime() - 7 * 86400000).toISOString()
+    if (period === 'month') return new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
+    return null
+  }
 
   async function fetchSellers() {
     const { data } = await supabase.from('users').select('id, name').eq('business_id', profile!.business_id)
@@ -61,33 +82,43 @@ export default function SalesHistoryPage() {
       .eq('business_id', profile!.business_id)
       .order('created_at', { ascending: false })
 
-    const now = new Date()
-    if (period === 'today') {
-      const start = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString()
-      query = query.gte('created_at', start)
-    } else if (period === 'week') {
-      const start = new Date(now.getTime() - 7 * 86400000).toISOString()
-      query = query.gte('created_at', start)
-    } else if (period === 'month') {
-      const start = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
-      query = query.gte('created_at', start)
-    }
+    const start = periodStart()
+    if (start) query = query.gte('created_at', start)
+    if (sellerFilter) query = query.eq('seller_id', sellerFilter)
+    if (paymentFilter) query = query.eq('payment_method', paymentFilter)
 
-    const { data } = await query.limit(200)
+    const from = (page - 1) * PAGE_SIZE
+    const { data } = await query.range(from, from + PAGE_SIZE - 1)
     setSales((data as unknown as SaleWithItems[]) || [])
     setLoading(false)
   }
 
+  // Total real del período, sin paginar (para el monto y el conteo totales)
+  async function fetchSalesTotal() {
+    let query = supabase
+      .from('sales')
+      .select('total, voided')
+      .eq('business_id', profile!.business_id)
+
+    const start = periodStart()
+    if (start) query = query.gte('created_at', start)
+    if (sellerFilter) query = query.eq('seller_id', sellerFilter)
+    if (paymentFilter) query = query.eq('payment_method', paymentFilter)
+
+    const { data } = await query
+    const rows = data || []
+    setTotalCount(rows.length)
+    setTotalAmount(rows.filter((s) => !s.voided).reduce((sum, s) => sum + s.total, 0))
+  }
+
   const filtered = sales.filter((s) => {
-    if (sellerFilter && s.seller_id !== sellerFilter) return false
-    if (paymentFilter && s.payment_method !== paymentFilter) return false
     if (!search) return true
     const q = search.toLowerCase()
     return s.customer?.name?.toLowerCase().includes(q) ||
       s.sale_items?.some((i: SaleWithItems['sale_items'][number]) => i.product?.name?.toLowerCase().includes(q))
   })
 
-  const totalPeriod = filtered.filter(s => !s.voided).reduce((sum, s) => sum + s.total, 0)
+  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE))
 
   const periodTabs = [
     { id: 'today' as const, label: 'Hoy' },
@@ -150,7 +181,9 @@ export default function SalesHistoryPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <h1 className="text-lg font-bold text-foreground">Historial de ventas</h1>
-          <p className="text-sm text-muted-foreground">{filtered.length} ventas — Total: {formatCurrency(totalPeriod)}</p>
+          <p className="text-sm text-muted-foreground">
+            {totalCount} ventas — Total: {formatCurrency(totalAmount)}
+          </p>
         </div>
       </div>
 
@@ -240,6 +273,19 @@ export default function SalesHistoryPage() {
               </button>
             )
           })}
+        </div>
+      )}
+
+      {/* Pagination */}
+      {!loading && totalCount > PAGE_SIZE && (
+        <div className="flex items-center justify-between text-sm">
+          <Button variant="secondary" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
+            Anterior
+          </Button>
+          <span className="text-xs text-muted-foreground">Página {page} de {totalPages}</span>
+          <Button variant="secondary" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>
+            Siguiente
+          </Button>
         </div>
       )}
 

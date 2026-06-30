@@ -17,44 +17,37 @@ import {
 const painPoints = [
   {
     icon: AlertTriangle,
-    color: 'text-amber-400',
-    bg: 'bg-amber-400/10',
     title: 'Perdés ventas por no saber qué tenés en stock',
     desc: 'Decís que sí y después no encontrás el producto. O lo vendés dos veces.',
   },
   {
     icon: Clock,
-    color: 'text-red-400',
-    bg: 'bg-red-400/10',
     title: 'Hacés las facturas a mano o en papel',
     desc: 'Tardás, errás y después tenés problemas con AFIP que te cuestan caro.',
   },
   {
     icon: TrendingUp,
-    color: 'text-rose-400',
-    bg: 'bg-rose-400/10',
     title: 'No sabés si tu negocio gana o pierde',
     desc: 'Cerrás el mes y no tenés idea cuánto ganaste realmente después de gastos.',
   },
   {
     icon: Users,
-    color: 'text-violet-400',
-    bg: 'bg-violet-400/10',
     title: 'Los clientes te deben y no podés llevar el control',
     desc: 'Cuadernos, Excel o memoria. Siempre se escapa algo y los números no cierran.',
   },
 ]
 
+// Verde = lo operativo del día a día · Cobre = lo que toca la plata y el cumplimiento
 const features = [
-  { icon: ShoppingCart, color: 'bg-blue-500/20 text-blue-400', title: 'Punto de venta', desc: 'Vendé rápido con búsqueda inteligente y lector de código de barras. Cada venta en segundos.' },
-  { icon: Package, color: 'bg-violet-500/20 text-violet-400', title: 'Control de stock', desc: 'Inventario en tiempo real con alertas de mínimos y gestión de compras a proveedores.' },
-  { icon: FileText, color: 'bg-indigo-500/20 text-indigo-400', title: 'Facturación AFIP', desc: 'Factura A, B y C con CAE automático. Notas de crédito incluidas. 100% legal.' },
-  { icon: BarChart3, color: 'bg-orange-500/20 text-orange-400', title: 'Reportes y ganancias', desc: 'Ventas, ganancia por producto y métricas del negocio con gráficos claros y exportables.' },
-  { icon: Users, color: 'bg-cyan-500/20 text-cyan-400', title: 'Clientes y cta. cte.', desc: 'Registrá clientes, historial completo de compras, saldo de cuenta corriente y deudas.' },
-  { icon: Smartphone, color: 'bg-green-500/20 text-green-400', title: 'Modo offline (PWA)', desc: 'Instalable en celular y PC. Si se corta internet seguís vendiendo con tickets — las ventas se sincronizan al volver la conexión.' },
-  { icon: Wallet, color: 'bg-rose-500/20 text-rose-400', title: 'Caja diaria', desc: 'Apertura y cierre de caja con arqueo automático. Resumen del día al instante.' },
-  { icon: Activity, color: 'bg-emerald-500/20 text-emerald-400', title: 'Salud del negocio', desc: 'Score en tiempo real: stock crítico, deudas, facturas pendientes y alertas inteligentes.' },
-  { icon: Bell, color: 'bg-purple-500/20 text-purple-400', title: 'Notificaciones', desc: 'Alertas automáticas de stock bajo, deudas altas, productos sin costo y más.' },
+  { icon: ShoppingCart, group: 'verde' as const, title: 'Punto de venta', desc: 'Vendé rápido con búsqueda inteligente y lector de código de barras. Cada venta en segundos.' },
+  { icon: Package, group: 'verde' as const, title: 'Control de stock', desc: 'Inventario en tiempo real con alertas de mínimos y gestión de compras a proveedores.' },
+  { icon: FileText, group: 'cobre' as const, title: 'Facturación AFIP', desc: 'Factura A, B y C con CAE automático. Notas de crédito incluidas. 100% legal.' },
+  { icon: BarChart3, group: 'cobre' as const, title: 'Reportes y ganancias', desc: 'Ventas, ganancia por producto y métricas del negocio con gráficos claros y exportables.' },
+  { icon: Users, group: 'verde' as const, title: 'Clientes y cta. cte.', desc: 'Registrá clientes, historial completo de compras, saldo de cuenta corriente y deudas.' },
+  { icon: Smartphone, group: 'verde' as const, title: 'Modo offline (PWA)', desc: 'Instalable en celular y PC. Si se corta internet seguís vendiendo con tickets — las ventas se sincronizan al volver la conexión.' },
+  { icon: Wallet, group: 'verde' as const, title: 'Caja diaria', desc: 'Apertura y cierre de caja con arqueo automático. Resumen del día al instante.' },
+  { icon: Activity, group: 'cobre' as const, title: 'Salud del negocio', desc: 'Score en tiempo real: stock crítico, deudas, facturas pendientes y alertas inteligentes.' },
+  { icon: Bell, group: 'cobre' as const, title: 'Notificaciones', desc: 'Alertas automáticas de stock bajo, deudas altas, productos sin costo y más.' },
 ]
 
 const steps = [
@@ -62,24 +55,69 @@ const steps = [
     num: '01',
     title: 'Creá tu cuenta',
     desc: 'Registrate en 2 minutos. Sin tarjeta, sin letra chica. 7 días para probarlo todo.',
-    color: 'text-green-400',
-    bg: 'bg-green-400/10 border-green-400/20',
   },
   {
     num: '02',
     title: 'Cargá tus productos',
     desc: 'Importá desde Excel o cargalos uno a uno. Stock, precios y categorías en orden.',
-    color: 'text-blue-400',
-    bg: 'bg-blue-400/10 border-blue-400/20',
   },
   {
     num: '03',
     title: 'Empezá a vender',
     desc: 'Punto de venta listo, facturación automática y reportes en tiempo real desde el día uno.',
-    color: 'text-violet-400',
-    bg: 'bg-violet-400/10 border-violet-400/20',
   },
 ]
+
+const ticketItems = [
+  { name: 'Coca-Cola 500ml', qty: 2, price: 1200 },
+  { name: 'Alfajor Jorgito', qty: 3, price: 550 },
+  { name: 'Pan lactal Bimbo', qty: 1, price: 2100 },
+  { name: 'Yerba La Merced 1kg', qty: 1, price: 4300 },
+]
+const ticketTotal = ticketItems.reduce((sum, i) => sum + i.qty * i.price, 0)
+
+/* ─────────────── HERO TICKET (signature element) ─────────────── */
+function ReceiptHero() {
+  return (
+    <div className="relative w-full max-w-[340px] mx-auto lg:mx-0">
+      <div className="ticket-edge-top ticket-edge-bottom bg-paper text-paper-foreground rounded-[var(--radius-ticket)] shadow-2xl shadow-black/40 px-5 pt-6 pb-5 font-mono rotate-[1.5deg]">
+        <div className="text-center border-b border-dashed border-paper-foreground/25 pb-3 mb-3">
+          <p className="text-xs font-bold tracking-[0.2em]">STOCKIA HUB</p>
+          <p className="text-[10px] opacity-60 mt-1">TICKET N.º 00128 · 18:42</p>
+        </div>
+        <div className="space-y-2 text-[12px]">
+          {ticketItems.map((item, i) => (
+            <div
+              key={item.name}
+              className="ticket-line flex items-baseline justify-between gap-2"
+              style={{ animationDelay: `${300 + i * 140}ms` }}
+            >
+              <span className="truncate">{item.name} <span className="opacity-50">x{item.qty}</span></span>
+              <span className="tabular-nums shrink-0">${(item.qty * item.price).toLocaleString('es-AR')}</span>
+            </div>
+          ))}
+        </div>
+        <div
+          className="ticket-line flex items-baseline justify-between border-t border-dashed border-paper-foreground/25 mt-3 pt-3"
+          style={{ animationDelay: `${300 + ticketItems.length * 140}ms` }}
+        >
+          <span className="text-sm font-bold tracking-wide">TOTAL</span>
+          <span className="text-xl font-bold text-secondary tabular-nums">${ticketTotal.toLocaleString('es-AR')}</span>
+        </div>
+        <div
+          className="ticket-line barcode-strip mt-4"
+          style={{ animationDelay: `${300 + (ticketItems.length + 1) * 140}ms` }}
+        />
+        <p
+          className="ticket-line text-center text-[9px] tracking-[0.2em] opacity-50 mt-2"
+          style={{ animationDelay: `${300 + (ticketItems.length + 1) * 140}ms` }}
+        >
+          GRACIAS POR SU COMPRA
+        </p>
+      </div>
+    </div>
+  )
+}
 
 const testimonials = [
   {
@@ -153,7 +191,7 @@ function FaqItem({ q, a }: { q: string; a: string }) {
   const [open, setOpen] = useState(false)
   return (
     <button
-      className="w-full text-left bg-[#0d1b2d] border border-white/10 rounded-xl p-5 hover:bg-white/5 transition-all duration-200"
+      className="w-full text-left bg-surface-elevated border border-white/10 rounded-xl p-5 hover:bg-white/5 transition-all duration-200"
       onClick={() => setOpen(!open)}
     >
       <div className="flex items-start justify-between gap-3">
@@ -193,18 +231,15 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen app-bg text-white overflow-x-hidden">
 
-      {/* ── Background blobs ── */}
+      {/* Una sola fuente de luz ambiental, no manchas arcoíris decorativas */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
-        <div className="absolute -top-40 -left-40 w-175 h-175 bg-green-500/10 rounded-full blur-3xl" />
-        <div className="absolute top-1/3 -right-40 w-150 h-150 bg-blue-500/8 rounded-full blur-3xl" />
-        <div className="absolute bottom-0 left-1/3 w-100 h-100 bg-violet-500/8 rounded-full blur-3xl" />
-        <div className="absolute top-2/3 left-0 w-87.5 h-87.5 bg-rose-500/5 rounded-full blur-3xl" />
+        <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[900px] h-[900px] bg-primary/8 rounded-full blur-3xl" />
       </div>
 
       {/* ══════════════════════════════════════
           HEADER
       ══════════════════════════════════════ */}
-      <header className="sticky top-0 z-50 bg-[#07111f]/90 border-b border-white/10 backdrop-blur-xl">
+      <header className="sticky top-0 z-50 bg-surface/90 border-b border-white/10 backdrop-blur-xl">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <img src={logo} alt="STOCKIA HUB" className="h-7" />
@@ -229,59 +264,64 @@ export default function LandingPage() {
       {/* ══════════════════════════════════════
           HERO — ATENCIÓN
       ══════════════════════════════════════ */}
-      <section className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 pt-20 pb-16 sm:pt-28 sm:pb-24">
-        <div className="max-w-3xl mx-auto text-center">
+      <section className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 pt-16 pb-16 sm:pt-24 sm:pb-24">
+        <div className="grid lg:grid-cols-[1.1fr_0.9fr] gap-12 lg:gap-8 items-center">
+          <div className="text-center lg:text-left">
 
-          {/* Badge */}
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-green-500/15 border border-green-500/25 text-green-400 text-xs font-semibold uppercase tracking-widest mb-7 animate-fade-in">
-            <Zap className="w-3 h-3" />
-            7 días gratis · Sin tarjeta de crédito
+            {/* Badge */}
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-primary/15 border border-primary/25 text-primary text-xs font-semibold uppercase tracking-widest mb-7 animate-fade-in font-mono">
+              <Zap className="w-3 h-3" />
+              7 días gratis · Sin tarjeta de crédito
+            </div>
+
+            {/* Headline */}
+            <h1 className="font-display text-5xl sm:text-6xl lg:text-[68px] leading-[0.95] mb-5 tracking-tight animate-fade-in-up uppercase">
+              El sistema que tu negocio
+              <span className="text-primary"> necesitaba</span>
+            </h1>
+
+            {/* Sub */}
+            <p className="text-base sm:text-xl text-white/50 mb-10 max-w-xl mx-auto lg:mx-0 leading-relaxed animate-fade-in-up">
+              Punto de venta, stock, facturación AFIP y reportes de ganancia real.
+              Todo en un solo lugar, listo en minutos.
+            </p>
+
+            {/* CTAs */}
+            <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3 mb-6 animate-fade-in-up">
+              <Link to="/register"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 h-14 px-10 gradient-primary text-white font-bold rounded-2xl shadow-xl shadow-green-900/40 transition-all hover:brightness-110 active:scale-[0.98] text-[16px]">
+                Empezar gratis ahora <ArrowRight className="w-5 h-5" />
+              </Link>
+              <a href="#features"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 h-14 px-8 bg-surface-elevated border border-white/10 rounded-2xl text-white/75 font-medium hover:bg-white/10 transition-colors text-[15px]">
+                <Play className="w-4 h-4" />
+                Ver cómo funciona
+              </a>
+            </div>
+
+            {/* Micro-copy */}
+            <p className="text-xs text-white/30 mb-10">
+              Sin tarjeta · Sin instalación · Sin compromisos
+            </p>
+
+            {/* Social proof numbers */}
+            <div className="grid grid-cols-3 gap-3 max-w-md mx-auto lg:mx-0">
+              {[
+                { val: '+500', label: 'Negocios activos' },
+                { val: '+1M', label: 'Ventas procesadas' },
+                { val: '99.9%', label: 'Uptime garantizado' },
+              ].map((s, i) => (
+                <div key={i} className="bg-surface-elevated border border-white/10 rounded-xl p-3.5 text-center">
+                  <p className="text-xl font-bold text-primary font-mono tabular-nums">{s.val}</p>
+                  <p className="text-[11px] text-white/35 mt-0.5 leading-tight">{s.label}</p>
+                </div>
+              ))}
+            </div>
           </div>
 
-          {/* Headline */}
-          <h1 className="text-4xl sm:text-5xl lg:text-[62px] font-bold leading-[1.08] mb-5 tracking-tight animate-fade-in-up">
-            El sistema que tu negocio<br />
-            <span className="text-primary">
-              necesitaba desde siempre
-            </span>
-          </h1>
-
-          {/* Sub */}
-          <p className="text-base sm:text-xl text-white/50 mb-10 max-w-xl mx-auto leading-relaxed animate-fade-in-up">
-            Punto de venta, stock, facturación AFIP y reportes de ganancia real.
-            Todo en un solo lugar, listo en minutos.
-          </p>
-
-          {/* CTAs */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-6 animate-fade-in-up">
-            <Link to="/register"
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 h-14 px-10 gradient-primary text-white font-bold rounded-2xl shadow-xl shadow-green-900/40 transition-all hover:brightness-110 active:scale-[0.98] text-[16px]">
-              Empezar gratis ahora <ArrowRight className="w-5 h-5" />
-            </Link>
-            <a href="#features"
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 h-14 px-8 bg-[#0d1b2d] border border-white/10 rounded-2xl text-white/75 font-medium hover:bg-white/10 transition-colors text-[15px]">
-              <Play className="w-4 h-4" />
-              Ver cómo funciona
-            </a>
-          </div>
-
-          {/* Micro-copy */}
-          <p className="text-xs text-white/30 mb-14">
-            Sin tarjeta · Sin instalación · Sin compromisos
-          </p>
-
-          {/* Social proof numbers */}
-          <div className="grid grid-cols-3 gap-3 max-w-md mx-auto">
-            {[
-              { val: '+500', label: 'Negocios activos' },
-              { val: '+1M', label: 'Ventas procesadas' },
-              { val: '99.9%', label: 'Uptime garantizado' },
-            ].map((s, i) => (
-              <div key={i} className="bg-[#0d1b2d] border border-white/10 rounded-xl p-3.5 text-center">
-                <p className="text-xl font-bold text-green-400">{s.val}</p>
-                <p className="text-[11px] text-white/35 mt-0.5 leading-tight">{s.label}</p>
-              </div>
-            ))}
+          {/* Signature: ticket de venta real */}
+          <div className="animate-fade-in-up">
+            <ReceiptHero />
           </div>
         </div>
       </section>
@@ -291,10 +331,10 @@ export default function LandingPage() {
       ══════════════════════════════════════ */}
       <section className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 py-16 sm:py-20">
         <div className="text-center mb-10">
-          <span className="inline-block px-3 py-1 rounded-full bg-red-500/15 border border-red-500/20 text-red-400 text-xs font-semibold uppercase tracking-widest mb-4">
+          <span className="inline-block px-3 py-1 rounded-full bg-secondary/15 border border-secondary/20 text-secondary text-xs font-semibold uppercase tracking-widest mb-4 font-mono">
             ¿Te identificás?
           </span>
-          <h2 className="text-2xl sm:text-3xl font-bold text-white mb-3">
+          <h2 className="font-display text-3xl sm:text-4xl text-white mb-3 uppercase">
             ¿Cuánto te cuesta no tener un sistema?
           </h2>
           <p className="text-white/40 text-sm max-w-md mx-auto">
@@ -303,9 +343,9 @@ export default function LandingPage() {
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-3xl mx-auto">
           {painPoints.map((p, i) => (
-            <div key={i} className="bg-[#0d1b2d] border border-white/10 rounded-xl p-5 flex gap-4 items-start">
-              <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${p.bg}`}>
-                <p.icon className={`w-5 h-5 ${p.color}`} />
+            <div key={i} className="bg-surface-elevated border border-white/10 rounded-xl p-5 flex gap-4 items-start">
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 bg-secondary/10">
+                <p.icon className="w-5 h-5 text-secondary" />
               </div>
               <div>
                 <h3 className="text-sm font-bold text-white mb-1">{p.title}</h3>
@@ -316,8 +356,8 @@ export default function LandingPage() {
         </div>
         {/* Bridge */}
         <div className="mt-10 text-center">
-          <div className="inline-flex items-center gap-2.5 px-5 py-3 rounded-2xl bg-green-500/10 border border-green-500/20">
-            <CheckCircle2 className="w-5 h-5 text-green-400 shrink-0" />
+          <div className="inline-flex items-center gap-2.5 px-5 py-3 rounded-2xl bg-primary/10 border border-primary/20">
+            <CheckCircle2 className="w-5 h-5 text-primary shrink-0" />
             <span className="text-sm font-semibold text-white">
               STOCKIA HUB resuelve todo esto desde el primer día.
             </span>
@@ -330,17 +370,17 @@ export default function LandingPage() {
       ══════════════════════════════════════ */}
       <section id="features" className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 py-16 sm:py-20">
         <div className="text-center mb-10">
-          <span className="inline-block px-3 py-1 rounded-full bg-blue-500/15 border border-blue-500/20 text-blue-400 text-xs font-semibold uppercase tracking-widest mb-4">
+          <span className="inline-block px-3 py-1 rounded-full bg-primary/15 border border-primary/20 text-primary text-xs font-semibold uppercase tracking-widest mb-4 font-mono">
             Funciones
           </span>
-          <h2 className="text-2xl sm:text-3xl font-bold text-white mb-2">Todo lo que necesitás en un solo lugar</h2>
+          <h2 className="font-display text-3xl sm:text-4xl text-white mb-2 uppercase">Todo lo que necesitás en un solo lugar</h2>
           <p className="text-white/40 text-sm">Herramientas reales para negocios reales de Argentina</p>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {features.map((f, i) => (
             <div key={i}
-              className="bg-[#0d1b2d] border border-white/10 rounded-xl p-5 hover:bg-white/10 hover:-translate-y-1 hover:shadow-2xl transition-all duration-200 cursor-default">
-              <div className={`w-11 h-11 rounded-xl flex items-center justify-center mb-3 ${f.color}`}>
+              className="bg-surface-elevated border border-white/10 rounded-xl p-5 hover:bg-white/10 hover:-translate-y-1 hover:shadow-2xl transition-all duration-200 cursor-default">
+              <div className={`w-11 h-11 rounded-xl flex items-center justify-center mb-3 ${f.group === 'verde' ? 'bg-primary/15 text-primary' : 'bg-secondary/15 text-secondary'}`}>
                 <f.icon className="w-5 h-5" />
               </div>
               <h3 className="text-sm font-bold text-white mb-1.5">{f.title}</h3>
@@ -355,22 +395,18 @@ export default function LandingPage() {
       ══════════════════════════════════════ */}
       <section className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 py-16 sm:py-20">
         <div className="text-center mb-10">
-          <span className="inline-block px-3 py-1 rounded-full bg-violet-500/15 border border-violet-500/20 text-violet-400 text-xs font-semibold uppercase tracking-widest mb-4">
+          <span className="inline-block px-3 py-1 rounded-full bg-primary/15 border border-primary/20 text-primary text-xs font-semibold uppercase tracking-widest mb-4 font-mono">
             Así de simple
           </span>
-          <h2 className="text-2xl sm:text-3xl font-bold text-white mb-2">Empezás a vender en 3 pasos</h2>
+          <h2 className="font-display text-3xl sm:text-4xl text-white mb-2 uppercase">Empezás a vender en 3 pasos</h2>
           <p className="text-white/40 text-sm">No necesitás técnicos, servidores ni instalación</p>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 relative">
-          {/* Connector line desktop */}
-          <div className="hidden md:block absolute top-13 left-[calc(16.5%+1rem)] right-[calc(16.5%+1rem)] h-px bg-primary/25" />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {steps.map((s, i) => (
-            <div key={i} className="text-center relative">
-              <div className={`inline-flex w-17 h-17 rounded-2xl border items-center justify-center mb-4 ${s.bg}`}>
-                <span className={`text-2xl font-black ${s.color}`}>{s.num}</span>
-              </div>
-              <h3 className="text-base font-bold text-white mb-2">{s.title}</h3>
-              <p className="text-sm text-white/45 leading-relaxed max-w-xs mx-auto">{s.desc}</p>
+            <div key={i} className="text-left relative bg-surface-elevated border border-white/10 rounded-xl p-5">
+              <span className="font-mono text-[11px] tracking-[0.15em] text-primary">ÍTEM {s.num}</span>
+              <h3 className="text-base font-bold text-white mt-2 mb-2">{s.title}</h3>
+              <p className="text-sm text-white/45 leading-relaxed">{s.desc}</p>
             </div>
           ))}
         </div>
@@ -387,11 +423,11 @@ export default function LandingPage() {
       ══════════════════════════════════════ */}
       <section className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 py-16 sm:py-20">
         <div className="text-center mb-10">
-          <h2 className="text-2xl sm:text-3xl font-bold text-white mb-2">¿Por qué STOCKIA HUB?</h2>
+          <h2 className="font-display text-3xl sm:text-4xl text-white mb-2 uppercase">¿Por qué STOCKIA HUB?</h2>
           <p className="text-white/40 text-sm">Lo que el cuaderno, el Excel y los sistemas viejos no te dan</p>
         </div>
         <div className="max-w-2xl mx-auto">
-          <div className="bg-[#0d1b2d] border border-white/10 rounded-xl overflow-hidden">
+          <div className="bg-surface-elevated border border-white/10 rounded-xl overflow-hidden">
             {/* Header */}
             <div className="grid grid-cols-[1fr_auto_auto] gap-0 border-b border-white/10">
               <div className="p-4 text-xs font-semibold text-white/40 uppercase tracking-wider"></div>
@@ -426,15 +462,15 @@ export default function LandingPage() {
       ══════════════════════════════════════ */}
       <section className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 py-16 sm:py-20">
         <div className="text-center mb-10">
-          <span className="inline-block px-3 py-1 rounded-full bg-amber-500/15 border border-amber-500/20 text-amber-400 text-xs font-semibold uppercase tracking-widest mb-4">
+          <span className="inline-block px-3 py-1 rounded-full bg-secondary/15 border border-secondary/20 text-secondary text-xs font-semibold uppercase tracking-widest mb-4 font-mono">
             Testimonios
           </span>
-          <h2 className="text-2xl sm:text-3xl font-bold text-white mb-2">Lo que dicen los que ya lo usan</h2>
+          <h2 className="font-display text-3xl sm:text-4xl text-white mb-2 uppercase">Lo que dicen los que ya lo usan</h2>
           <p className="text-white/40 text-sm">Negocios reales de Argentina</p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {testimonials.map((t, i) => (
-            <div key={i} className="bg-[#0d1b2d] border border-white/10 rounded-xl p-6 flex flex-col gap-4">
+            <div key={i} className="bg-surface-elevated border border-white/10 rounded-xl p-6 flex flex-col gap-4">
               {/* Stars */}
               <div className="flex gap-0.5">
                 {Array.from({ length: t.stars }).map((_, j) => (
@@ -467,49 +503,44 @@ export default function LandingPage() {
       ══════════════════════════════════════ */}
       <section id="pricing" className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 py-16 sm:py-20">
         <div className="text-center mb-10">
-          <span className="inline-block px-3 py-1 rounded-full bg-green-500/15 border border-green-500/25 text-green-400 text-xs font-semibold uppercase tracking-widest mb-4">
+          <span className="inline-block px-3 py-1 rounded-full bg-primary/15 border border-primary/25 text-primary text-xs font-semibold uppercase tracking-widest mb-4 font-mono">
             Precio
           </span>
-          <h2 className="text-2xl sm:text-3xl font-bold text-white mb-2">Un plan, todo incluido</h2>
+          <h2 className="font-display text-3xl sm:text-4xl text-white mb-2 uppercase">Un plan, todo incluido</h2>
           <p className="text-white/40 text-sm">Sin funciones bloqueadas, sin sorpresas al final del mes</p>
         </div>
 
         <div className="max-w-md mx-auto">
-          {/* Card */}
-          <div className="relative bg-[#0d1b2d] border border-green-500/25 bg-green-500/5 overflow-hidden rounded-xl p-8">
-            {/* Glow */}
-            <div className="absolute -top-20 -right-20 w-64 h-64 bg-green-500/10 rounded-full blur-2xl pointer-events-none" />
-
-            {/* Badge */}
-            <div className="absolute -top-px left-1/2 -translate-x-1/2">
-              <span className="inline-flex items-center gap-1.5 px-4 py-1 gradient-primary text-white text-[11px] font-bold rounded-b-xl shadow-lg">
-                <Zap className="w-3 h-3" /> MÁS POPULAR
-              </span>
+          {/* Card — el plan presentado como un ticket real */}
+          <div className="relative ticket-edge-top ticket-edge-bottom bg-paper text-paper-foreground overflow-hidden rounded-[var(--radius-ticket)] p-8 pt-10 shadow-2xl shadow-black/30 -rotate-[0.6deg]">
+            {/* Sello tipo timbre, en vez de cinta genérica */}
+            <div className="absolute top-4 right-5 stamp w-16 h-16 text-secondary">
+              <span className="text-[9px] font-bold uppercase leading-tight text-center">Más<br />popular</span>
             </div>
 
             {/* Plan name */}
-            <p className="text-xs font-bold text-green-400 uppercase tracking-widest text-center mb-5 mt-3">Plan Negocio</p>
+            <p className="font-mono text-xs font-bold text-primary uppercase tracking-widest mb-5">Plan Negocio</p>
 
             {/* Price */}
-            <div className="text-center mb-6">
-              <div className="flex items-start justify-center gap-1">
-                <span className="text-2xl font-bold text-white/60 mt-2">$</span>
-                <span className="text-6xl font-black text-white tracking-tight">70.000</span>
+            <div className="mb-6">
+              <div className="flex items-start gap-1 font-mono">
+                <span className="text-2xl font-bold opacity-50 mt-2">$</span>
+                <span className="text-6xl font-bold tracking-tight tabular-nums">70.000</span>
               </div>
-              <p className="text-sm text-white/35 mt-1">por mes · en pesos argentinos</p>
-              <p className="text-xs text-green-400 mt-1.5 font-semibold">7 días gratis para empezar</p>
+              <p className="text-sm opacity-50 mt-1">por mes · en pesos argentinos</p>
+              <p className="text-xs text-primary mt-1.5 font-semibold">7 días gratis para empezar</p>
             </div>
 
             {/* Features list */}
-            <div className="space-y-2.5 mb-7">
+            <div className="space-y-2.5 mb-7 border-t border-dashed border-paper-foreground/20 pt-5">
               {planFeatures.map((f, i) => (
                 <div key={i} className="flex items-center gap-3">
-                  <div className="w-5 h-5 rounded-full bg-green-500/20 flex items-center justify-center shrink-0">
-                    <Check className="w-3 h-3 text-green-400" />
+                  <div className="w-5 h-5 rounded-full bg-primary/15 flex items-center justify-center shrink-0">
+                    <Check className="w-3 h-3 text-primary" />
                   </div>
-                  <span className={`text-sm ${f.hot ? 'text-white font-medium' : 'text-white/65'}`}>
+                  <span className={`text-sm ${f.hot ? 'font-medium' : 'opacity-70'}`}>
                     {f.text}
-                    {f.hot && <span className="ml-1.5 text-[10px] font-bold text-green-400 bg-green-400/10 px-1.5 py-0.5 rounded-full">INCLUIDO</span>}
+                    {f.hot && <span className="ml-1.5 text-[10px] font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded-full">INCLUIDO</span>}
                   </span>
                 </div>
               ))}
@@ -520,18 +551,19 @@ export default function LandingPage() {
               className="w-full inline-flex items-center justify-center gap-2 h-13 py-3.5 gradient-primary text-white font-bold rounded-2xl shadow-xl shadow-green-900/40 hover:brightness-110 transition-all active:scale-[0.99] text-[15px]">
               Empezar 7 días gratis <ArrowRight className="w-4 h-4" />
             </Link>
-            <p className="text-center text-[11px] text-white/25 mt-3 flex items-center justify-center gap-2">
+            <p className="text-center text-[11px] opacity-40 mt-3 flex items-center justify-center gap-2">
               <Lock className="w-3 h-3" /> Sin tarjeta · Cancelá cuando quieras
             </p>
 
             {/* Payment info */}
-            <div className="mt-4 pt-4 border-t border-white/8">
-              <p className="text-[11px] text-white/30 text-center mb-2">Para suscribirse transferir al alias:</p>
+            <div className="barcode-strip mt-5" />
+            <div className="mt-3">
+              <p className="text-[11px] opacity-50 text-center mb-2">Para suscribirse transferir al alias:</p>
               <div className="flex items-center justify-center gap-2">
-                <span className="font-mono text-sm font-black text-white bg-white/5 border border-white/10 px-3 py-1.5 rounded-lg tracking-wide">farmani2.ppay</span>
+                <span className="font-mono text-sm font-black bg-paper-foreground/5 border border-paper-foreground/15 px-3 py-1.5 rounded-lg tracking-wide">farmani2.ppay</span>
                 <button
                   onClick={() => { navigator.clipboard.writeText('farmani2.ppay'); }}
-                  className="w-7 h-7 rounded-lg bg-white/5 hover:bg-white/15 flex items-center justify-center text-white/50 hover:text-white transition-colors"
+                  className="w-7 h-7 rounded-lg bg-paper-foreground/5 hover:bg-paper-foreground/15 flex items-center justify-center opacity-60 hover:opacity-100 transition-colors"
                   title="Copiar alias"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
@@ -547,8 +579,8 @@ export default function LandingPage() {
               { icon: Wifi, label: 'Modo offline' },
               { icon: CreditCard, label: 'Sin tarjeta' },
             ].map((b, i) => (
-              <div key={i} className="bg-[#0d1b2d] border border-white/10 rounded-xl p-3 flex flex-col items-center gap-1.5">
-                <b.icon className="w-4 h-4 text-green-400" />
+              <div key={i} className="bg-surface-elevated border border-white/10 rounded-xl p-3 flex flex-col items-center gap-1.5">
+                <b.icon className="w-4 h-4 text-primary" />
                 <span className="text-[11px] text-white/45 font-medium">{b.label}</span>
               </div>
             ))}
@@ -561,7 +593,7 @@ export default function LandingPage() {
       ══════════════════════════════════════ */}
       <section id="faq" className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 py-16 sm:py-20">
         <div className="text-center mb-10">
-          <h2 className="text-2xl sm:text-3xl font-bold text-white mb-2">Preguntas frecuentes</h2>
+          <h2 className="font-display text-3xl sm:text-4xl text-white mb-2 uppercase">Preguntas frecuentes</h2>
           <p className="text-white/40 text-sm">Respondemos las dudas más comunes antes de arrancar</p>
         </div>
         <div className="max-w-2xl mx-auto space-y-2">
@@ -575,17 +607,17 @@ export default function LandingPage() {
           FINAL CTA — ACCIÓN FINAL
       ══════════════════════════════════════ */}
       <section className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 py-16 sm:py-20">
-        <div className="relative bg-[#0d1b2d] border border-green-500/20 rounded-xl p-10 sm:p-14 text-center overflow-hidden">
+        <div className="relative bg-surface-elevated border border-primary/20 rounded-xl p-10 sm:p-14 text-center overflow-hidden">
           {/* Background glow */}
           <div className="absolute inset-0 bg-primary/5 pointer-events-none" />
-          <div className="absolute -top-20 left-1/2 -translate-x-1/2 w-80 h-80 bg-green-500/10 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute -top-20 left-1/2 -translate-x-1/2 w-80 h-80 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
 
           <div className="relative z-10">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-green-500/15 border border-green-500/25 text-green-400 text-xs font-semibold uppercase tracking-widest mb-6">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-primary/15 border border-primary/25 text-primary text-xs font-semibold uppercase tracking-widest mb-6 font-mono">
               <Zap className="w-3 h-3" />
               Sin riesgos · Gratis por 7 días
             </div>
-            <h2 className="text-3xl sm:text-4xl font-black text-white mb-4 leading-tight">
+            <h2 className="font-display text-4xl sm:text-5xl text-white mb-4 leading-tight uppercase">
               Tu negocio merece un sistema<br className="hidden sm:block" />
               <span className="text-primary"> que funcione de verdad.</span>
             </h2>
@@ -598,7 +630,7 @@ export default function LandingPage() {
                 Crear cuenta gratis <ArrowRight className="w-5 h-5" />
               </Link>
               <Link to="/login"
-                className="w-full sm:w-auto inline-flex items-center justify-center h-14 px-8 bg-[#0d1b2d] border border-white/10 rounded-2xl text-white/70 font-medium hover:bg-white/10 transition-colors text-[15px]">
+                className="w-full sm:w-auto inline-flex items-center justify-center h-14 px-8 bg-surface border border-white/10 rounded-2xl text-white/70 font-medium hover:bg-white/10 transition-colors text-[15px]">
                 Ya tengo cuenta
               </Link>
             </div>

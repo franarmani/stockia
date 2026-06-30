@@ -118,15 +118,15 @@ export default function MenuLauncher() {
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">
+          <h1 className="font-display text-3xl text-white uppercase leading-none">
             Buenos días, {firstName}
           </h1>
-          <p className="text-sm text-white/40 mt-1">{business?.name}</p>
-          <p className="text-xs text-white/20 mt-0.5">{today}</p>
+          <p className="text-sm text-white/40 mt-2">{business?.name}</p>
+          <p className="text-xs text-white/20 mt-0.5 capitalize">{today}</p>
         </div>
         <button
           onClick={() => navigate('/pos')}
-          className="flex items-center gap-2 h-10 px-4 rounded-xl bg-primary text-white text-sm font-bold hover:brightness-110 transition-all shadow-lg shadow-primary/20"
+          className="flex items-center gap-2 h-10 px-4 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-hover transition-all shadow-lg shadow-primary/20"
         >
           <ShoppingCart className="w-4 h-4" />
           Nueva venta
@@ -142,30 +142,30 @@ export default function MenuLauncher() {
             label="Ventas de hoy"
             value={formatCurrency(stats.todaySales)}
             icon={DollarSign}
-            color="text-green-400"
-            bg="bg-green-500/10"
+            color="text-secondary"
+            bg="bg-secondary/10"
             subtitle={`${stats.todayCount} operación${stats.todayCount !== 1 ? 'es' : ''}`}
           />
           <StatCard
             label="Operaciones"
             value={stats.todayCount.toString()}
             icon={TrendingUp}
-            color="text-blue-400"
+            color="text-primary"
             bg="bg-primary/10"
           />
           <StatCard
             label="Ticket promedio"
             value={stats.todayCount > 0 ? formatCurrency(stats.averageTicket) : '...'}
             icon={BarChart3}
-            color="text-violet-400"
-            bg="bg-violet-500/10"
+            color="text-secondary"
+            bg="bg-secondary/10"
           />
           <StatCard
             label="Stock crítico"
             value={stats.lowStockCount.toString()}
             icon={Package}
-            color={stats.lowStockCount > 0 ? 'text-amber-400' : 'text-green-400'}
-            bg={stats.lowStockCount > 0 ? 'bg-amber-500/10' : 'bg-green-500/10'}
+            color={stats.lowStockCount > 0 ? 'text-destructive' : 'text-primary'}
+            bg={stats.lowStockCount > 0 ? 'bg-destructive/10' : 'bg-primary/10'}
             subtitle={stats.lowStockCount > 0 ? 'productos por reponer' : 'sin novedades'}
             href="/products"
           />
@@ -178,7 +178,7 @@ export default function MenuLauncher() {
         {!stats ? (
           <SkeletonChart />
         ) : (
-        <div className="bg-[#0d1b2d] border border-white/5 rounded-2xl p-5">
+        <div className="bg-surface border border-border rounded-2xl shadow-lg shadow-black/20 p-5">
           <div className="flex items-center justify-between mb-4">
             <div>
               <h3 className="text-sm font-bold text-white">Ventas últimos 7 días</h3>
@@ -211,7 +211,7 @@ export default function MenuLauncher() {
                     <div className="flex flex-col items-center justify-start h-8 mt-2">
                       <span className="text-[9px] text-white/30 font-medium leading-none mb-1">{days[dayIndex]}</span>
                       {value > 0 ? (
-                        <span className="text-[8px] text-white/50 font-bold leading-none">${value.toLocaleString('es-AR')}</span>
+                        <span className="text-[8px] text-white/50 font-bold leading-none font-mono tabular-nums">${value.toLocaleString('es-AR')}</span>
                       ) : (
                         <span className="text-[8px] text-transparent font-bold leading-none">-</span>
                       )}
@@ -229,7 +229,7 @@ export default function MenuLauncher() {
         )}
 
         {/* Right: Stock crítico */}
-        <div className="bg-[#0d1b2d] border border-white/5 rounded-2xl p-5">
+        <div className="bg-surface border border-border rounded-2xl shadow-lg shadow-black/20 p-5">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-bold text-white">Stock crítico</h3>
             <button
@@ -245,10 +245,10 @@ export default function MenuLauncher() {
                 <div key={item.id} className="flex items-center justify-between p-2.5 bg-white/5 rounded-xl">
                   <span className="text-[13px] font-medium text-white/70 truncate mr-2">{item.name}</span>
                   <span className={cn(
-                    'text-[11px] font-bold px-2 py-0.5 rounded-lg shrink-0',
+                    'text-[11px] font-bold px-2 py-0.5 rounded-lg shrink-0 font-mono tabular-nums',
                     item.stock === 0
-                      ? 'bg-red-500/20 text-red-400'
-                      : 'bg-amber-500/20 text-amber-400'
+                      ? 'bg-destructive/20 text-destructive'
+                      : 'bg-secondary/20 text-secondary'
                   )}>
                     {item.stock} / {item.stock_min} {item.stock <= 1 ? 'un' : 'uds'}
                   </span>
@@ -276,23 +276,23 @@ export default function MenuLauncher() {
       {/* Bottom row */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Caja status */}
-        <div className="bg-[#0d1b2d] border border-white/5 rounded-2xl p-5">
+        <div className="bg-surface border border-border rounded-2xl shadow-lg shadow-black/20 p-5">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className={cn(
                 'w-10 h-10 rounded-xl flex items-center justify-center',
-                stats?.cajaOpen ? 'bg-green-500/10' : 'bg-red-500/10'
+                stats?.cajaOpen ? 'bg-primary/10' : 'bg-destructive/10'
               )}>
                 <Wallet className={cn(
                   'w-5 h-5',
-                  stats?.cajaOpen ? 'text-green-400' : 'text-red-400'
+                  stats?.cajaOpen ? 'text-primary' : 'text-destructive'
                 )} />
               </div>
               <div>
                 <p className="text-sm font-bold text-white">Caja</p>
                 <p className={cn(
                   'text-xs font-medium',
-                  stats?.cajaOpen ? 'text-green-400' : 'text-red-400'
+                  stats?.cajaOpen ? 'text-primary' : 'text-destructive'
                 )}>
                   {stats?.cajaOpen ? 'Abierta' : 'Cerrada'}
                 </p>
@@ -308,23 +308,23 @@ export default function MenuLauncher() {
         </div>
 
         {/* Subscription status */}
-        <div className="bg-[#0d1b2d] border border-white/5 rounded-2xl p-5">
+        <div className="bg-surface border border-border rounded-2xl shadow-lg shadow-black/20 p-5">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className={cn(
                 'w-10 h-10 rounded-xl flex items-center justify-center',
-                isExpired ? 'bg-red-500/10' : 'bg-primary/10'
+                isExpired ? 'bg-destructive/10' : 'bg-primary/10'
               )}>
                 <Crown className={cn(
                   'w-5 h-5',
-                  isExpired ? 'text-red-400' : 'text-primary'
+                  isExpired ? 'text-destructive' : 'text-primary'
                 )} />
               </div>
               <div>
                 <p className="text-sm font-bold text-white">{planName}</p>
                 <p className={cn(
                   'text-xs font-medium',
-                  isExpired ? 'text-red-400' : 'text-white/40'
+                  isExpired ? 'text-destructive' : 'text-white/40'
                 )}>
                   {isExpired
                     ? 'Suscripción vencida'
@@ -373,7 +373,7 @@ function StatCard({
     <div
       onClick={href ? () => navigate(href) : undefined}
       className={cn(
-        'bg-[#0d1b2d] border border-white/5 rounded-2xl p-4',
+        'bg-surface border border-border rounded-2xl shadow-lg shadow-black/20 p-4',
         href && 'cursor-pointer hover:border-white/10 transition-all'
       )}
     >
@@ -383,7 +383,7 @@ function StatCard({
           <Icon className={cn('w-4 h-4', color)} />
         </div>
       </div>
-      <p className="text-2xl font-bold text-white tracking-tight">{value}</p>
+      <p className="text-2xl font-bold text-white tracking-tight font-mono tabular-nums">{value}</p>
       {subtitle && (
         <p className="text-[11px] text-white/30 mt-1">{subtitle}</p>
       )}
