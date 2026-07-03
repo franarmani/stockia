@@ -39,7 +39,7 @@ interface PaymentRequest {
   note: string | null
   reviewed_at: string | null
   created_at: string
-  business?: { name: string; email: string }
+  business?: { name: string; email: string; pending_discount_pct: number; pending_discount_note: string | null }
 }
 
 function statusLabel(b: BusinessRow) {
@@ -91,7 +91,7 @@ export default function AdminPage() {
     setLoadingPayments(true)
     const { data, error } = await supabase
       .from('payment_requests')
-      .select('*, business:businesses(name, email)')
+      .select('*, business:businesses(name, email, pending_discount_pct, pending_discount_note)')
       .order('created_at', { ascending: false })
     if (error) toast.error('Error cargando solicitudes: ' + error.message)
     else setPaymentRequests(data ?? [])
@@ -107,8 +107,10 @@ export default function AdminPage() {
     if (reqErr) { toast.error(reqErr.message); setUpdating(null); return }
     await supabase
       .from('businesses')
-      .update({ subscription_status: 'active' })
+      .update({ subscription_status: 'active', pending_discount_pct: 0, pending_discount_note: null })
       .eq('id', req.business_id)
+    await supabase.from('referrals').update({ referrer_rewarded: true }).eq('referrer_business_id', req.business_id)
+    await supabase.from('referrals').update({ referred_rewarded: true }).eq('referred_business_id', req.business_id)
     toast.success('✅ Pago aprobado y cuenta activada')
     setPaymentRequests(prev => prev.map(r => r.id === req.id ? { ...r, status: 'approved' } : r))
     setUpdating(null)
@@ -417,6 +419,9 @@ export default function AdminPage() {
                         <td className="px-4 py-3">
                           <p className="text-sm font-semibold text-white">{req.business?.name ?? '—'}</p>
                           <p className="text-[11px] text-white/30">{req.business?.email ?? ''}</p>
+                          {!!req.business?.pending_discount_pct && (
+                            <p className="text-[11px] text-amber-400 font-semibold mt-0.5">🎁 {req.business.pending_discount_pct}% off — {req.business.pending_discount_note}</p>
+                          )}
                         </td>
                         <td className="px-4 py-3 text-sm text-white/70 font-semibold">{req.amount}</td>
                         <td className="px-4 py-3">

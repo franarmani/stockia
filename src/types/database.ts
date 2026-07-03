@@ -57,6 +57,9 @@ export interface Database {
           offline_enabled: boolean
           cert_status: string
           payment_method_discounts: Record<string, number> | null
+          referral_code: string | null
+          pending_discount_pct: number
+          pending_discount_note: string | null
           created_at: string
         }
         Insert: {
@@ -85,6 +88,9 @@ export interface Database {
           offline_enabled?: boolean
           cert_status?: string
           payment_method_discounts?: Record<string, number> | null
+          referral_code?: string | null
+          pending_discount_pct?: number
+          pending_discount_note?: string | null
           created_at?: string
         }
         Update: {
@@ -113,6 +119,9 @@ export interface Database {
           offline_enabled?: boolean
           cert_status?: string
           payment_method_discounts?: Record<string, number> | null
+          referral_code?: string | null
+          pending_discount_pct?: number
+          pending_discount_note?: string | null
           created_at?: string
         }
         Relationships: []

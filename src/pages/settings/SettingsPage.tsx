@@ -13,7 +13,7 @@ import {
   Check, MoreVertical, UserPlus, Store, Users, Shield, Plus, Trash2, Crown, 
   Save, FileText, Printer, CheckCircle2, Upload, AlertCircle, Wifi, Download, 
   Copy, Key, Zap, ChevronRight, ChevronLeft, Loader2, Globe, ChevronDown, Percent,
-  CreditCard, Banknote, ArrowRightLeft, Settings, Bell, Lock,
+  CreditCard, Banknote, ArrowRightLeft, Settings, Bell, Lock, Gift,
 } from 'lucide-react'
 import { getSubscriptionDateState, formatSubscriptionDate, getDaysSinceExpiration } from '@/features/subscription/utils/subscriptionDates'
 import { cn } from '@/lib/utils'
@@ -27,6 +27,7 @@ const WIZARD_STEPS = [
 const TABS = [
   { id: 'general', label: 'General', icon: Settings },
   { id: 'subscription', label: 'Suscripción', icon: Crown },
+  { id: 'referrals', label: 'Referidos', icon: Gift },
   { id: 'afip', label: 'Facturación AFIP', icon: FileText },
   { id: 'printing', label: 'Impresión y marca', icon: Printer },
   { id: 'payments', label: 'Medios de pago', icon: CreditCard },
@@ -69,6 +70,8 @@ export default function SettingsPage() {
     cash: 0, debit: 0, credit: 0, transfer: 0,
   })
   const [userForm, setUserForm] = useState({ email: '', password: '', full_name: '', role: 'seller' as 'admin' | 'seller' })
+  const [referrals, setReferrals] = useState<{ id: string; created_at: string; referred_rewarded: boolean; business: { name: string; email: string } | null }[]>([])
+  const [loadingReferrals, setLoadingReferrals] = useState(false)
 
   const certStatus = fiscalSettings?.cert_status || 'missing'
   const csrGenerated = certStatus === 'csr_generated' || certStatus === 'crt_uploaded' || certStatus === 'connected'
@@ -114,12 +117,35 @@ export default function SettingsPage() {
   }, [afipConnected])
 
   useEffect(() => { if (profile?.business_id) fetchUsers() }, [profile?.business_id])
+  useEffect(() => { if (profile?.business_id) fetchReferrals() }, [profile?.business_id])
 
   async function fetchUsers() {
     setLoading(true)
     const { data } = await supabase.from('users').select('*').eq('business_id', profile!.business_id)
     setUsers(data || [])
     setLoading(false)
+  }
+
+  async function fetchReferrals() {
+    setLoadingReferrals(true)
+    if (!business?.referral_code) {
+      const { data: code } = await supabase.rpc('ensure_referral_code', { p_business_id: profile!.business_id })
+      if (code) updateBusiness({ referral_code: code })
+    }
+    const { data: rows } = await supabase
+      .from('referrals')
+      .select('id, created_at, referred_rewarded, referred_business_id')
+      .eq('referrer_business_id', profile!.business_id)
+      .order('created_at', { ascending: false })
+    if (rows && rows.length > 0) {
+      const ids = rows.map((r) => r.referred_business_id)
+      const { data: refBusinesses } = await supabase.from('businesses').select('id, name, email').in('id', ids)
+      const byId = new Map((refBusinesses || []).map((b) => [b.id, b]))
+      setReferrals(rows.map((r) => ({ ...r, business: byId.get(r.referred_business_id) || null })))
+    } else {
+      setReferrals([])
+    }
+    setLoadingReferrals(false)
   }
 
   async function handleLogoUpload(file: File) {
@@ -390,6 +416,13 @@ export default function SettingsPage() {
                   </>
                 )}
 
+                {business?.pending_discount_pct ? (
+                  <div className="flex items-center gap-2 bg-amber-500/10 border border-amber-500/20 rounded-xl px-3 py-2 mb-4">
+                    <Gift className="w-4 h-4 text-amber-400 shrink-0" />
+                    <p className="text-xs text-amber-300">{business.pending_discount_note || `Tenés ${business.pending_discount_pct}% de descuento pendiente`}</p>
+                  </div>
+                ) : null}
+
                 <div className="flex flex-wrap gap-2 mt-4">
                   <button
                     onClick={() => window.open('https://wa.me/5492915716099?text=Hola,%20quisiera%20enviar%20el%20comprobante%20para%20activar%20mi%20plan.', '_blank')}
@@ -404,6 +437,75 @@ export default function SettingsPage() {
                     Contactar soporte
                   </button>
                 </div>
+              </div>
+            </div>
+          )}
+
+          {/* ── REFERRALS ── */}
+          {activeTab === 'referrals' && (
+            <div className="bg-[#0d1b2d] border border-white/5 rounded-2xl p-5 space-y-5">
+              <div className="flex items-center gap-2 mb-1">
+                <Gift className="w-5 h-5 text-primary" />
+                <h2 className="font-semibold text-white">Programa de referidos</h2>
+              </div>
+              <p className="text-sm text-white/50">
+                Compartí tu código con otros negocios. Vos obtenés <span className="text-primary font-semibold">20% off</span> en tu próximo pago,
+                y quien se registre con tu código obtiene <span className="text-primary font-semibold">10% off</span> en su primer mes.
+              </p>
+
+              <div className="bg-white/5 border border-white/10 rounded-2xl p-5">
+                <label className="block text-xs font-medium text-white/40 mb-2">Tu código de referido</label>
+                <div className="flex flex-wrap gap-2">
+                  <div className="flex-1 min-w-[140px] h-11 px-4 rounded-xl bg-white/5 border border-white/10 flex items-center font-mono text-lg font-bold text-white tracking-wider">
+                    {business?.referral_code || '···'}
+                  </div>
+                  <button
+                    disabled={!business?.referral_code}
+                    onClick={() => {
+                      navigator.clipboard.writeText(business!.referral_code!)
+                      toast.success('Código copiado')
+                    }}
+                    className="h-11 px-4 rounded-xl bg-white/5 text-white/70 text-sm font-semibold hover:bg-white/10 hover:text-white transition-all flex items-center gap-2 disabled:opacity-40"
+                  >
+                    <Copy className="w-4 h-4" /> Copiar
+                  </button>
+                  <button
+                    disabled={!business?.referral_code}
+                    onClick={() => {
+                      const link = `${window.location.origin}/register?ref=${business!.referral_code}`
+                      const text = encodeURIComponent(`¡Te invito a probar Stockia Hub! Registrate con mi código y obtené 10% off tu primer mes: ${link}`)
+                      window.open(`https://wa.me/?text=${text}`, '_blank')
+                    }}
+                    className="h-11 px-4 rounded-xl bg-primary text-white text-sm font-bold hover:brightness-110 transition-all disabled:opacity-40"
+                  >
+                    Compartir por WhatsApp
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <h3 className="text-sm font-semibold text-white/70 mb-3">Personas que referiste</h3>
+                {loadingReferrals ? (
+                  <div className="text-sm text-white/30">Cargando...</div>
+                ) : referrals.length === 0 ? (
+                  <div className="text-sm text-white/30">Todavía no referiste a nadie.</div>
+                ) : (
+                  <div className="space-y-2">
+                    {referrals.map((r) => (
+                      <div key={r.id} className="flex items-center justify-between bg-white/5 border border-white/10 rounded-xl px-4 py-3">
+                        <div>
+                          <p className="text-sm font-medium text-white">{r.business?.name || 'Negocio'}</p>
+                          <p className="text-xs text-white/30">{r.business?.email}</p>
+                        </div>
+                        <Badge className={r.referred_rewarded
+                          ? 'bg-green-500/15 text-green-400 border-green-500/25'
+                          : 'bg-amber-500/15 text-amber-400 border-amber-500/25'}>
+                          {r.referred_rewarded ? 'Premiado' : 'Pendiente'}
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           )}

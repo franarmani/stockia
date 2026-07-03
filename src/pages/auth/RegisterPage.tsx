@@ -1,9 +1,9 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
 import { toast } from 'sonner'
 import logo from '@/logo.png'
-import { Mail, Lock, User, Store, ArrowRight, Eye, EyeOff, Check } from 'lucide-react'
+import { Mail, Lock, User, Store, ArrowRight, Eye, EyeOff, Check, Gift } from 'lucide-react'
 
 const BENEFITS = [
   'Sin tarjeta de crédito',
@@ -13,7 +13,8 @@ const BENEFITS = [
 
 export default function RegisterPage() {
   const navigate = useNavigate()
-  const [form, setForm] = useState({ fullName: '', businessName: '', email: '', password: '' })
+  const [searchParams] = useSearchParams()
+  const [form, setForm] = useState({ fullName: '', businessName: '', email: '', password: '', referralCode: searchParams.get('ref') || '' })
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
 
@@ -59,6 +60,14 @@ export default function RegisterPage() {
         })
 
       if (profileError) { toast.error('Error al crear perfil'); setLoading(false); return }
+
+      if (form.referralCode.trim()) {
+        const { data: referral } = await supabase.rpc('redeem_referral_code', {
+          p_code: form.referralCode.trim(),
+          p_business_id: business.id,
+        })
+        if (referral?.ok) toast.success('¡Código de referido aplicado! 10% off tu primer mes')
+      }
 
       await supabase.auth.signOut()
       toast.success('¡Cuenta creada! Ahora iniciá sesión')
@@ -153,6 +162,14 @@ export default function RegisterPage() {
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-white/35 hover:text-white/70 transition-colors">
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
+                </div>
+              </div>
+              <div>
+                <label className="block text-[13px] font-medium text-white/70 mb-1.5">Código de referido (opcional)</label>
+                <div className="relative">
+                  <Gift className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/35" />
+                  <input type="text" value={form.referralCode} onChange={(e) => setForm({ ...form, referralCode: e.target.value.toUpperCase() })}
+                    placeholder="Ej: ABC123" autoComplete="off" className={inputCls} />
                 </div>
               </div>
 
