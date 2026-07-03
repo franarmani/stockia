@@ -104,26 +104,27 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   if (!user) return <Navigate to="/login" replace />
 
   const isSuperAdmin = profile?.is_superadmin
-  const isActive = business?.subscription_status === 'active'
   const daysLeft = calculateRawRemainingDays(business?.trial_ends_at)
-  
-  // Recordatorio solo para negocios en trial con pocos días restantes (excepto superadmin).
+
+  // Recordatorio para negocios en trial o ya activos (mensualidad por vencer),
+  // con pocos días restantes (excepto superadmin).
   // No mostrar el recordatorio cerrable el día del vencimiento, porque ese caso ya se maneja con el modal de bloqueo.
-  const shouldShowPaymentReminder = !isSuperAdmin && !isActive &&
-    business?.subscription_status === 'trial' && 
+  const shouldShowPaymentReminder = !isSuperAdmin &&
+    (business?.subscription_status === 'trial' || business?.subscription_status === 'active') &&
     daysLeft > 0 &&
-    daysLeft <= 2 && 
+    daysLeft <= 2 &&
     !sessionClosed
 
   if (shouldShowPaymentReminder) {
     return (
       <>
         {children}
-        <PaymentNotificationModal 
+        <PaymentNotificationModal
+          daysLeft={daysLeft}
           onClose={() => {
             sessionStorage.setItem('payment_modal_closed', 'true')
             setSessionClosed(true)
-          }} 
+          }}
         />
       </>
     )

@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react'
+import { addDays } from 'date-fns'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/authStore'
 import { useBusinessStore } from '@/stores/businessStore'
@@ -12,9 +13,9 @@ const ALIAS = 'farmani2.ppay'
 const WA_NUMBER = '5492915716099'
 const PRECIO = '$70.000'
 
-export default function PaymentNotificationModal({ onClose }: { onClose?: () => void }) {
+export default function PaymentNotificationModal({ onClose, daysLeft }: { onClose?: () => void; daysLeft?: number }) {
   const { user, profile, signOut } = useAuthStore()
-  const { business } = useBusinessStore()
+  const { business, updateBusiness } = useBusinessStore()
   const [file, setFile] = useState<File | null>(null)
   const [preview, setPreview] = useState<string | null>(null)
   const [uploading, setUploading] = useState(false)
@@ -64,8 +65,17 @@ export default function PaymentNotificationModal({ onClose }: { onClose?: () => 
 
       if (reqErr) throw new Error(reqErr.message)
 
+      // Activación automática: confiamos en el comprobante y extendemos la
+      // mensualidad al instante. Si luego resulta falso o no llegó, el
+      // superadmin da de baja la cuenta manualmente desde /admin.
+      const baseDate = business.trial_ends_at && new Date(business.trial_ends_at) > new Date()
+        ? new Date(business.trial_ends_at)
+        : new Date()
+      const newTrialEndsAt = addDays(baseDate, 30).toISOString()
+      await updateBusiness({ subscription_status: 'active', trial_ends_at: newTrialEndsAt })
+
       setSubmitted(true)
-      toast.success('¡Comprobante enviado! Activaremos tu cuenta a la brevedad.')
+      toast.success('¡Pago acreditado! Tu cuenta ya está activa por 30 días más.')
     } catch (e: any) {
       toast.error(e.message || 'Error al enviar')
     }
@@ -88,8 +98,10 @@ export default function PaymentNotificationModal({ onClose }: { onClose?: () => 
               <CreditCard className="w-5 h-5 text-primary" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-white">Activá tu Plan Negocio</h2>
-              <p className="text-sm text-white/50">Total a abonar: <span className="text-primary font-bold">{PRECIO}</span></p>
+              <h2 className="text-lg font-bold text-white">
+                {daysLeft === 1 ? 'Mañana se vence tu mensualidad' : daysLeft ? `Tu mensualidad vence en ${daysLeft} días` : 'Activá tu Plan Negocio'}
+              </h2>
+              <p className="text-sm text-white/50">Pagala ahora así no te quedás sin sistema: <span className="text-primary font-bold">{PRECIO}</span></p>
             </div>
           </div>
           <p className="text-[13px] text-white/40 leading-relaxed">
@@ -103,9 +115,9 @@ export default function PaymentNotificationModal({ onClose }: { onClose?: () => 
               <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
                 <CheckCircle2 className="w-8 h-8 text-primary" />
               </div>
-              <h3 className="text-lg font-bold text-white mb-1">Comprobante recibido</h3>
+              <h3 className="text-lg font-bold text-white mb-1">¡Cuenta activada!</h3>
               <p className="text-sm text-white/50 mb-6">
-                Estamos procesando tu pago. En breve tu cuenta quedará activa.
+                Ya extendimos tu mensualidad 30 días. Guardá el comprobante por las dudas.
               </p>
               <button
                 onClick={sendWA}
