@@ -7,27 +7,29 @@ import './index.css'
 import { registerSW } from 'virtual:pwa-register'
 
 // Aggressive PWA update: automatically reload when a new version is available
-registerSW({ 
+const updateSW = registerSW({
   immediate: true,
   onNeedRefresh() {
     console.log('[PWA] New version available, reloading...')
-    window.location.reload()
+    updateSW(true)
+  },
+  onRegisteredSW(_url, registration) {
+    // SPA client-side routing never triggers the browser's native SW update
+    // check (it only runs on full navigations), so poll for updates manually.
+    if (registration) {
+      setInterval(() => registration.update(), 60 * 1000)
+    }
   },
   onOfflineReady() {
     console.log('[PWA] App ready for offline use')
   }
 })
 
-// Force cache clear on version change
-const BUILD_ID = '20260607-cache-bust';
-if (localStorage.getItem('stockia_build') !== BUILD_ID) {
-  if ('caches' in window) {
-    caches.keys().then(names => {
-      for (const name of names) caches.delete(name);
-    });
-  }
-  localStorage.setItem('stockia_build', BUILD_ID);
-}
+// Reload exactly once the new service worker actually takes control —
+// avoids serving a stale precached shell after an update is detected.
+navigator.serviceWorker?.addEventListener('controllerchange', () => {
+  window.location.reload()
+})
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
