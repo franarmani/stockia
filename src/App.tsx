@@ -62,10 +62,20 @@ const AdminPage = lazy(() => import('@/pages/admin/AdminPage'))
 const MusicPage = lazy(() => import('@/pages/music/MusicPage'))
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'))
 
+// Cuánto se "snoozea" el recordatorio de pago al cerrarlo con la X — vuelve a
+// insistir pasado este tiempo en vez de desaparecer para el resto de la sesión.
+const PAYMENT_REMINDER_SNOOZE_MS = 15 * 60 * 1000
+
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading, profile } = useAuthStore()
   const { business } = useBusinessStore()
-  const [sessionClosed, setSessionClosed] = useState(() => !!sessionStorage.getItem('payment_modal_closed'))
+  const [sessionClosed, setSessionClosed] = useState(false)
+
+  useEffect(() => {
+    if (!sessionClosed) return
+    const timer = setTimeout(() => setSessionClosed(false), PAYMENT_REMINDER_SNOOZE_MS)
+    return () => clearTimeout(timer)
+  }, [sessionClosed])
 
   useEffect(() => {
     if (profile?.email === 'francoarmani107@gmail.com') {
@@ -121,10 +131,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
         {children}
         <PaymentNotificationModal
           daysLeft={daysLeft}
-          onClose={() => {
-            sessionStorage.setItem('payment_modal_closed', 'true')
-            setSessionClosed(true)
-          }}
+          onClose={() => setSessionClosed(true)}
         />
       </>
     )
