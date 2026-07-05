@@ -61,7 +61,7 @@ export default function LoginPage() {
       <div className="hidden lg:flex lg:w-[46%] relative flex-col justify-between p-12 overflow-hidden">
         <div className="absolute -top-32 -left-32 w-[480px] h-[480px] bg-primary/10 rounded-full blur-3xl pointer-events-none" />
         <div className="relative z-10">
-          <img src={logo} alt="STOCKIA HUB" className="h-8 w-fit" />
+          <img src={logo} alt="STOCKIA HUB" className="h-8 w-auto self-start" />
         </div>
         <div className="relative z-10">
           <h1 className="font-display text-4xl text-white leading-[0.95] mb-3 uppercase">
@@ -88,7 +88,7 @@ export default function LoginPage() {
       <div className="flex-1 flex flex-col min-h-screen">
         {/* Mobile header — visible only on mobile */}
         <div className="lg:hidden flex flex-col px-6 pt-14 pb-8">
-          <img src={logo} alt="STOCKIA HUB" className="h-7 w-fit mb-10" />
+          <img src={logo} alt="STOCKIA HUB" className="h-7 w-auto self-start mb-10" />
           <h1 className="font-display text-4xl text-white leading-[0.95] uppercase whitespace-pre-line">
             {forgotMode ? 'Recuperar\ncontraseña' : 'Bienvenido\nde vuelta'}
           </h1>
