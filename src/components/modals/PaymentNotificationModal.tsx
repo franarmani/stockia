@@ -99,7 +99,7 @@ export default function PaymentNotificationModal({ onClose, daysLeft }: { onClos
             </div>
             <div>
               <h2 className="text-lg font-bold text-white">
-                {daysLeft === 1 ? 'Mañana se vence tu mensualidad' : daysLeft ? `Tu mensualidad vence en ${daysLeft} días` : 'Activá tu Plan Negocio'}
+                {daysLeft === 0 ? 'Tu mensualidad vence hoy' : daysLeft === 1 ? 'Mañana se vence tu mensualidad' : daysLeft ? `Tu mensualidad vence en ${daysLeft} días` : 'Activá tu Plan Negocio'}
               </h2>
               <p className="text-sm text-white/50">Pagala ahora así no te quedás sin sistema: <span className="text-primary font-bold">{PRECIO}</span></p>
             </div>

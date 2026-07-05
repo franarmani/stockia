@@ -6,11 +6,28 @@ import { supabase } from '@/lib/supabase'
 import { useSubscription } from '@/features/subscription'
 import { formatCurrency, cn } from '@/lib/utils'
 import { SkeletonMetrics, SkeletonChart } from '@/components/ui/Skeleton'
+import PaymentNotificationModal from '@/components/modals/PaymentNotificationModal'
 import {
   ShoppingCart, Package, TrendingUp, DollarSign,
   AlertTriangle, ArrowRight, BarChart3, Wallet,
   Crown, Clock, ChevronRight,
 } from 'lucide-react'
+
+function useCountdown(deadline: Date, active: boolean) {
+  const [remainingMs, setRemainingMs] = useState(() => Math.max(0, deadline.getTime() - Date.now()))
+
+  useEffect(() => {
+    if (!active) return
+    const id = setInterval(() => setRemainingMs(Math.max(0, deadline.getTime() - Date.now())), 1000)
+    return () => clearInterval(id)
+  }, [active, deadline.getTime()])
+
+  const totalSeconds = Math.floor(remainingMs / 1000)
+  const h = String(Math.floor(totalSeconds / 3600)).padStart(2, '0')
+  const m = String(Math.floor((totalSeconds % 3600) / 60)).padStart(2, '0')
+  const s = String(totalSeconds % 60).padStart(2, '0')
+  return `${h}:${m}:${s}`
+}
 
 interface QuickStats {
   todaySales: number
@@ -25,10 +42,13 @@ export default function MenuLauncher() {
   const navigate = useNavigate()
   const { profile } = useAuthStore()
   const { business } = useBusinessStore()
-  const { planName, daysRemaining, isExpired, dateState, status } = useSubscription()
+  const { planName, daysRemaining, isExpired, expiresToday, dateState, status } = useSubscription()
   const [stats, setStats] = useState<QuickStats | null>(null)
   const [weeklySales, setWeeklySales] = useState<number[]>([])
   const [lastSaleTime, setLastSaleTime] = useState<string | null>(null)
+  const [showPayModal, setShowPayModal] = useState(false)
+  const payDeadline = new Date(dateState.expirationDate.getTime() + 24 * 60 * 60 * 1000)
+  const countdown = useCountdown(payDeadline, expiresToday)
 
   useEffect(() => {
     if (profile?.business_id) {
@@ -132,6 +152,33 @@ export default function MenuLauncher() {
           Nueva venta
         </button>
       </div>
+
+      {/* Aviso: vence hoy */}
+      {expiresToday && (
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-destructive/10 border border-destructive/30 rounded-2xl p-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-destructive/15 flex items-center justify-center shrink-0">
+              <AlertTriangle className="w-5 h-5 text-destructive" />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-white">Tu suscripción vence hoy</p>
+              <p className="text-xs text-white/50">Pagala ahora para no quedarte sin sistema.</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3 shrink-0">
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-black/20 border border-destructive/20">
+              <Clock className="w-3.5 h-3.5 text-destructive" />
+              <span className="font-mono text-sm font-bold text-destructive tabular-nums">{countdown}</span>
+            </div>
+            <button
+              onClick={() => setShowPayModal(true)}
+              className="h-9 px-4 rounded-xl bg-destructive text-white text-xs font-bold hover:brightness-110 transition-all whitespace-nowrap"
+            >
+              Pagar ahora
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Metrics row */}
       {!stats ? (
@@ -353,6 +400,8 @@ export default function MenuLauncher() {
           Última venta: {lastSaleTime}
         </div>
       )}
+
+      {showPayModal && <PaymentNotificationModal daysLeft={0} onClose={() => setShowPayModal(false)} />}
     </div>
   )
 }
