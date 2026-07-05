@@ -14,7 +14,7 @@ import SubscriptionGuard from '@/features/subscription/components/SubscriptionGu
 import UpdateNotificationModal from '@/components/modals/UpdateNotificationModal'
 
 // ── VERSIONING ──
-const APP_VERSION = '1.8.2' // Local version
+const APP_VERSION = '1.9.0' // Local version — bump together with public/version.json on every deploy
 
 // ── localStorage cache helpers ──
 const PROFILE_CACHE_KEY = 'stockia_profile'
@@ -177,6 +177,9 @@ export default function App() {
           }
 
           setShowUpdateModal(true)
+          // Forzamos la recarga a los pocos segundos — no dependemos de que
+          // el usuario note el modal y haga clic.
+          setTimeout(() => window.location.reload(), 4000)
         }
       } catch (err) {
         console.warn('[Update] Failed to fetch version info', err)
