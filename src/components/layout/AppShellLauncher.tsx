@@ -145,7 +145,7 @@ export default function AppShellLauncher() {
       </div>
 
       {/* Navigation */}
-      <nav key={sidebarCollapsed ? 'collapsed' : 'expanded'} className="flex-1 px-2 py-3 space-y-4 overflow-y-auto">
+      <nav key={sidebarCollapsed ? 'collapsed' : 'expanded'} className="flex-1 px-2 py-2 space-y-2.5 overflow-y-auto overflow-x-hidden">
         {NAV_SECTIONS.map((section) => (
           <div key={section.label}>
             {!sidebarCollapsed ? (
@@ -166,7 +166,7 @@ export default function AppShellLauncher() {
                   title={sidebarCollapsed ? item.name : undefined}
                   style={{ animationDelay: `${i * 35}ms` }}
                   className={cn(
-                    'flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-medium transition-all group animate-pop-3d',
+                    'flex items-center gap-3 px-3 py-2 rounded-xl text-[13px] font-medium transition-all group animate-pop-3d',
                     sidebarCollapsed ? 'justify-center' : '',
                     isActive(item.href)
                       ? 'bg-primary/15 text-primary'
@@ -184,11 +184,11 @@ export default function AppShellLauncher() {
                     <span className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
                   )}
 
-                  {/* Floating 3D glassmorphism icon preview on hover (icon only, no text) */}
+                  {/* Floating 3D glassmorphism icon preview on hover (icon only, no text) — desktop only, it's what causes horizontal overflow on the mobile drawer */}
                   <span
                     aria-hidden
-                    className="pointer-events-none absolute left-[calc(100%+26px)] top-1/2 z-[9999]
-                      flex items-center justify-center w-[76px] h-[76px] rounded-[22px]
+                    className="pointer-events-none hidden lg:flex absolute left-[calc(100%+26px)] top-1/2 z-[9999]
+                      items-center justify-center w-[76px] h-[76px] rounded-[22px]
                       bg-[radial-gradient(circle_at_30%_20%,rgba(34,197,94,0.24),transparent_45%),linear-gradient(145deg,rgba(12,45,30,0.92),rgba(3,18,12,0.96))]
                       border border-[rgba(34,197,94,0.38)] backdrop-blur-[16px]
                       shadow-[0_22px_45px_rgba(0,0,0,0.48),0_0_30px_rgba(34,197,94,0.18),inset_0_1px_0_rgba(255,255,255,0.08)]
@@ -279,7 +279,7 @@ export default function AppShellLauncher() {
       {mobileDrawerOpen && (
         <div className="fixed inset-0 z-[100] lg:hidden">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setMobileDrawerOpen(false)} />
-          <div className="absolute left-0 top-0 h-full w-72 bg-sidebar border-r border-border shadow-2xl animate-slide-in-left">
+          <div className="absolute left-0 top-0 h-full w-72 max-w-[85vw] bg-sidebar border-r border-border shadow-2xl animate-slide-in-left overflow-x-hidden">
             {renderSidebar(false, () => setMobileDrawerOpen(false))}
           </div>
         </div>
