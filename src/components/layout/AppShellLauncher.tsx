@@ -67,25 +67,23 @@ export default function AppShellLauncher() {
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false)
   const [sidebarHovered, setSidebarHovered] = useState(false)
   const { initAudio } = useMusicStore()
-  const { expiresToday, isExpired, status } = useSubscription()
+  const { isExpired, status } = useSubscription()
 
-  // Force modal if trial_ends_at is in the past, even if status says "active"
-  const isTrialEndedPast = business?.trial_ends_at ? 
-    new Date(business.trial_ends_at).getTime() < new Date().getTime() : false
-  const shouldShowBlockingModal = expiresToday || isExpired || business?.subscription_status === 'expired' || isTrialEndedPast
+  // El día que vence, se avisa con el banner de /menu (con cronómetro) en vez de
+  // bloquear de entrada — recién se bloquea cuando el día completo ya pasó.
+  const shouldShowBlockingModal = isExpired || business?.subscription_status === 'expired'
 
   useEffect(() => {
     try {
       console.log('[AppShellLauncher debug] business:', business)
       console.log('[AppShellLauncher debug] subscription status:', status)
-      console.log('[AppShellLauncher debug] expiresToday:', expiresToday, 'isExpired:', isExpired)
+      console.log('[AppShellLauncher debug] isExpired:', isExpired)
       console.log('[AppShellLauncher debug] trial_ends_at:', business?.trial_ends_at)
-      console.log('[AppShellLauncher debug] isTrialEndedPast:', isTrialEndedPast)
       console.log('[AppShellLauncher debug] shouldShowBlockingModal:', shouldShowBlockingModal)
     } catch (e) {
       console.warn('[AppShellLauncher debug] error logging debug info', e)
     }
-  }, [business, status, expiresToday, isExpired, isTrialEndedPast, shouldShowBlockingModal])
+  }, [business, status, isExpired, shouldShowBlockingModal])
 
   useEffect(() => { initAudio() }, [])
 
@@ -109,21 +107,32 @@ export default function AppShellLauncher() {
     return location.pathname.startsWith(href)
   }
 
-  const renderSidebar = (sidebarCollapsed: boolean) => (
+  const renderSidebar = (sidebarCollapsed: boolean, onCloseButton?: () => void) => (
     <div className="flex flex-col h-full">
       {/* Logo */}
       <div className={cn(
         'flex items-center h-16 px-4 border-b border-white/10 shrink-0',
-        sidebarCollapsed ? 'justify-center' : 'gap-3'
+        sidebarCollapsed ? 'justify-center' : 'justify-between gap-3'
       )}>
-        <img src={logoSolo} alt="STOCKIA HUB" className="w-8 h-8 shrink-0" />
-        {!sidebarCollapsed && (
-          <div className="overflow-hidden">
-            <p className="text-sm font-bold text-white leading-none tracking-tight">STOCKIA HUB</p>
-            {business?.name && (
-              <p className="text-[11px] text-white/40 truncate mt-0.5 max-w-[160px]">{business.name}</p>
-            )}
-          </div>
+        <div className={cn('flex items-center gap-3 min-w-0', sidebarCollapsed ? 'justify-center' : '')}>
+          <img src={logoSolo} alt="STOCKIA HUB" className="w-8 h-8 shrink-0" />
+          {!sidebarCollapsed && (
+            <div className="overflow-hidden">
+              <p className="text-sm font-bold text-white leading-none tracking-tight">STOCKIA HUB</p>
+              {business?.name && (
+                <p className="text-[11px] text-white/40 truncate mt-0.5 max-w-[160px]">{business.name}</p>
+              )}
+            </div>
+          )}
+        </div>
+        {onCloseButton && (
+          <button
+            onClick={onCloseButton}
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-white/30 hover:text-white hover:bg-white/5 shrink-0"
+            aria-label="Cerrar menú"
+          >
+            <X className="w-4 h-4" />
+          </button>
         )}
       </div>
       <div className="p-2 border-b border-white/10 shrink-0 hidden lg:flex">
@@ -136,7 +145,7 @@ export default function AppShellLauncher() {
       </div>
 
       {/* Navigation */}
-      <nav key={sidebarCollapsed ? 'collapsed' : 'expanded'} className="flex-1 px-2 py-3 space-y-4">
+      <nav key={sidebarCollapsed ? 'collapsed' : 'expanded'} className="flex-1 px-2 py-3 space-y-4 overflow-y-auto">
         {NAV_SECTIONS.map((section) => (
           <div key={section.label}>
             {!sidebarCollapsed ? (
@@ -247,7 +256,7 @@ export default function AppShellLauncher() {
         </main>
         <MiniPlayer />
         <YouTubePlayer />
-        {(expiresToday || isExpired) && <TrialExpiredModal />}
+        {isExpired && <TrialExpiredModal />}
       </div>
     )
   }
@@ -271,15 +280,7 @@ export default function AppShellLauncher() {
         <div className="fixed inset-0 z-[100] lg:hidden">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setMobileDrawerOpen(false)} />
           <div className="absolute left-0 top-0 h-full w-72 bg-sidebar border-r border-border shadow-2xl animate-slide-in-left">
-            <div className="flex justify-end p-2">
-              <button
-                onClick={() => setMobileDrawerOpen(false)}
-                className="w-8 h-8 rounded-lg flex items-center justify-center text-white/30 hover:text-white hover:bg-white/5"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-            {renderSidebar(false)}
+            {renderSidebar(false, () => setMobileDrawerOpen(false))}
           </div>
         </div>
       )}
