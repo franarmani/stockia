@@ -337,7 +337,7 @@ export default function AppShellLauncher() {
         </div>
 
         {/* Page content */}
-        <main className="flex-1 overflow-auto">
+        <main className="flex-1 overflow-y-auto overflow-x-hidden">
           <div className="px-4 md:px-6 lg:px-8 py-6 max-w-[1600px] mx-auto w-full pb-24 lg:pb-8">
             <Outlet />
           </div>

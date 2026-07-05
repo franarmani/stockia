@@ -153,29 +153,60 @@ export default function MenuLauncher() {
         </button>
       </div>
 
-      {/* Aviso: vence hoy */}
-      {expiresToday && (
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-destructive/10 border border-destructive/30 rounded-2xl p-4">
+      {/* Tiempo de suscripción disponible */}
+      {status !== 'cancelled' && (
+        <div className={cn(
+          'flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl p-4 border',
+          expiresToday || isExpired ? 'bg-destructive/10 border-destructive/30' : 'bg-primary/5 border-primary/20'
+        )}>
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-destructive/15 flex items-center justify-center shrink-0">
-              <AlertTriangle className="w-5 h-5 text-destructive" />
+            <div className={cn(
+              'w-10 h-10 rounded-xl flex items-center justify-center shrink-0',
+              expiresToday || isExpired ? 'bg-destructive/15' : 'bg-primary/10'
+            )}>
+              {expiresToday || isExpired
+                ? <AlertTriangle className="w-5 h-5 text-destructive" />
+                : <Clock className="w-5 h-5 text-primary" />}
             </div>
             <div>
-              <p className="text-sm font-bold text-white">Tu suscripción vence hoy</p>
-              <p className="text-xs text-white/50">Pagala ahora para no quedarte sin sistema.</p>
+              <p className="text-sm font-bold text-white">
+                {isExpired
+                  ? 'Tu suscripción está vencida'
+                  : expiresToday
+                    ? 'Tu suscripción vence hoy'
+                    : `Te quedan ${daysRemaining} día${daysRemaining !== 1 ? 's' : ''} de suscripción`}
+              </p>
+              <p className="text-xs text-white/50">
+                {isExpired
+                  ? 'Regularizá el pago para reactivar tu cuenta.'
+                  : expiresToday
+                    ? 'Pagala ahora para no quedarte sin sistema.'
+                    : `${planName} · Activo`}
+              </p>
             </div>
           </div>
           <div className="flex items-center gap-3 shrink-0">
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-black/20 border border-destructive/20">
-              <Clock className="w-3.5 h-3.5 text-destructive" />
-              <span className="font-mono text-sm font-bold text-destructive tabular-nums">{countdown}</span>
-            </div>
-            <button
-              onClick={() => setShowPayModal(true)}
-              className="h-9 px-4 rounded-xl bg-destructive text-white text-xs font-bold hover:brightness-110 transition-all whitespace-nowrap"
-            >
-              Pagar ahora
-            </button>
+            {expiresToday && (
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-black/20 border border-destructive/20">
+                <Clock className="w-3.5 h-3.5 text-destructive" />
+                <span className="font-mono text-sm font-bold text-destructive tabular-nums">{countdown}</span>
+              </div>
+            )}
+            {expiresToday || isExpired ? (
+              <button
+                onClick={() => setShowPayModal(true)}
+                className="h-9 px-4 rounded-xl bg-destructive text-white text-xs font-bold hover:brightness-110 transition-all whitespace-nowrap"
+              >
+                Pagar ahora
+              </button>
+            ) : (
+              <button
+                onClick={() => navigate('/settings')}
+                className="h-9 px-4 rounded-xl bg-white/5 text-white/50 text-xs font-medium hover:bg-white/10 hover:text-white transition-all whitespace-nowrap"
+              >
+                Ver suscripción
+              </button>
+            )}
           </div>
         </div>
       )}
@@ -422,7 +453,7 @@ function StatCard({
     <div
       onClick={href ? () => navigate(href) : undefined}
       className={cn(
-        'bg-surface border border-border rounded-2xl shadow-lg shadow-black/20 p-4',
+        'bg-surface border border-border rounded-2xl shadow-lg shadow-black/20 p-4 min-w-0',
         href && 'cursor-pointer hover:border-white/10 transition-all'
       )}
     >
@@ -432,7 +463,7 @@ function StatCard({
           <Icon className={cn('w-4 h-4', color)} />
         </div>
       </div>
-      <p className="text-2xl font-bold text-white tracking-tight font-mono tabular-nums">{value}</p>
+      <p className="text-2xl font-bold text-white tracking-tight font-mono tabular-nums truncate">{value}</p>
       {subtitle && (
         <p className="text-[11px] text-white/30 mt-1">{subtitle}</p>
       )}
