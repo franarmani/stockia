@@ -3,7 +3,6 @@ import { useEffect } from 'react'
 import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/stores/authStore'
 import { useBusinessStore } from '@/stores/businessStore'
-import logoSolo from '@/logosolo.png'
 import {
   LayoutDashboard,
   ShoppingCart,
@@ -69,20 +68,22 @@ function SidebarContent({
   }
 
   return (
-    <div className="flex flex-col h-full bg-sidebar text-sidebar-foreground">
+    <div className="flex flex-col h-full bg-surface/80 backdrop-blur-3xl border-r border-white/10 text-white shadow-[4px_0_24px_rgba(0,0,0,0.5)]">
       {/* Logo */}
       <div
         className={cn(
-          'flex items-center h-16 px-4 border-b border-sidebar-border shrink-0',
+          'flex items-center h-[72px] px-4 border-b border-white/10 shrink-0',
           collapsed ? 'justify-center' : 'gap-3'
         )}
       >
-        <img src={logoSolo} alt="STOCKIA HUB" className="w-8 h-8 shrink-0" />
+        <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-white/95 shadow-[0_0_12px_rgba(255,255,255,0.2)] shrink-0">
+          <img src="/og-image.png" alt="Icono" className="h-5 w-auto object-contain" />
+        </div>
         {!collapsed && (
-          <div className="overflow-hidden text-left">
-            <p className="text-sm font-bold text-white leading-none tracking-tight">STOCKIA HUB</p>
+          <div className="overflow-hidden text-left flex flex-col items-start gap-1">
+            <img src="/2.png" alt="STOCKIA" className="h-3.5 w-auto brightness-0 invert" />
             {business?.name && (
-              <p className="text-[11px] text-white/40 truncate mt-0.5 max-w-[160px]">{business.name}</p>
+              <p className="text-[10px] text-white/50 truncate max-w-[160px] uppercase tracking-wider font-semibold">{business.name}</p>
             )}
           </div>
         )}
@@ -98,11 +99,11 @@ function SidebarContent({
             title={collapsed ? item.name : undefined}
             className={({ isActive }) =>
               cn(
-                'sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-medium group',
+                'sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-medium group transition-all duration-300',
                 collapsed ? 'justify-center' : '',
                 isActive
-                  ? 'bg-primary/20 text-primary'
-                  : 'text-white/55'
+                  ? 'bg-primary/10 text-primary shadow-[inset_0_0_12px_rgba(0,240,255,0.1)] border border-primary/20'
+                  : 'text-white/40 hover:text-white hover:bg-white/5'
               )
             }
           >
@@ -123,7 +124,7 @@ function SidebarContent({
                       </span>
                     )}
                     {isActive && (
-                      <span className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
+                      <span className="w-1.5 h-1.5 rounded-full bg-primary shrink-0 shadow-[0_0_8px_rgba(0,240,255,0.8)]" />
                     )}
                   </>
                 )}

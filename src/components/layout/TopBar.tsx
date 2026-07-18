@@ -48,11 +48,15 @@ export default function TopBar({ onMenuClick }: TopBarProps) {
         </button>
 
         {/* Logo - mobile only */}
-        <img src={logo} alt="STOCKIA HUB" className="w-7 h-7 shrink-0 sm:hidden drop-shadow-sm" />
+        <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-white/95 shadow-[0_0_8px_rgba(255,255,255,0.2)] shrink-0 sm:hidden">
+          <img src="/og-image.png" alt="Icono" className="w-5 h-5 object-contain" />
+        </div>
 
         {/* Logo and Business Info (Desktop) */}
         <div className="hidden sm:flex items-center gap-3 min-w-0">
-          <img src={logo} alt="Logo" className="w-8 h-8 shrink-0 drop-shadow-md" />
+          <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-white/95 shadow-[0_0_12px_rgba(255,255,255,0.2)] shrink-0">
+            <img src="/og-image.png" alt="Icono" className="h-5 w-auto object-contain" />
+          </div>
           <div className="flex flex-col min-w-0">
             <span className="font-bold text-[14px] text-foreground whitespace-nowrap">
               {business?.name || 'STOCKIA HUB'}

@@ -62,7 +62,10 @@ export default function AppShellLauncher() {
   const { business } = useBusinessStore()
   const { isOnline, pendingCount, syncing, syncPendingSales } = useOnlineStatus()
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
-    try { return localStorage.getItem(SIDEBAR_KEY) === 'true' } catch { return false }
+    try { 
+      const stored = localStorage.getItem(SIDEBAR_KEY)
+      return stored !== null ? stored === 'true' : true 
+    } catch { return true }
   })
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false)
   const [sidebarHovered, setSidebarHovered] = useState(false)
@@ -111,17 +114,16 @@ export default function AppShellLauncher() {
     <div className="flex flex-col h-full">
       {/* Logo */}
       <div className={cn(
-        'flex items-center h-16 px-4 border-b border-white/10 shrink-0',
+        'flex items-center h-[72px] px-4 border-b border-white/10 shrink-0',
         sidebarCollapsed ? 'justify-center' : 'justify-between gap-3'
       )}>
         <div className={cn('flex items-center gap-3 min-w-0', sidebarCollapsed ? 'justify-center' : '')}>
-          <img src={logoSolo} alt="STOCKIA HUB" className="w-8 h-8 shrink-0" />
+          <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-white/95 shadow-[0_0_12px_rgba(255,255,255,0.2)] shrink-0">
+            <img src="/og-image.png" alt="Icono" className="h-5 w-auto object-contain" />
+          </div>
           {!sidebarCollapsed && (
-            <div className="overflow-hidden">
-              <p className="text-sm font-bold text-white leading-none tracking-tight">STOCKIA HUB</p>
-              {business?.name && (
-                <p className="text-[11px] text-white/40 truncate mt-0.5 max-w-[160px]">{business.name}</p>
-              )}
+            <div className="overflow-hidden flex flex-col items-start gap-1 mt-1">
+              <img src="/2.png" alt="STOCKIA" className="h-3.5 w-auto brightness-0 invert" />
             </div>
           )}
         </div>
@@ -135,26 +137,19 @@ export default function AppShellLauncher() {
           </button>
         )}
       </div>
-      <div className="p-2 border-b border-white/10 shrink-0 hidden lg:flex">
-        <button
-          onClick={(e) => { e.stopPropagation(); handleToggleCollapse() }}
-          className="w-full flex items-center justify-center p-2 rounded-xl text-white/20 hover:text-white/60 hover:bg-white/5 transition-all"
-        >
-          {sidebarCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
-        </button>
-      </div>
+
 
       {/* Navigation */}
-      <nav key={sidebarCollapsed ? 'collapsed' : 'expanded'} className="flex-1 px-2 py-2 space-y-2.5 overflow-y-auto overflow-x-hidden">
+      <nav key={sidebarCollapsed ? 'collapsed' : 'expanded'} className="flex-1 py-3 space-y-1 overflow-y-auto">
         {NAV_SECTIONS.map((section) => (
-          <div key={section.label}>
+          <div key={section.label} className="mb-4">
             {!sidebarCollapsed ? (
-              <p className="text-[9px] font-bold text-white/35 uppercase tracking-widest px-3 mb-1.5 h-3 flex items-center">
+              <p className="text-[10px] font-bold text-white/30 uppercase tracking-widest pl-5 mb-2 h-3 flex items-center">
                 {section.label}
               </p>
             ) : (
-              <div className="h-3 mb-1.5 flex items-center justify-center">
-                <span className="w-5 h-px bg-white/15 rounded-full" />
+              <div className="h-3 mb-2 flex items-center justify-center">
+                <span className="w-4 h-px bg-white/15 rounded-full" />
               </div>
             )}
             <div className="space-y-0.5">
@@ -166,38 +161,21 @@ export default function AppShellLauncher() {
                   title={sidebarCollapsed ? item.name : undefined}
                   style={{ animationDelay: `${i * 35}ms` }}
                   className={cn(
-                    'flex items-center gap-3 px-3 py-2 rounded-xl text-[13px] font-medium transition-all group animate-pop-3d',
+                    'relative flex items-center gap-3 px-3 py-2.5 mx-3 rounded-xl text-[13px] font-medium transition-all duration-300 group',
                     sidebarCollapsed ? 'justify-center' : '',
                     isActive(item.href)
-                      ? 'bg-primary/15 text-primary'
-                      : 'text-white/50 hover:text-white hover:bg-white/5'
+                      ? 'border-l-[3px] border-primary text-primary bg-gradient-to-r from-primary/15 to-transparent shadow-[inset_1px_0_10px_rgba(0,240,255,0.1)]'
+                      : 'border-l-[3px] border-transparent text-white/40 hover:text-white hover:bg-white/5'
                   )}
                 >
                   <item.icon className={cn(
                     'w-[18px] h-[18px] shrink-0 transition-colors',
-                    isActive(item.href) ? 'text-primary' : 'text-white/30 group-hover:text-white/60'
+                    isActive(item.href) ? 'text-primary drop-shadow-[0_0_8px_rgba(0,240,255,0.8)]' : 'text-white/30 group-hover:text-white/60'
                   )} />
                   {!sidebarCollapsed && (
-                    <span className="truncate flex-1 animate-fade-in">{item.name}</span>
-                  )}
-                  {!sidebarCollapsed && isActive(item.href) && (
-                    <span className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
+                    <span className={cn("truncate flex-1", isActive(item.href) && "drop-shadow-[0_0_8px_rgba(0,240,255,0.6)]")}>{item.name}</span>
                   )}
 
-                  {/* Floating 3D glassmorphism icon preview on hover (icon only, no text) — desktop only, it's what causes horizontal overflow on the mobile drawer */}
-                  <span
-                    aria-hidden
-                    className="pointer-events-none hidden lg:flex absolute left-[calc(100%+26px)] top-1/2 z-[9999]
-                      items-center justify-center w-[76px] h-[76px] rounded-[22px]
-                      bg-[radial-gradient(circle_at_30%_20%,rgba(34,197,94,0.24),transparent_45%),linear-gradient(145deg,rgba(12,45,30,0.92),rgba(3,18,12,0.96))]
-                      border border-[rgba(34,197,94,0.38)] backdrop-blur-[16px]
-                      shadow-[0_22px_45px_rgba(0,0,0,0.48),0_0_30px_rgba(34,197,94,0.18),inset_0_1px_0_rgba(255,255,255,0.08)]
-                      opacity-0 [transform:translateY(-50%)_perspective(900px)_translateX(-8px)_rotateY(-22deg)_scale(0.72)]
-                      transition-[opacity,transform] duration-200 ease-out
-                      group-hover:opacity-100 group-hover:[transform:translateY(-50%)_perspective(900px)_translateX(0)_rotateY(0deg)_scale(1)]"
-                  >
-                    <item.icon className="w-[38px] h-[38px] text-primary drop-shadow-[0_0_12px_rgba(34,197,94,0.45)]" />
-                  </span>
                 </NavLink>
               ))}
             </div>
@@ -232,26 +210,7 @@ export default function AppShellLauncher() {
   if (isPOS) {
     return (
       <div className="app-bg dark-shell min-h-screen flex flex-col">
-        <header className="fixed top-0 inset-x-0 z-40 h-14 flex items-center px-4 bg-sidebar border-b border-border">
-          <div className="flex items-center gap-3">
-            <button onClick={() => navigate('/menu')} className="flex items-center gap-2">
-              <img src={logoSolo} alt="STOCKIA HUB" className="w-7 h-7" />
-            </button>
-            <div className="w-px h-5 bg-white/10" />
-            <span className="text-[11px] font-bold text-white/40 uppercase tracking-widest">Nueva venta</span>
-          </div>
-          <div className="flex-1" />
-          <div className="flex items-center gap-2">
-            <SubscriptionBadge />
-            <button
-              onClick={() => navigate('/menu')}
-              className="text-xs text-white/40 hover:text-white px-2 py-1"
-            >
-              Salir
-            </button>
-          </div>
-        </header>
-        <main className="flex-1 pt-14 flex flex-col">
+        <main className="flex-1 flex flex-col min-h-0">
           <Outlet />
         </main>
         <MiniPlayer />
@@ -268,7 +227,7 @@ export default function AppShellLauncher() {
         onMouseEnter={() => setSidebarHovered(true)}
         onMouseLeave={() => setSidebarHovered(false)}
         className={cn(
-          'hidden lg:flex flex-col h-screen sticky top-0 shrink-0 transition-[width] duration-300 ease-in-out bg-sidebar border-r border-border z-30',
+          'hidden lg:flex flex-col h-screen sticky top-0 shrink-0 transition-[width] duration-300 ease-in-out bg-surface/80 backdrop-blur-3xl border-r border-white/10 z-30 shadow-[4px_0_24px_rgba(0,0,0,0.5)] text-white',
           sidebarCollapsed && !sidebarHovered ? 'w-[76px]' : 'w-[248px]'
         )}
       >
@@ -279,7 +238,7 @@ export default function AppShellLauncher() {
       {mobileDrawerOpen && (
         <div className="fixed inset-0 z-[100] lg:hidden">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setMobileDrawerOpen(false)} />
-          <div className="absolute left-0 top-0 h-full w-72 max-w-[85vw] bg-sidebar border-r border-border shadow-2xl animate-slide-in-left overflow-x-hidden">
+          <div className="absolute left-0 top-0 h-full w-72 max-w-[85vw] bg-surface/90 backdrop-blur-3xl border-r border-white/10 shadow-2xl animate-slide-in-left overflow-x-hidden text-white">
             {renderSidebar(false, () => setMobileDrawerOpen(false))}
           </div>
         </div>
@@ -297,8 +256,8 @@ export default function AppShellLauncher() {
             >
               <Menu className="w-5 h-5" />
             </button>
-            <div className="hidden sm:flex items-center gap-2 text-sm min-w-0">
-              <span className="font-semibold text-white truncate max-w-[160px]">{business?.name || 'STOCKIA HUB'}</span>
+            <div className="hidden sm:flex items-center gap-2 min-w-0 px-2 py-1 bg-white/5 rounded-lg border border-white/10">
+              <span className="font-bold text-white text-[12px] uppercase tracking-widest truncate max-w-[160px]">{business?.name || 'STOCKIA HUB'}</span>
             </div>
           </div>
 

@@ -250,7 +250,7 @@ export default function ProductsPage() {
           <GlassButton size="sm" onClick={() => setShowImportModal(true)} className="bg-white/5">
             <Upload className="w-3.5 h-3.5" /> Importar
           </GlassButton>
-          <GlassButton size="sm" onClick={openNew} className="bg-violet-500 text-white hover:bg-violet-400 border-none font-black shadow-lg shadow-violet-500/20">
+          <GlassButton size="sm" onClick={openNew} className="bg-primary text-black hover:bg-primary/90 border-none font-black shadow-[0_0_15px_rgba(0,240,255,0.3)]">
             <Plus className="w-4 h-4" /> Nuevo Producto
           </GlassButton>
         </div>
@@ -297,15 +297,6 @@ export default function ProductsPage() {
           </div>
         </button>
 
-        <div className="hidden md:flex items-center gap-3 p-4 rounded-2xl bg-white/[0.01] border border-white/5 opacity-50">
-           <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-white/20">
-             <Zap className="w-5 h-5" />
-           </div>
-           <div>
-             <p className="text-[10px] font-black text-white/20 uppercase tracking-widest">AI Radar</p>
-             <p className="text-[11px] font-bold text-white/20">Próximamente</p>
-           </div>
-        </div>
       </div>
 
       {/* Low stock alert - Bento Style */}
@@ -468,13 +459,6 @@ export default function ProductsPage() {
                     </button>
                   </div>
 
-                  <button 
-                    onClick={(e) => { e.stopPropagation(); navigate(`/products/${p.id}`) }}
-                    className="flex items-center gap-1.5 h-9 px-3 rounded-xl bg-violet-500/10 text-violet-400 group/ai transition-all hover:bg-violet-500 hover:text-white"
-                  >
-                    <Zap className="w-3.5 h-3.5 fill-current" />
-                    <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">IA</span>
-                  </button>
                 </div>
               </div>
             ))}

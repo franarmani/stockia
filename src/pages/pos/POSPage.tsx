@@ -16,6 +16,7 @@ import Button from '@/components/ui/Button'
 import Badge from '@/components/ui/Badge'
 import Modal from '@/components/ui/Modal'
 import PostSaleModal, { type PostSaleData } from '@/components/PostSaleModal'
+import SubscriptionBadge from '@/features/subscription/components/SubscriptionBadge'
 import type { Product, Customer, CartItem } from '@/types/database'
 import {
   Search, Plus, Minus, Trash2, ShoppingCart, CreditCard,
@@ -647,43 +648,45 @@ export default function POSPage() {
       )}
 
       {/* ═══════════ HEADER ═══════════ */}
-      <header className="shrink-0 h-14 flex items-center justify-between px-4 border-b border-white/8 bg-[#0d1b2d]">
-        <div className="flex items-center gap-3">
+      <header className="shrink-0 h-[72px] flex items-center justify-between px-4 sm:px-6 border-b border-white/10 bg-surface/80 backdrop-blur-3xl shadow-sm z-50">
+        <div className="flex items-center gap-4">
           <button
             onClick={() => navigate('/menu')}
-            className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-500 hover:text-slate-300 hover:bg-white/8 transition-all"
+            className="flex items-center gap-2 group"
             title="Volver al menú"
           >
-            <LogOut className="w-4 h-4" />
-          </button>
-          <div className="w-px h-6 bg-white/8" />
-          <div className="flex items-center gap-1.5">
-            <div className="w-7 h-7 rounded-lg bg-primary/15 flex items-center justify-center">
-              <ShoppingCart className="w-3.5 h-3.5 text-primary" />
+            <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-white/95 shadow-[0_0_15px_rgba(255,255,255,0.2)] group-hover:scale-105 transition-all">
+              <img src="/og-image.png" alt="Icono" className="h-6 w-auto object-contain" />
             </div>
-            <span className="text-sm font-bold text-white tracking-tight">Nueva venta</span>
+          </button>
+          <div className="w-px h-8 bg-white/10 hidden sm:block" />
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center shadow-[inset_0_0_12px_rgba(0,240,255,0.2)] border border-primary/20">
+              <ShoppingCart className="w-4 h-4 text-primary drop-shadow-[0_0_8px_rgba(0,240,255,0.8)]" />
+            </div>
+            <div className="flex flex-col">
+              <span className="text-[14px] font-bold text-white tracking-tight uppercase">Nueva venta</span>
+              {business?.name && (
+                <span className="text-[10px] text-white/50 uppercase tracking-widest font-semibold hidden sm:block">{business.name}</span>
+              )}
+            </div>
           </div>
-          {business?.name && (
-            <>
-              <span className="text-slate-600 text-sm font-medium hidden sm:inline">·</span>
-              <span className="text-slate-400 text-sm hidden sm:inline">{business.name}</span>
-            </>
-          )}
         </div>
         <div className="flex items-center gap-3">
-          <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-bold border transition-all ${
+          <div className="hidden md:flex">
+            <SubscriptionBadge />
+          </div>
+          <div className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-[11px] font-bold border transition-all ${
             cajaOpen
-              ? 'bg-green-500/8 text-green-400/90 border-green-500/15'
-              : 'bg-red-500/8 text-red-400/90 border-red-500/15'
+              ? 'bg-green-500/10 text-green-400 border-green-500/20 shadow-[inset_0_0_12px_rgba(34,197,94,0.15)]'
+              : 'bg-red-500/10 text-red-400 border-red-500/20 shadow-[inset_0_0_12px_rgba(239,68,68,0.15)]'
           }`}>
-            <div className={`w-1.5 h-1.5 rounded-full ${cajaOpen ? 'bg-green-400' : 'bg-red-400'} animate-pulse`} />
-            <span className="uppercase tracking-wider">{cajaOpen ? 'Caja abierta' : 'Caja cerrada'}</span>
+            <div className={`w-2 h-2 rounded-full ${cajaOpen ? 'bg-green-400 shadow-[0_0_8px_rgba(34,197,94,1)]' : 'bg-red-400 shadow-[0_0_8px_rgba(239,68,68,1)]'} animate-pulse`} />
+            <span className="uppercase tracking-wider hidden sm:inline">{cajaOpen ? 'Caja abierta' : 'Caja cerrada'}</span>
           </div>
           {profile?.name && (
-            <div className="hidden sm:flex items-center gap-2 text-slate-400 text-xs font-medium">
-              <div className="w-6 h-6 rounded-full bg-white/8 flex items-center justify-center">
-                <User className="w-3 h-3 text-slate-500" />
-              </div>
+            <div className="hidden sm:flex items-center gap-2 text-white/60 text-xs font-medium bg-white/5 px-3 py-1.5 rounded-xl border border-white/10">
+              <User className="w-3.5 h-3.5 text-white/40" />
               <span>{profile.name?.split(' ')[0]}</span>
             </div>
           )}

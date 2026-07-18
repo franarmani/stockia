@@ -80,9 +80,9 @@ const ticketTotal = ticketItems.reduce((sum, i) => sum + i.qty * i.price, 0)
 function ReceiptHero() {
   return (
     <div className="relative w-full max-w-[340px] mx-auto lg:mx-0">
-      <div className="ticket-edge-top ticket-edge-bottom bg-paper text-paper-foreground rounded-[var(--radius-ticket)] shadow-2xl shadow-black/40 px-5 pt-6 pb-5 font-mono rotate-[1.5deg]">
-        <div className="text-center border-b border-dashed border-paper-foreground/25 pb-3 mb-3">
-          <p className="text-xs font-bold tracking-[0.2em]">STOCKIA HUB</p>
+      <div className="glass-card glass-card--glow rounded-2xl px-5 pt-6 pb-5 rotate-[1.5deg]">
+        <div className="text-center border-b border-white/20 pb-3 mb-3">
+          <p className="text-xs font-bold tracking-[0.2em] text-primary">STOCKIA HUB</p>
           <p className="text-[10px] opacity-60 mt-1">TICKET N.º 00128 · 18:42</p>
         </div>
         <div className="space-y-2 text-[12px]">
@@ -105,7 +105,7 @@ function ReceiptHero() {
           <span className="text-xl font-bold text-secondary tabular-nums">${ticketTotal.toLocaleString('es-AR')}</span>
         </div>
         <div
-          className="ticket-line barcode-strip mt-4"
+          className="w-full h-[2px] bg-gradient-to-r from-transparent via-primary/50 to-transparent mt-4"
           style={{ animationDelay: `${300 + (ticketItems.length + 1) * 140}ms` }}
         />
         <p
@@ -239,32 +239,35 @@ export default function LandingPage() {
       {/* ══════════════════════════════════════
           HEADER
       ══════════════════════════════════════ */}
-      <header className="sticky top-0 z-50 bg-surface/90 border-b border-white/10 backdrop-blur-xl">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <img src={logo} alt="STOCKIA HUB" className="h-7" />
+      <div className="fixed top-4 sm:top-6 left-0 right-0 z-50 flex justify-center px-4 pointer-events-none">
+        <header className="pointer-events-auto flex items-center justify-between h-14 px-4 sm:px-6 w-full max-w-5xl bg-surface/60 border border-white/10 backdrop-blur-xl rounded-full shadow-[0_8px_32px_rgba(0,0,0,0.4)] transition-all">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-white/95 shadow-[0_0_12px_rgba(255,255,255,0.2)]">
+              <img src="/og-image.png" alt="Icono STOCKIA" className="h-5 w-auto object-contain" />
+            </div>
+            <img src="/2.png" alt="STOCKIA" className="h-4 sm:h-5 w-auto object-contain brightness-0 invert" />
           </div>
-          <nav className="hidden md:flex items-center gap-6 text-sm text-white/50">
-            <a href="#features" className="hover:text-white transition-colors">Funciones</a>
-            <a href="#pricing" className="hover:text-white transition-colors">Precio</a>
-            <a href="#faq" className="hover:text-white transition-colors">FAQ</a>
+          <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-white/60">
+            <a href="#features" className="hover:text-white hover:text-shadow-[0_0_8px_rgba(255,255,255,0.5)] transition-all">Funciones</a>
+            <a href="#pricing" className="hover:text-white hover:text-shadow-[0_0_8px_rgba(255,255,255,0.5)] transition-all">Precio</a>
+            <a href="#faq" className="hover:text-white hover:text-shadow-[0_0_8px_rgba(255,255,255,0.5)] transition-all">FAQ</a>
           </nav>
-          <div className="flex items-center gap-2">
-            <Link to="/login" className="text-sm font-medium text-white/55 hover:text-white transition-colors px-3 py-1.5">
+          <div className="flex items-center gap-3 sm:gap-4">
+            <Link to="/login" className="hidden sm:block text-sm font-medium text-white/60 hover:text-white transition-colors">
               Ingresar
             </Link>
             <Link to="/register"
-              className="inline-flex items-center gap-1.5 h-8 px-4 gradient-primary text-white text-sm font-semibold rounded-xl transition-all hover:brightness-110 shadow-lg shadow-green-900/40">
-              Probar gratis <ArrowRight className="w-3.5 h-3.5" />
+              className="inline-flex items-center gap-1.5 h-9 px-4 sm:px-5 gradient-primary text-background text-sm font-bold rounded-full transition-all hover:scale-105 shadow-[0_4px_16px_rgba(0,240,255,0.3)] hover:shadow-[0_4px_24px_rgba(0,240,255,0.5)]">
+              Probar gratis <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
-        </div>
-      </header>
+        </header>
+      </div>
 
       {/* ══════════════════════════════════════
           HERO — ATENCIÓN
       ══════════════════════════════════════ */}
-      <section className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 pt-16 pb-16 sm:pt-24 sm:pb-24">
+      <section className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 pt-32 pb-16 sm:pt-40 sm:pb-24">
         <div className="grid lg:grid-cols-[1.1fr_0.9fr] gap-12 lg:gap-8 items-center">
           <div className="text-center lg:text-left">
 
@@ -304,19 +307,6 @@ export default function LandingPage() {
               Sin tarjeta · Sin instalación · Sin compromisos
             </p>
 
-            {/* Social proof numbers */}
-            <div className="grid grid-cols-3 gap-3 max-w-md mx-auto lg:mx-0">
-              {[
-                { val: '+500', label: 'Negocios activos' },
-                { val: '+1M', label: 'Ventas procesadas' },
-                { val: '99.9%', label: 'Uptime garantizado' },
-              ].map((s, i) => (
-                <div key={i} className="bg-surface-elevated border border-white/10 rounded-xl p-3.5 text-center">
-                  <p className="text-xl font-bold text-primary font-mono tabular-nums">{s.val}</p>
-                  <p className="text-[11px] text-white/35 mt-0.5 leading-tight">{s.label}</p>
-                </div>
-              ))}
-            </div>
           </div>
 
           {/* Signature: ticket de venta real */}
@@ -511,8 +501,8 @@ export default function LandingPage() {
         </div>
 
         <div className="max-w-md mx-auto">
-          {/* Card — el plan presentado como un ticket real */}
-          <div className="relative ticket-edge-top ticket-edge-bottom bg-paper text-paper-foreground overflow-hidden rounded-[var(--radius-ticket)] p-8 pt-10 shadow-2xl shadow-black/30 -rotate-[0.6deg]">
+          {/* Card — el plan presentado como un panel de cristal */}
+          <div className="relative glass-card glass-card--glow overflow-hidden rounded-2xl p-8 pt-10 -rotate-[0.6deg]">
             {/* Sello tipo timbre, en vez de cinta genérica */}
             <div className="absolute top-4 right-5 stamp w-16 h-16 text-secondary">
               <span className="text-[9px] font-bold uppercase leading-tight text-center">Más<br />popular</span>
@@ -556,7 +546,7 @@ export default function LandingPage() {
             </p>
 
             {/* Payment info */}
-            <div className="barcode-strip mt-5" />
+            <div className="w-full h-[2px] bg-gradient-to-r from-transparent via-primary/50 to-transparent mt-5" />
             <div className="mt-3">
               <p className="text-[11px] opacity-50 text-center mb-2">Para suscribirse transferir al alias:</p>
               <div className="flex items-center justify-center gap-2">

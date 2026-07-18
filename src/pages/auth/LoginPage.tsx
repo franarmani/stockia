@@ -53,15 +53,19 @@ export default function LoginPage() {
   }
 
   /* ─── Shared input class ─── */
-  const inputCls = 'w-full h-11 pl-10 pr-3 rounded-xl text-sm bg-white/5 text-foreground placeholder:text-muted-foreground border border-white/10 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all'
+  const inputCls = 'w-full h-12 pl-11 pr-3 rounded-xl text-sm bg-white/5 backdrop-blur-md text-foreground placeholder:text-white/40 border border-white/10 hover:border-white/20 focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary focus:shadow-[0_0_12px_rgba(0,240,255,0.2)] transition-all'
 
   return (
     <div className="min-h-screen flex bg-background">
       {/* ─── Desktop left brand panel ─── */}
-      <div className="hidden lg:flex lg:w-[46%] relative flex-col justify-between p-12 overflow-hidden">
-        <div className="absolute -top-32 -left-32 w-[480px] h-[480px] bg-primary/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="relative z-10">
-          <img src={logo} alt="STOCKIA HUB" className="h-8 w-auto self-start" />
+      <div className="hidden lg:flex lg:w-[46%] relative flex-col justify-between p-12 overflow-hidden border-r border-white/5">
+        <div className="absolute -top-32 -left-32 w-[600px] h-[600px] bg-primary/15 rounded-full blur-[100px] pointer-events-none" />
+        <div className="absolute -bottom-32 -right-32 w-[500px] h-[500px] bg-secondary/15 rounded-full blur-[100px] pointer-events-none" />
+        <div className="relative z-10 flex items-center gap-3">
+          <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-white/95 shadow-[0_0_12px_rgba(255,255,255,0.2)]">
+            <img src="/og-image.png" alt="Icono STOCKIA" className="h-6 w-auto object-contain" />
+          </div>
+          <img src="/2.png" alt="STOCKIA" className="h-5 sm:h-6 w-auto object-contain brightness-0 invert" />
         </div>
         <div className="relative z-10">
           <h1 className="font-display text-4xl text-white leading-[0.95] mb-3 uppercase">
@@ -88,7 +92,12 @@ export default function LoginPage() {
       <div className="flex-1 flex flex-col min-h-screen">
         {/* Mobile header — visible only on mobile */}
         <div className="lg:hidden flex flex-col px-6 pt-14 pb-8">
-          <img src={logo} alt="STOCKIA HUB" className="h-7 w-auto self-start mb-10" />
+          <div className="flex items-center gap-3 mb-10">
+            <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-white/95 shadow-[0_0_12px_rgba(255,255,255,0.2)]">
+              <img src="/og-image.png" alt="Icono STOCKIA" className="h-6 w-auto object-contain" />
+            </div>
+            <img src="/2.png" alt="STOCKIA" className="h-5 sm:h-6 w-auto object-contain brightness-0 invert" />
+          </div>
           <h1 className="font-display text-4xl text-white leading-[0.95] uppercase whitespace-pre-line">
             {forgotMode ? 'Recuperar\ncontraseña' : 'Bienvenido\nde vuelta'}
           </h1>
@@ -137,8 +146,8 @@ export default function LoginPage() {
               <form onSubmit={handleForgotPassword} className="space-y-4">
                 <div>
                   <label className="block text-[13px] font-medium text-white/70 mb-1.5">Email</label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/35" />
+                  <div className="relative group">
+                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40 group-focus-within:text-primary transition-colors" />
                     <input
                       type="email" value={email} onChange={(e) => setEmail(e.target.value)}
                       placeholder="tu@email.com" autoComplete="email" required
@@ -149,7 +158,7 @@ export default function LoginPage() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full h-11 rounded-xl font-semibold text-sm text-white flex items-center justify-center gap-2 bg-primary hover:bg-primary-hover transition-all disabled:opacity-60"
+                  className="w-full h-12 rounded-xl font-bold text-sm text-background flex items-center justify-center gap-2 gradient-primary hover:scale-[1.02] shadow-[0_4px_16px_rgba(0,240,255,0.25)] hover:shadow-[0_4px_24px_rgba(0,240,255,0.4)] transition-all disabled:opacity-60"
                 >
                   {loading ? 'Enviando...' : <>Enviar link de recuperación <ArrowRight className="w-4 h-4" /></>}
                 </button>
@@ -166,8 +175,8 @@ export default function LoginPage() {
               <form onSubmit={handleLogin} className="space-y-4">
                 <div>
                   <label className="block text-[13px] font-medium text-white/70 mb-1.5">Email</label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/35" />
+                  <div className="relative group">
+                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40 group-focus-within:text-primary transition-colors" />
                     <input
                       type="email" value={email} onChange={(e) => setEmail(e.target.value)}
                       placeholder="tu@email.com" autoComplete="email" required
@@ -185,8 +194,8 @@ export default function LoginPage() {
                       ¿Olvidaste tu contraseña?
                     </button>
                   </div>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/35" />
+                  <div className="relative group">
+                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40 group-focus-within:text-primary transition-colors" />
                     <input
                       type={showPassword ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)}
                       placeholder="••••••••" autoComplete="current-password" required
@@ -204,7 +213,7 @@ export default function LoginPage() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full h-11 rounded-xl font-semibold text-sm text-white flex items-center justify-center gap-2 bg-primary hover:bg-primary-hover transition-all disabled:opacity-60"
+                  className="w-full h-12 rounded-xl font-bold text-sm text-background flex items-center justify-center gap-2 gradient-primary hover:scale-[1.02] shadow-[0_4px_16px_rgba(0,240,255,0.25)] hover:shadow-[0_4px_24px_rgba(0,240,255,0.4)] transition-all disabled:opacity-60"
                 >
                   {loading ? 'Ingresando...' : <>Iniciar sesión <ArrowRight className="w-4 h-4" /></>}
                 </button>

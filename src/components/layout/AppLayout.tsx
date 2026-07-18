@@ -49,10 +49,10 @@ export default function AppLayout() {
         {/* Offline / pending sync banner */}
         {(!isOnline || pendingCount > 0) && (
           <div
-            className={`px-4 py-2 flex items-center justify-between text-[12px] font-medium shrink-0 ${
+            className={`px-4 py-2 flex items-center justify-between text-[12px] font-medium shrink-0 backdrop-blur-md ${
               !isOnline
-                ? 'bg-slate-800 text-slate-200'
-                : 'bg-amber-50 text-amber-800 border-b border-amber-100'
+                ? 'bg-destructive/10 text-destructive border-b border-destructive/20'
+                : 'bg-warning/10 text-warning border-b border-warning/20'
             }`}
           >
             <div className="flex items-center gap-2">
@@ -79,7 +79,7 @@ export default function AppLayout() {
             {isOnline && pendingCount > 0 && !syncing && (
               <button
                 onClick={syncPendingSales}
-                className="px-2.5 py-0.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-[11px] font-semibold transition-colors"
+                className="px-2.5 py-0.5 bg-warning hover:bg-warning/80 text-background rounded-lg text-[11px] font-semibold transition-colors shadow-[0_0_8px_rgba(245,158,11,0.3)]"
               >
                 Sincronizar
               </button>
