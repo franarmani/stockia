@@ -14,7 +14,7 @@ import SubscriptionGuard from '@/features/subscription/components/SubscriptionGu
 import UpdateNotificationModal from '@/components/modals/UpdateNotificationModal'
 
 // ── VERSIONING ──
-const APP_VERSION = '1.9.2' // Local version — bump together with public/version.json on every deploy
+const APP_VERSION = '1.9.3' // Local version — bump together with public/version.json on every deploy
 
 // ── localStorage cache helpers ──
 const PROFILE_CACHE_KEY = 'stockia_profile'
@@ -70,6 +70,16 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading, profile } = useAuthStore()
   const { business } = useBusinessStore()
   const [sessionClosed, setSessionClosed] = useState(false)
+  const [stuck, setStuck] = useState(false)
+
+  useEffect(() => {
+    if (!(loading || (user && !profile))) {
+      setStuck(false)
+      return
+    }
+    const timer = setTimeout(() => setStuck(true), 15000)
+    return () => clearTimeout(timer)
+  }, [loading, user, profile])
 
   useEffect(() => {
     if (!sessionClosed) return
@@ -100,6 +110,21 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
   // Loading OR (user exists but profile hasn't loaded yet) → show spinner
   if (loading || (user && !profile)) {
+    if (stuck) {
+      return (
+        <div className="flex items-center justify-center h-screen bg-background">
+          <div className="flex flex-col items-center gap-3 text-center px-4">
+            <p className="text-muted-foreground text-sm">No pudimos cargar tu cuenta. Revisá tu conexión e intentá de nuevo.</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium"
+            >
+              Reintentar
+            </button>
+          </div>
+        </div>
+      )
+    }
     return (
       <div className="flex items-center justify-center h-screen bg-background">
         <div className="flex flex-col items-center gap-3">
