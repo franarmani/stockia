@@ -30,13 +30,24 @@ export default function LoginPage() {
     e.preventDefault()
     if (!email || !password) { toast.error('Completá todos los campos'); return }
     setLoading(true)
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
-    if (error) {
-      toast.error('Email o contraseña incorrectos')
+    try {
+      const timeout = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('timeout')), 15000)
+      )
+      const { error } = await Promise.race([
+        supabase.auth.signInWithPassword({ email, password }),
+        timeout,
+      ])
+      if (error) {
+        toast.error('Email o contraseña incorrectos')
+        setLoading(false)
+      } else {
+        // Navigate immediately — ProtectedRoute will show spinner while profile loads
+        navigate('/menu')
+      }
+    } catch {
+      toast.error('No se pudo conectar. Revisá tu conexión e intentá de nuevo.')
       setLoading(false)
-    } else {
-      // Navigate immediately — ProtectedRoute will show spinner while profile loads
-      navigate('/menu')
     }
   }
 
