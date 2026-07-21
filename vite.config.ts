@@ -44,8 +44,8 @@ export default defineConfig({
             },
           },
           {
-            // Cache Supabase REST API calls (products list etc.)
-            urlPattern: /^https:\/\/.*\.supabase\.co\/rest\/v1\//,
+            // Cache Supabase REST API calls (products list etc.) — proxied through our own domain
+            urlPattern: /\/supabase-api\/rest\/v1\//,
             handler: 'NetworkFirst', // Changed from StaleWhileRevalidate to NetworkFirst for core data
             options: {
               cacheName: 'api-data-cache',

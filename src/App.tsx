@@ -14,7 +14,7 @@ import SubscriptionGuard from '@/features/subscription/components/SubscriptionGu
 import UpdateNotificationModal from '@/components/modals/UpdateNotificationModal'
 
 // ── VERSIONING ──
-const APP_VERSION = '1.9.4' // Local version — bump together with public/version.json on every deploy
+const APP_VERSION = '1.9.5' // Local version — bump together with public/version.json on every deploy
 
 // ── localStorage cache helpers ──
 const PROFILE_CACHE_KEY = 'stockia_profile'
