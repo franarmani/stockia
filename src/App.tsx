@@ -14,7 +14,7 @@ import SubscriptionGuard from '@/features/subscription/components/SubscriptionGu
 import UpdateNotificationModal from '@/components/modals/UpdateNotificationModal'
 
 // ── VERSIONING ──
-const APP_VERSION = '1.10.2' // Local version — bump together with public/version.json on every deploy
+const APP_VERSION = '1.10.3' // Local version — bump together with public/version.json on every deploy
 
 // ── localStorage cache helpers ──
 const PROFILE_CACHE_KEY = 'stockia_profile'
@@ -272,11 +272,11 @@ export default function App() {
       }
     }
 
-    function loadFromCache(): boolean {
+    function loadFromCache(userId: string): boolean {
       const cached = getCachedProfile()
       const cachedBiz = getCachedBusiness()
       console.log('[Auth] loadFromCache cachedBiz:', cachedBiz)
-      if (cached) {
+      if (cached && cached.id === userId) {
         setProfile(cached)
         if (cachedBiz) setBusiness(cachedBiz)
         profileLoaded = true
@@ -296,7 +296,7 @@ export default function App() {
       setUser(session.user)
 
       // Try cache first (instant)
-      if (loadFromCache()) {
+      if (loadFromCache(session.user.id)) {
         setLoading(false)
         // Refresh from network in background (silent)
         loadFromNetwork(session.user.id)
@@ -336,7 +336,7 @@ export default function App() {
 
       // New sign-in → try cache, then network
       if (event === 'SIGNED_IN') {
-        if (loadFromCache()) {
+        if (loadFromCache(session.user.id)) {
           setLoading(false)
           loadFromNetwork(session.user.id) // silent refresh
           return

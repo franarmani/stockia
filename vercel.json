@@ -27,7 +27,7 @@
     }
   ],
   "rewrites": [
-    { "source": "/supabase-api/:path*", "destination": "https://mrpenblsmooeqzegtcqp.supabase.co/:path*" },
-    { "source": "/((?!assets/|supabase-api/).*)", "destination": "/index.html" }
+    { "source": "/((?!assets/).*)", "destination": "/index.html" }
   ]
 }
+
