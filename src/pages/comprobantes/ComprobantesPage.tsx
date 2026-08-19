@@ -5,6 +5,7 @@ import { useBusinessStore } from '@/stores/businessStore'
 import { formatCurrency, formatDateTime } from '@/lib/utils'
 import { requestCAE, getCbteTipo } from '@/lib/afipService'
 import { openInvoicePDF, type InvoicePDFData } from '@/lib/invoicePdf'
+import type { PrintMode } from '@/lib/documentLayout'
 import Button from '@/components/ui/Button'
 import Badge from '@/components/ui/Badge'
 import Modal from '@/components/ui/Modal'
@@ -15,7 +16,7 @@ import type { Invoice, CartItem, InvoiceItem, Product } from '@/types/database'
 import { CBTE_TIPOS, IVA_CONDITIONS } from '@/types/database'
 import {
   FileText, Search, Filter, Eye, Ban, ChevronDown, ChevronUp,
-  Calendar, Download, RotateCcw, Loader2,
+  Calendar, Download, Palette, RotateCcw, Loader2,
 } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -197,7 +198,7 @@ export default function ComprobantesPage() {
     setNCProcessing(false)
   }
 
-  async function handleDownloadPDF(inv: Invoice) {
+  async function handleDownloadPDF(inv: Invoice, mode: PrintMode = 'bw') {
     if (!business) return
 
     // Fetch invoice line items for the PDF
@@ -240,6 +241,7 @@ export default function ComprobantesPage() {
       businessCuit: business.cuit,
       businessAddress: business.address,
       businessPhone: business.phone,
+      businessEmail: business.email,
       ivaCondition: business.iva_condition,
       iibb: (business as any).iibb,
       razonSocial: (business as any).razon_social,
@@ -265,10 +267,11 @@ export default function ComprobantesPage() {
       netoNoGravado: inv.neto_no_gravado,
       exento: inv.exento,
       paymentMethod: '-',
+      receiptFooter: business.receipt_footer,
       logoUrl: business.logo_url,
       primaryColor: (business as any).primary_color || undefined,
     }
-    openInvoicePDF(pdfData)
+    openInvoicePDF(pdfData, mode)
   }
 
   const filtered = invoices.filter((inv) => {
@@ -405,7 +408,7 @@ export default function ComprobantesPage() {
                       <button onClick={() => openDetail(inv)} className="w-7 h-7 rounded-xl flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition" title="Ver detalle">
                         <Eye className="w-3.5 h-3.5" />
                       </button>
-                      <button onClick={() => handleDownloadPDF(inv)} className="w-7 h-7 rounded-xl flex items-center justify-center text-muted-foreground hover:text-blue-600 hover:bg-blue-500/100/10 transition" title="Descargar PDF">
+                      <button onClick={() => handleDownloadPDF(inv, 'bw')} className="w-7 h-7 rounded-xl flex items-center justify-center text-muted-foreground hover:text-blue-600 hover:bg-blue-500/10 transition" title="PDF blanco y negro">
                         <Download className="w-3.5 h-3.5" />
                       </button>
                       {!inv.voided && ![3, 8, 13].includes(inv.cbte_tipo) && (
@@ -554,8 +557,11 @@ export default function ComprobantesPage() {
 
             <div className="flex gap-3 pt-2">
               <Button variant="outline" className="flex-1" onClick={() => setShowDetailModal(false)}>Cerrar</Button>
-              <Button className="flex-1" onClick={() => handleDownloadPDF(selectedInvoice)}>
-                <Download className="w-4 h-4" /> PDF
+              <Button className="flex-1" onClick={() => handleDownloadPDF(selectedInvoice, 'bw')}>
+                <Download className="w-4 h-4" /> PDF B/N
+              </Button>
+              <Button variant="outline" className="flex-1" onClick={() => handleDownloadPDF(selectedInvoice, 'color')}>
+                <Palette className="w-4 h-4" /> PDF color
               </Button>
               {!selectedInvoice.voided && ![3, 8, 13].includes(selectedInvoice.cbte_tipo) && (
                 <Button variant="outline" className="flex-1" onClick={() => { setShowDetailModal(false); openNCModal(selectedInvoice) }}>

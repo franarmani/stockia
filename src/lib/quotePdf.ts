@@ -9,6 +9,7 @@
 import { formatCurrency } from '@/lib/utils'
 import {
   documentStyles, emitterBlock, printOnReadyScript, openPrintWindow,
+  resolveAccent, type PrintMode,
 } from '@/lib/documentLayout'
 
 export interface QuoteItemData {
@@ -24,9 +25,13 @@ export interface QuotePDFData {
   businessCuit?: string | null
   businessAddress?: string | null
   businessPhone?: string | null
+  businessEmail?: string | null
   razonSocial?: string | null
   domicilioComercial?: string | null
   ivaConditionLabel?: string
+  puntoVenta?: number | null
+  /** Mensaje configurable que se imprime al pie (Configuración → ticket). */
+  receiptFooter?: string | null
 
   // Documento
   quoteNumber: number
@@ -65,8 +70,8 @@ function formatQty(q: number): string {
   return Number.isInteger(q) ? String(q) : q.toFixed(2).replace('.', ',')
 }
 
-export function generateQuotePDF(data: QuotePDFData): string {
-  const color = data.primaryColor || DEFAULT_COLOR
+export function generateQuotePDF(data: QuotePDFData, mode: PrintMode = 'color'): string {
+  const color = resolveAccent(data.primaryColor || DEFAULT_COLOR, mode)
   const number = pad(data.quoteNumber, 8)
   const discountAmount = data.subtotal * data.discount / 100
 
@@ -87,7 +92,7 @@ export function generateQuotePDF(data: QuotePDFData): string {
 <head>
   <meta charset="UTF-8">
   <title>Presupuesto ${number}</title>
-  <style>${documentStyles(color)}</style>
+  <style>${documentStyles(color, mode)}</style>
 </head>
 <body>
   <div class="sheet">
@@ -98,23 +103,29 @@ ${emitterBlock({
     businessCuit: data.businessCuit,
     businessAddress: data.businessAddress,
     businessPhone: data.businessPhone,
+    businessEmail: data.businessEmail,
     razonSocial: data.razonSocial,
     domicilioComercial: data.domicilioComercial,
     ivaConditionLabel: data.ivaConditionLabel,
+    puntoVenta: data.puntoVenta,
     logoUrl: data.logoUrl,
   })}
       <div class="doc-block">
-        <p class="doc-title">PRESUPUESTO <span>Nº: ${number}</span></p>
-        <p class="doc-meta">Fecha: ${formatDate(data.date)}</p>
-        ${data.validUntil ? `<p class="doc-meta">Válido hasta: ${formatDate(data.validUntil)}</p>` : ''}
+        <p class="doc-title">COMPROBANTE</p>
+        <p class="doc-kind">Presupuesto</p>
+        <p class="doc-number">Nº ${number}</p>
+        <p class="doc-meta">Fecha: <strong>${formatDate(data.date)}</strong></p>
+        ${data.validUntil ? `<p class="doc-meta">Válido hasta: <strong>${formatDate(data.validUntil)}</strong></p>` : ''}
       </div>
     </div>
 
     <div class="customer">
-      <p class="block-title">Datos cliente</p>
-      <p>${data.customerName || 'Consumidor Final'}</p>
-      ${data.customerAddress ? `<p>${data.customerAddress}</p>` : ''}
-      ${data.customerPhone ? `<p>${data.customerPhone}</p>` : ''}
+      <p class="block-title">Datos del cliente</p>
+      <p class="cname">${data.customerName || 'Consumidor Final'}</p>
+      <div class="customer-grid">
+        ${data.customerAddress ? `<p class="field"><span>Domicilio:</span> ${data.customerAddress}</p>` : ''}
+        ${data.customerPhone ? `<p class="field"><span>Teléfono:</span> ${data.customerPhone}</p>` : ''}
+      </div>
     </div>
 
     <table>
@@ -173,6 +184,7 @@ ${emitterBlock({
     <div class="spacer"></div>
 
     <div class="footer">
+      ${data.receiptFooter ? `<p class="message">${data.receiptFooter}</p>` : ''}
       <p>Ante cualquier consulta sobre este presupuesto, comuníquese con nosotros${data.businessPhone ? ` al ${data.businessPhone}` : ''}.</p>
       <p class="legal">Este presupuesto no constituye comprobante fiscal. Los precios pueden estar sujetos a modificación una vez vencida la fecha de validez y están sujetos a disponibilidad de stock.</p>
     </div>
@@ -186,8 +198,8 @@ ${printOnReadyScript}
 }
 
 /** Abre el presupuesto en ventana nueva para imprimir o guardar como PDF. */
-export function openQuotePDF(data: QuotePDFData) {
-  openPrintWindow(generateQuotePDF(data))
+export function openQuotePDF(data: QuotePDFData, mode: PrintMode = 'color') {
+  openPrintWindow(generateQuotePDF(data, mode))
 }
 
 /** Link de WhatsApp con el resumen del presupuesto. */

@@ -3,8 +3,9 @@ import Modal from '@/components/ui/Modal'
 import Button from '@/components/ui/Button'
 import TicketPrintModal from '@/components/TicketPrintModal'
 import { openInvoicePDF, getWhatsAppLink, type InvoicePDFData } from '@/lib/invoicePdf'
+import type { PrintMode } from '@/lib/documentLayout'
 import { formatCurrency } from '@/lib/utils'
-import { Printer, FileText, MessageCircle, CheckCircle2, X, Download } from 'lucide-react'
+import { Printer, FileText, MessageCircle, CheckCircle2, X, Download, Palette } from 'lucide-react'
 import type { CartItem } from '@/types/database'
 
 export interface PostSaleData {
@@ -12,6 +13,7 @@ export interface PostSaleData {
   businessName: string
   businessAddress?: string | null
   businessPhone?: string | null
+  businessEmail?: string | null
   businessCuit?: string | null
   ivaCondition?: string | null
   iibb?: string | null
@@ -80,13 +82,14 @@ export default function PostSaleModal({ open, onClose, data }: PostSaleModalProp
     setShowTicket(true)
   }
 
-  function handleDownloadPDF() {
+  function handleDownloadPDF(mode: PrintMode = 'bw') {
     if (!data || !isInvoice) return
     const pdfData: InvoicePDFData = {
       businessName: data.businessName,
       businessCuit: data.businessCuit,
       businessAddress: data.businessAddress,
       businessPhone: data.businessPhone,
+      businessEmail: data.businessEmail,
       ivaCondition: data.ivaCondition,
       iibb: data.iibb,
       razonSocial: data.razonSocial,
@@ -113,10 +116,11 @@ export default function PostSaleModal({ open, onClose, data }: PostSaleModalProp
       exento: data.exento,
       paymentMethod: data.paymentMethod,
       installments: data.installments,
+      receiptFooter: data.footer,
       logoUrl: data.logoUrl,
       primaryColor: data.primaryColor,
     }
-    openInvoicePDF(pdfData)
+    openInvoicePDF(pdfData, mode)
   }
 
   function handleWhatsApp() {
@@ -214,20 +218,35 @@ export default function PostSaleModal({ open, onClose, data }: PostSaleModalProp
               </div>
             </button>
 
-            {/* PDF download – only for invoices */}
+            {/* PDF A4 – only for invoices. B/N primero: es como se imprime normalmente. */}
             {isInvoice && (
-              <button
-                onClick={handleDownloadPDF}
-                className="w-full flex items-center gap-3 p-3 rounded-xl border border-white/10 hover:border-blue-300 hover:bg-blue-500/100/10 transition-colors text-left group"
-              >
-                <div className="w-9 h-9 rounded-md bg-blue-500/10 group-hover:bg-blue-500/15 flex items-center justify-center shrink-0 transition-colors">
-                  <Download className="w-5 h-5 text-blue-600 transition" />
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-foreground">Descargar PDF</p>
-                  <p className="text-xs text-muted-foreground">Factura {data.receiptType} en A4 para el cliente</p>
-                </div>
-              </button>
+              <>
+                <button
+                  onClick={() => handleDownloadPDF('bw')}
+                  className="w-full flex items-center gap-3 p-3 rounded-xl border border-white/10 hover:border-blue-300 hover:bg-blue-500/10 transition-colors text-left group"
+                >
+                  <div className="w-9 h-9 rounded-md bg-blue-500/10 group-hover:bg-blue-500/15 flex items-center justify-center shrink-0 transition-colors">
+                    <Download className="w-5 h-5 text-blue-600 transition" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">Descargar PDF · Blanco y negro</p>
+                    <p className="text-xs text-muted-foreground">Comprobante {data.receiptType} en A4, listo para imprimir</p>
+                  </div>
+                </button>
+
+                <button
+                  onClick={() => handleDownloadPDF('color')}
+                  className="w-full flex items-center gap-3 p-3 rounded-xl border border-white/10 hover:border-violet-300 hover:bg-violet-500/10 transition-colors text-left group"
+                >
+                  <div className="w-9 h-9 rounded-md bg-violet-500/10 group-hover:bg-violet-500/15 flex items-center justify-center shrink-0 transition-colors">
+                    <Palette className="w-5 h-5 text-violet-500 transition" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">Descargar PDF · Color</p>
+                    <p className="text-xs text-muted-foreground">Con los colores de tu marca</p>
+                  </div>
+                </button>
+              </>
             )}
 
             {/* WhatsApp – for invoices and tickets with phone */}

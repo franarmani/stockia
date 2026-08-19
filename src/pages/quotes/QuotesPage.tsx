@@ -7,6 +7,7 @@ import { useBusinessStore } from '@/stores/businessStore'
 import { usePOSStore } from '@/stores/posStore'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import { openQuotePDF, getQuoteWhatsAppLink, type QuotePDFData } from '@/lib/quotePdf'
+import type { PrintMode } from '@/lib/documentLayout'
 import { IVA_CONDITIONS, QUOTE_STATUS_LABELS } from '@/types/database'
 import type { Quote, QuoteItem, QuoteStatus, Customer, Product, CartItem } from '@/types/database'
 import Button from '@/components/ui/Button'
@@ -17,7 +18,7 @@ import LoadingSpinner from '@/components/ui/LoadingSpinner'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/Table'
 import QuoteFormModal from './QuoteFormModal'
 import {
-  ClipboardList, Plus, Search, Download, MessageCircle, Eye,
+  ClipboardList, Plus, Search, Printer, Palette, MessageCircle, Eye,
   CheckCircle2, XCircle, Trash2, ShoppingCart,
 } from 'lucide-react'
 import { toast } from 'sonner'
@@ -122,9 +123,12 @@ export default function QuotesPage() {
       businessCuit: b?.cuit,
       businessAddress: b?.address,
       businessPhone: b?.phone,
+      businessEmail: b?.email,
       razonSocial: b?.razon_social,
       domicilioComercial: b?.domicilio_comercial,
       ivaConditionLabel: IVA_CONDITIONS.find(c => c.id === b?.iva_condition)?.label,
+      puntoVenta: b?.punto_venta,
+      receiptFooter: b?.receipt_footer,
       quoteNumber: q.quote_number,
       date: new Date(q.created_at),
       validUntil: q.valid_until ? new Date(`${q.valid_until}T12:00:00`) : null,
@@ -144,10 +148,10 @@ export default function QuotesPage() {
     }
   }
 
-  async function handlePrint(q: Quote) {
+  async function handlePrint(q: Quote, mode: PrintMode = 'bw') {
     const items = await loadItems(q.id)
     if (items.length === 0) { toast.error('El presupuesto no tiene productos'); return }
-    openQuotePDF(buildPdfData(q, items))
+    openQuotePDF(buildPdfData(q, items), mode)
   }
 
   async function handleWhatsApp(q: Quote) {
@@ -341,8 +345,11 @@ export default function QuotesPage() {
                         <Button size="icon" variant="ghost" title="Ver detalle" onClick={() => openDetail(q)}>
                           <Eye className="w-4 h-4" />
                         </Button>
-                        <Button size="icon" variant="ghost" title="Descargar PDF" onClick={() => handlePrint(q)}>
-                          <Download className="w-4 h-4" />
+                        <Button size="icon" variant="ghost" title="PDF blanco y negro" onClick={() => handlePrint(q, 'bw')}>
+                          <Printer className="w-4 h-4" />
+                        </Button>
+                        <Button size="icon" variant="ghost" title="PDF a color" onClick={() => handlePrint(q, 'color')}>
+                          <Palette className="w-4 h-4" />
                         </Button>
                         <Button size="icon" variant="ghost" title="Enviar por WhatsApp" onClick={() => handleWhatsApp(q)}>
                           <MessageCircle className="w-4 h-4" />
@@ -451,8 +458,11 @@ export default function QuotesPage() {
 
             {/* Acciones */}
             <div className="flex flex-wrap gap-2 pt-1">
-              <Button variant="outline" onClick={() => handlePrint(detailQuote)}>
-                <Download className="w-4 h-4" /> PDF
+              <Button variant="outline" onClick={() => handlePrint(detailQuote, 'bw')}>
+                <Printer className="w-4 h-4" /> PDF B/N
+              </Button>
+              <Button variant="outline" onClick={() => handlePrint(detailQuote, 'color')}>
+                <Palette className="w-4 h-4" /> PDF color
               </Button>
               <Button variant="outline" onClick={() => handleWhatsApp(detailQuote)}>
                 <MessageCircle className="w-4 h-4" /> WhatsApp
