@@ -145,10 +145,11 @@ export default function AdminPage() {
 
   async function setStatus(id: string, status: 'active' | 'expired') {
     setUpdating(id)
+    const yesterday = new Date(Date.now() - 86400000).toISOString()
     const updates: Partial<BusinessRow> =
       status === 'active'
         ? { subscription_status: 'active' }
-        : { subscription_status: 'expired' }
+        : { subscription_status: 'expired', trial_ends_at: yesterday }
 
     const { error } = await supabase
       .from('businesses')
@@ -160,7 +161,7 @@ export default function AdminPage() {
     } else {
       toast.success(status === 'active' ? '✅ Cuenta activada' : '🔒 Cuenta desactivada')
       setBusinesses(prev =>
-        prev.map(b => b.id === id ? { ...b, subscription_status: status } : b)
+        prev.map(b => b.id === id ? { ...b, subscription_status: status, trial_ends_at: status === 'expired' ? yesterday : b.trial_ends_at } : b)
       )
     }
     setUpdating(null)

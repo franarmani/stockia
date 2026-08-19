@@ -11,6 +11,7 @@ import {
   Receipt,
   Truck,
   FileText,
+  ClipboardList,
   BarChart3,
   Settings,
   X,
@@ -26,6 +27,7 @@ const MAIN_NAV = [
 const MORE_NAV = [
   { name: 'Compras',      href: '/purchases',     icon: Truck },
   { name: 'Comprobantes', href: '/comprobantes',  icon: FileText },
+  { name: 'Presupuestos', href: '/presupuestos',  icon: ClipboardList },
   { name: 'Caja',         href: '/cash-register', icon: Wallet },
   { name: 'Historial',    href: '/sales',         icon: Receipt },
   { name: 'Reportes',     href: '/reports',       icon: BarChart3 },

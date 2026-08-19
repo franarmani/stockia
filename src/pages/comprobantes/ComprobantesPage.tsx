@@ -265,6 +265,8 @@ export default function ComprobantesPage() {
       netoNoGravado: inv.neto_no_gravado,
       exento: inv.exento,
       paymentMethod: '-',
+      logoUrl: business.logo_url,
+      primaryColor: (business as any).primary_color || undefined,
     }
     openInvoicePDF(pdfData)
   }

@@ -17,6 +17,7 @@ const PAGE_NAMES: Record<string, string> = {
   '/reports':      'Reportes',
   '/settings':     'Configuración',
   '/comprobantes': 'Comprobantes',
+  '/presupuestos': 'Presupuestos',
   '/purchases':    'Compras',
 }
 

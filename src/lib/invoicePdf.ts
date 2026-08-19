@@ -14,6 +14,10 @@ import { formatCurrency } from '@/lib/utils'
 import { IVA_CONDITIONS, DOC_TIPOS, CBTE_TIPOS } from '@/types/database'
 import type { CartItem } from '@/types/database'
 
+import {
+  documentStyles, emitterBlock, printOnReadyScript, openPrintWindow,
+} from '@/lib/documentLayout'
+
 export interface InvoicePDFData {
   // Business
   businessName: string
@@ -121,15 +125,21 @@ export function generateInvoicePDF(data: InvoicePDFData) {
   const fullNumber = `${pad(data.puntoVenta, 5)}-${pad(data.invoiceNumber, 8)}`
 
   const dateStr = data.date.toLocaleDateString('es-AR', {
-    day: '2-digit', month: '2-digit', year: 'numeric',
+    day: '2-digit', month: 'long', year: 'numeric',
   })
+
+  const discountAmount = data.subtotal * data.discount / 100
+  const qrUrl = buildAfipQrUrlPdf(data)
 
   const itemsRows = data.items.map((item) => `
     <tr>
-      <td style="padding:6px 8px;border-bottom:1px solid #e5e7eb;">${item.product.name}${item.product.brand ? ` <span style="color:#9ca3af;font-size:11px;">(${item.product.brand})</span>` : ''}</td>
-      <td style="padding:6px 8px;border-bottom:1px solid #e5e7eb;text-align:center;">${item.quantity}</td>
-      <td style="padding:6px 8px;border-bottom:1px solid #e5e7eb;text-align:right;">${formatCurrency(item.price)}</td>
-      <td style="padding:6px 8px;border-bottom:1px solid #e5e7eb;text-align:right;font-weight:600;">${formatCurrency(item.price * item.quantity)}</td>
+      <td class="desc">
+        <span class="item-name">${item.product.name}</span>
+        ${item.product.brand ? `<span class="item-brand">${item.product.brand}</span>` : ''}
+      </td>
+      <td class="num">${item.quantity}</td>
+      <td class="num">${formatCurrency(item.price)}</td>
+      <td class="num strong">${formatCurrency(item.price * item.quantity)}</td>
     </tr>
   `).join('')
 
@@ -138,154 +148,117 @@ export function generateInvoicePDF(data: InvoicePDFData) {
 <head>
   <meta charset="UTF-8">
   <title>Factura ${letter} ${fullNumber}</title>
-  <style>
-    @page { margin: 15mm; size: A4; }
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 13px; color: #1f2937; line-height: 1.5; }
-    .header { display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 16px; border-bottom: 2px solid #e5e7eb; position: relative; }
-    .header-left { flex: 1; }
-    .header-right { flex: 1; text-align: right; }
-    .letter-box { position: absolute; left: 50%; top: 0; transform: translateX(-50%); width: 56px; height: 56px; border: 3px solid ${color}; display: flex; align-items: center; justify-content: center; font-size: 32px; font-weight: 900; color: ${color}; background: white; z-index: 1; }
-    .biz-name { font-size: 18px; font-weight: 700; color: #111827; }
-    .biz-detail { font-size: 11px; color: #6b7280; }
-    .invoice-type { font-size: 16px; font-weight: 700; color: ${color}; }
-    .invoice-number { font-size: 22px; font-weight: 800; color: #111827; margin-top: 2px; }
-    .section { margin-top: 16px; }
-    .section-title { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #9ca3af; margin-bottom: 6px; }
-    .customer-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 24px; font-size: 12px; }
-    .customer-grid dt { color: #6b7280; }
-    .customer-grid dd { font-weight: 600; }
-    table { width: 100%; border-collapse: collapse; margin-top: 8px; }
-    thead th { background: #f9fafb; padding: 8px; text-align: left; font-size: 11px; font-weight: 700; text-transform: uppercase; color: #6b7280; border-bottom: 2px solid #e5e7eb; }
-    thead th:nth-child(2), thead th:nth-child(3), thead th:nth-child(4) { text-align: right; }
-    thead th:nth-child(2) { text-align: center; }
-    .totals { margin-top: 12px; display: flex; justify-content: flex-end; }
-    .totals-box { width: 280px; }
-    .total-row { display: flex; justify-content: space-between; padding: 4px 0; font-size: 13px; }
-    .total-row.main { font-size: 20px; font-weight: 800; color: ${color}; border-top: 2px solid ${color}; padding-top: 8px; margin-top: 4px; }
-    .cae-section { margin-top: 20px; padding: 12px 16px; border: 2px solid ${color}; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; }
-    .cae-label { font-size: 11px; color: #6b7280; }
-    .cae-value { font-size: 16px; font-weight: 800; color: #111827; letter-spacing: 0.05em; }
-    .footer { margin-top: 24px; text-align: center; font-size: 10px; color: #9ca3af; border-top: 1px solid #e5e7eb; padding-top: 12px; }
-  </style>
+  <style>${documentStyles(color)}</style>
 </head>
 <body>
-  <!-- HEADER -->
-  <div class="header">
-    <div class="header-left">
-      ${data.logoUrl ? `<img src="${data.logoUrl}" alt="Logo" style="max-width:120px;max-height:60px;object-fit:contain;margin-bottom:6px;display:block;" />` : ''}
-      <p class="biz-name">${data.razonSocial || data.businessName}</p>
-      <p class="biz-detail">${data.domicilioComercial || data.businessAddress || ''}</p>
-      ${data.businessCuit ? `<p class="biz-detail">CUIT: ${data.businessCuit}</p>` : ''}
-      <p class="biz-detail">Cond. IVA: ${getIvaLabel(data.ivaCondition)}</p>
-      ${data.iibb ? `<p class="biz-detail">IIBB: ${data.iibb}</p>` : ''}
-      ${data.inicioActividades ? `<p class="biz-detail">Inicio Act.: ${data.inicioActividades}</p>` : ''}
-    </div>
-    <div class="letter-box">${letter}</div>
-    <div class="header-right">
-      <p class="invoice-type">FACTURA</p>
-      <p class="invoice-number">Nro. ${fullNumber}</p>
-      <p class="biz-detail" style="margin-top:4px;">Fecha: ${dateStr}</p>
-      <p class="biz-detail">Pto. Venta: ${pad(data.puntoVenta, 5)}</p>
-    </div>
-  </div>
+  <div class="sheet">
 
-  <!-- CUSTOMER -->
-  <div class="section">
-    <p class="section-title">Datos del cliente</p>
-    <dl class="customer-grid">
-      <dt>Nombre / Razón Social</dt>
-      <dd>${data.customerName || 'Consumidor Final'}</dd>
-      <dt>${getDocLabel(data.customerDocTipo)}</dt>
-      <dd>${data.customerDocNro && data.customerDocNro !== '0' ? data.customerDocNro : '-'}</dd>
-      <dt>Cond. IVA</dt>
-      <dd>${getIvaLabel(data.customerIvaCondition)}</dd>
-      ${data.customerAddress ? `<dt>Domicilio</dt><dd>${data.customerAddress}</dd>` : ''}
-      <dt>Forma de pago</dt>
-      <dd>${PAYMENT_LABELS[data.paymentMethod] || data.paymentMethod}${data.installments && data.installments > 1 ? ` (${data.installments} cuotas)` : ''}</dd>
-    </dl>
-  </div>
+    <div class="top">
+${emitterBlock({
+      businessName: data.businessName,
+      businessCuit: data.businessCuit,
+      businessAddress: data.businessAddress,
+      businessPhone: data.businessPhone,
+      razonSocial: data.razonSocial,
+      domicilioComercial: data.domicilioComercial,
+      ivaConditionLabel: getIvaLabel(data.ivaCondition),
+      iibb: data.iibb,
+      inicioActividades: data.inicioActividades,
+      logoUrl: data.logoUrl,
+    })}
+      <div class="doc-block">
+        <div class="letter-badge">${letter}</div>
+        <p class="doc-title">FACTURA <span>Nº: ${fullNumber}</span></p>
+        <p class="doc-meta">Fecha: ${dateStr}</p>
+        <p class="doc-meta">Punto de venta: ${pad(data.puntoVenta, 5)}</p>
+      </div>
+    </div>
 
-  <!-- ITEMS -->
-  <div class="section">
-    <p class="section-title">Detalle</p>
+    <div class="customer">
+      <p class="block-title">Datos cliente</p>
+      <p>${data.customerName || 'Consumidor Final'}</p>
+      ${data.customerAddress ? `<p>${data.customerAddress}</p>` : ''}
+      <p>${getDocLabel(data.customerDocTipo)}: ${data.customerDocNro && data.customerDocNro !== '0' ? data.customerDocNro : '-'}</p>
+      <p>Cond. IVA: ${getIvaLabel(data.customerIvaCondition)}</p>
+      <p>Forma de pago: ${PAYMENT_LABELS[data.paymentMethod] || data.paymentMethod}${data.installments && data.installments > 1 ? ` (${data.installments} cuotas)` : ''}</p>
+    </div>
+
     <table>
       <thead>
         <tr>
-          <th>Descripción</th>
-          <th>Cant.</th>
-          <th>P. Unitario</th>
-          <th>Subtotal</th>
+          <th>Descripción / Producto</th>
+          <th class="num">Cantidad</th>
+          <th class="num">P. Unitario</th>
+          <th class="num">Total</th>
         </tr>
       </thead>
       <tbody>
         ${itemsRows}
       </tbody>
     </table>
-  </div>
 
-  <!-- TOTALS -->
-  <div class="totals">
-    <div class="totals-box">
-      ${data.discount > 0 ? `
-        <div class="total-row">
-          <span>Descuento ${data.discount}%</span>
-          <span>-${formatCurrency(data.subtotal * data.discount / 100)}</span>
+    <div class="totals">
+      <div class="totals-box">
+        <div class="row">
+          <span class="label">Subtotal</span>
+          <span class="pct"></span>
+          <span class="val">${formatCurrency(data.subtotal)}</span>
         </div>
-      ` : ''}
-      ${data.surchargeAmount > 0 ? `
-        <div class="total-row">
-          <span>Recargo</span>
-          <span>+${formatCurrency(data.surchargeAmount)}</span>
+        ${data.discount > 0 ? `
+        <div class="row">
+          <span class="label">Descuento</span>
+          <span class="pct">${data.discount}%</span>
+          <span class="val">-${formatCurrency(discountAmount)}</span>
+        </div>` : ''}
+        ${data.surchargeAmount > 0 ? `
+        <div class="row">
+          <span class="label">Recargo</span>
+          <span class="pct"></span>
+          <span class="val">+${formatCurrency(data.surchargeAmount)}</span>
+        </div>` : ''}
+        ${isFacturaA ? `
+        <div class="row">
+          <span class="label">Neto gravado</span>
+          <span class="pct"></span>
+          <span class="val">${formatCurrency(data.netoGravado || 0)}</span>
         </div>
-      ` : ''}
-      ${isFacturaA ? `
-        <div class="total-row">
-          <span>Neto gravado</span>
-          <span>${formatCurrency(data.netoGravado || 0)}</span>
+        <div class="row">
+          <span class="label">IVA</span>
+          <span class="pct">21%</span>
+          <span class="val">${formatCurrency(data.ivaAmount || 0)}</span>
+        </div>` : ''}
+        <div class="row grand">
+          <span class="label">Total</span>
+          <span class="pct"></span>
+          <span class="val">${formatCurrency(data.total)}</span>
         </div>
-        <div class="total-row">
-          <span>IVA 21%</span>
-          <span>${formatCurrency(data.ivaAmount || 0)}</span>
-        </div>
-      ` : ''}
-      <div class="total-row main">
-        <span>TOTAL</span>
-        <span>${formatCurrency(data.total)}</span>
       </div>
     </div>
-  </div>
 
-  <!-- CAE -->
-  ${data.cae ? `
-  <div class="cae-section">
-    <div>
-      <p class="cae-label">CAE (Código de Autorización Electrónico)</p>
-      <p class="cae-value">${data.cae}</p>
-      <p class="cae-label" style="margin-top:4px;">Fecha Vto. CAE</p>
-      <p style="font-size:14px;font-weight:700;">${data.caeExpiry || '-'}</p>
+    ${data.cae ? `
+    <div class="callout">
+      <div>
+        <p class="callout-label">CAE (Código de Autorización Electrónico)</p>
+        <p class="callout-value">${data.cae}</p>
+        <p class="callout-label" style="margin-top:8px;">Fecha Vto. CAE</p>
+        <p class="callout-sub">${data.caeExpiry || '-'}</p>
+      </div>
+      ${qrUrl ? `<div style="text-align:center;">
+        <img class="qr" src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrUrl)}" alt="QR AFIP" />
+        <p style="font-size:9px;color:#9ca3af;margin-top:3px;">Comprobante válido</p>
+      </div>` : ''}
+    </div>` : ''}
+
+    <div class="spacer"></div>
+
+    <div class="footer">
+      <p>Gracias por su compra. Ante cualquier consulta sobre este comprobante, comuníquese con nosotros${data.businessPhone ? ` al ${data.businessPhone}` : ''}.</p>
+      <p class="legal">Comprobante electrónico emitido según RG AFIP ${isFacturaA ? '4291' : '4004'}</p>
     </div>
-    ${(() => {
-      const qrUrl = buildAfipQrUrlPdf(data)
-      return qrUrl ? `<div style="text-align:center;">
-        <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(qrUrl)}" alt="QR AFIP" style="width:120px;height:120px;" />
-        <p style="font-size:9px;color:#9ca3af;margin-top:2px;">Comprobante válido como factura</p>
-      </div>` : `<div style="text-align:right;">
-        <p class="cae-label">Fecha Vto. CAE</p>
-        <p style="font-size:14px;font-weight:700;">${data.caeExpiry || '-'}</p>
-      </div>`
-    })()}
-  </div>
-  ` : ''}
 
-  <!-- FOOTER -->
-  <div class="footer">
-    <p>Comprobante electrónico emitido según RG AFIP ${isFacturaA ? '4291' : '4004'}</p>
   </div>
 
-<script>
-  window.onload = function() { window.print(); }
-</script>
+${printOnReadyScript}
 </body>
 </html>`
 
@@ -294,11 +267,7 @@ export function generateInvoicePDF(data: InvoicePDFData) {
 
 /** Open invoice PDF in a new window for printing/saving */
 export function openInvoicePDF(data: InvoicePDFData) {
-  const html = generateInvoicePDF(data)
-  const w = window.open('', '_blank', 'width=800,height=1000')
-  if (!w) return
-  w.document.write(html)
-  w.document.close()
+  openPrintWindow(generateInvoicePDF(data))
 }
 
 /** Generate a WhatsApp share link with invoice summary */

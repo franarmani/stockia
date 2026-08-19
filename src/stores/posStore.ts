@@ -22,6 +22,8 @@ interface POSState {
   customerId: string | null
   /** Mixed payments: when length > 0 it means multi-payment mode */
   paymentSplits: PaymentSplit[]
+  /** Presupuesto que originó este carrito; al cobrar se lo marca como vendido. */
+  sourceQuoteId: string | null
   addItem: (product: Product, qty?: number) => void
   removeItem: (productId: string) => void
   updateQuantity: (productId: string, quantity: number) => void
@@ -33,6 +35,8 @@ interface POSState {
   setPmDiscountPct: (pct: number) => void
   setCustomerId: (id: string | null) => void
   setPaymentSplits: (splits: PaymentSplit[]) => void
+  /** Reemplaza el carrito completo — usado al convertir un presupuesto en venta. */
+  loadCart: (items: CartItem[], opts?: { discount?: number; customerId?: string | null; sourceQuoteId?: string | null }) => void
   getSubtotal: () => number
   getTotal: () => number
   clearCart: () => void
@@ -61,6 +65,7 @@ export const usePOSStore = create<POSState>((set, get) => ({
   pmDiscountPct: 0,
   customerId: null,
   paymentSplits: [],
+  sourceQuoteId: null,
 
   addItem: (product: Product, qty?: number) => {
     const items = get().items
@@ -125,5 +130,18 @@ export const usePOSStore = create<POSState>((set, get) => ({
     return Math.round(afterPm * 100) / 100
   },
 
-  clearCart: () => set({ items: [], discount: 0, customerId: null, paymentMethod: 'cash', receiptType: 'ticket', installments: 1, surchargePct: 0, pmDiscountPct: 0, paymentSplits: [] }),
+  loadCart: (items, opts) => set({
+    items,
+    discount: opts?.discount ?? 0,
+    customerId: opts?.customerId ?? null,
+    paymentMethod: 'cash',
+    receiptType: 'ticket',
+    installments: 1,
+    surchargePct: 0,
+    pmDiscountPct: 0,
+    paymentSplits: [],
+    sourceQuoteId: opts?.sourceQuoteId ?? null,
+  }),
+
+  clearCart: () => set({ items: [], discount: 0, customerId: null, paymentMethod: 'cash', receiptType: 'ticket', installments: 1, surchargePct: 0, pmDiscountPct: 0, paymentSplits: [], sourceQuoteId: null }),
 }))

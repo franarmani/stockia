@@ -14,7 +14,7 @@ import SubscriptionGuard from '@/features/subscription/components/SubscriptionGu
 import UpdateNotificationModal from '@/components/modals/UpdateNotificationModal'
 
 // ── VERSIONING ──
-const APP_VERSION = '1.9.5' // Local version — bump together with public/version.json on every deploy
+const APP_VERSION = '1.10.0' // Local version — bump together with public/version.json on every deploy
 
 // ── localStorage cache helpers ──
 const PROFILE_CACHE_KEY = 'stockia_profile'
@@ -50,6 +50,7 @@ const ReportsPage = lazy(() => import('@/pages/reports/ReportsPage'))
 const SettingsPage = lazy(() => import('@/pages/settings/SettingsPage'))
 const PurchasesPage = lazy(() => import('@/pages/purchases/PurchasesPage'))
 const ComprobantesPage = lazy(() => import('@/pages/comprobantes/ComprobantesPage'))
+const QuotesPage = lazy(() => import('@/pages/quotes/QuotesPage'))
 const LandingPage = lazy(() => import('@/pages/landing/LandingPage'))
 const SubscriptionBlockedPage = lazy(() => import('@/pages/subscription/SubscriptionBlockedPage'))
 const ProductDetailPage = lazy(() => import('@/pages/products/ProductDetailPage'))
@@ -87,13 +88,6 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
     return () => clearTimeout(timer)
   }, [sessionClosed])
 
-  useEffect(() => {
-    if (profile?.email === 'francoarmani107@gmail.com') {
-      supabase.from('businesses').update({ subscription_status: 'expired' })
-        .eq('email', 'productos.caloclor@gmail.com')
-        .then(() => console.log('Fixed Caloclor db state'))
-    }
-  }, [profile?.email])
 
   useEffect(() => {
     try {
@@ -381,6 +375,7 @@ export default function App() {
           <Route path="products/:id" element={<SubscriptionGuard mode="block"><ProductDetailPage /></SubscriptionGuard>} />
           <Route path="purchases" element={<SubscriptionGuard mode="block"><PurchasesPage /></SubscriptionGuard>} />
           <Route path="comprobantes" element={<SubscriptionGuard mode="block"><ComprobantesPage /></SubscriptionGuard>} />
+          <Route path="presupuestos" element={<SubscriptionGuard mode="block"><QuotesPage /></SubscriptionGuard>} />
           <Route path="customers" element={<SubscriptionGuard mode="block"><CustomersPage /></SubscriptionGuard>} />
           <Route path="cash-register" element={<SubscriptionGuard mode="block"><CashRegisterPage /></SubscriptionGuard>} />
           <Route path="sales" element={<SubscriptionGuard mode="block"><SalesHistoryPage /></SubscriptionGuard>} />

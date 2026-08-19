@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
+import { quotesDb } from '@/lib/quotesDb'
 import { fetchAllProductsInBatches } from '@/lib/productService'
 import { useAuthStore } from '@/stores/authStore'
 import { useBusinessStore } from '@/stores/businessStore'
@@ -71,7 +72,7 @@ export default function POSPage() {
   const navigate = useNavigate()
   const { profile } = useAuthStore()
   const {
-    items, discount, paymentMethod, customerId,
+    items, discount, paymentMethod, customerId, sourceQuoteId,
     receiptType, installments, surchargePct, pmDiscountPct, paymentSplits,
     addItem, removeItem, updateQuantity, setDiscount,
     setPaymentMethod, setCustomerId, getSubtotal, getTotal, clearCart,
@@ -473,6 +474,14 @@ export default function POSPage() {
       }
 
       setLastSaleId(sale.id)
+
+      // Si la venta vino de un presupuesto, dejarlo enlazado y cerrado.
+      if (sourceQuoteId) {
+        await quotesDb
+          .from('quotes')
+          .update({ sale_id: (sale as any).id, status: 'accepted' })
+          .eq('id', sourceQuoteId)
+      }
 
       let invoiceCae: string | null = null
       let invoiceCaeExpiry: string | null = null

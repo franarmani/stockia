@@ -892,6 +892,47 @@ export type CustomerPayment = Database['public']['Tables']['customer_payments'][
 export type InvoiceItem = Database['public']['Tables']['invoice_items']['Row']
 
 /* ----------------------------------------------------------------
+   Presupuestos (documento no fiscal)
+   ---------------------------------------------------------------- */
+
+export type QuoteStatus = 'pending' | 'accepted' | 'rejected' | 'expired'
+
+export const QUOTE_STATUS_LABELS: Record<QuoteStatus, string> = {
+  pending: 'Pendiente',
+  accepted: 'Aceptado',
+  rejected: 'Rechazado',
+  expired: 'Vencido',
+}
+
+export interface Quote {
+  id: string
+  business_id: string
+  quote_number: number
+  customer_id: string | null
+  customer_name: string | null
+  customer_phone: string | null
+  status: QuoteStatus
+  subtotal: number
+  discount: number
+  total: number
+  valid_until: string | null
+  notes: string | null
+  sale_id: string | null
+  seller_id: string | null
+  created_at: string
+}
+
+export interface QuoteItem {
+  id: string
+  quote_id: string
+  product_id: string | null
+  description: string
+  quantity: number
+  price: number
+  created_at: string
+}
+
+/* ----------------------------------------------------------------
    NEW v6 TABLES
    ---------------------------------------------------------------- */
 
