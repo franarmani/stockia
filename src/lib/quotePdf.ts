@@ -111,8 +111,8 @@ ${emitterBlock({
     logoUrl: data.logoUrl,
   })}
       <div class="doc-block">
-        <p class="doc-title">COMPROBANTE</p>
-        <p class="doc-kind">Presupuesto</p>
+        <p class="doc-title">PRESUPUESTO</p>
+        <p class="doc-kind">Documento no fiscal</p>
         <p class="doc-number">Nº ${number}</p>
         <p class="doc-meta">Fecha: <strong>${formatDate(data.date)}</strong></p>
         ${data.validUntil ? `<p class="doc-meta">Válido hasta: <strong>${formatDate(data.validUntil)}</strong></p>` : ''}

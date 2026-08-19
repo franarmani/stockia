@@ -230,7 +230,7 @@ export default function PostSaleModal({ open, onClose, data }: PostSaleModalProp
                   </div>
                   <div>
                     <p className="text-sm font-semibold text-foreground">Descargar PDF · Blanco y negro</p>
-                    <p className="text-xs text-muted-foreground">Comprobante {data.receiptType} en A4, listo para imprimir</p>
+                    <p className="text-xs text-muted-foreground">Factura {data.receiptType} en A4, lista para imprimir</p>
                   </div>
                 </button>
 

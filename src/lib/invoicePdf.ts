@@ -155,7 +155,7 @@ export function generateInvoicePDF(data: InvoicePDFData, mode: PrintMode = 'colo
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Comprobante ${letter} ${fullNumber}</title>
+  <title>Factura ${letter} ${fullNumber}</title>
   <style>${documentStyles(color, mode)}</style>
 </head>
 <body>
@@ -181,8 +181,8 @@ ${emitterBlock({
           <span class="letter">${letter}</span>
           ${cbteCode ? `<span class="code">COD. ${cbteCode}</span>` : ''}
         </div>
-        <p class="doc-title">COMPROBANTE</p>
-        <p class="doc-kind">Factura ${letter}</p>
+        <p class="doc-title">FACTURA ${letter}</p>
+        <p class="doc-kind">Comprobante autorizado</p>
         <p class="doc-number">Nº ${fullNumber}</p>
         <p class="doc-meta">Fecha: <strong>${dateStr}</strong></p>
       </div>
