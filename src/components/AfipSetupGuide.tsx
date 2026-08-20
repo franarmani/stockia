@@ -56,12 +56,13 @@ const STEPS: Step[] = [
         </p>
         <ol className="list-decimal ml-4 mt-2 space-y-1 text-white/50">
           <li>«Agregar alias» y ponele un nombre, por ejemplo <code className="text-white/70">stockia</code>.</li>
-          <li>Subí el archivo CSR que descargaste.</li>
+          <li>Subí el archivo CSR del paso anterior y confirmá con «Agregar alias».</li>
           <li>AFIP te devuelve un certificado <code className="text-white/70">.crt</code>: descargalo.</li>
         </ol>
-        <p className="mt-2">
-          Si el servicio no te aparece en el listado, hay que habilitarlo primero desde
-          «Administrador de Relaciones de Clave Fiscal».
+        <p className="mt-2 text-amber-400/70">
+          Si dice «El Request enviado es inválido», el archivo no es el correcto: tiene que ser
+          el <code className="text-white/70">.csr</code> descargado desde acá, sin abrirlo ni
+          modificarlo.
         </p>
       </>
     ),
@@ -76,14 +77,20 @@ const STEPS: Step[] = [
           certificado para facturar:
         </p>
         <ol className="list-decimal ml-4 mt-2 space-y-1 text-white/50">
-          <li>«Nueva Relación» → Servicio → AFIP → WebServices.</li>
-          <li>Elegí <strong>«Facturación Electrónica»</strong> (wsfe).</li>
-          <li>Como representante, seleccioná el certificado que creaste recién.</li>
+          <li>«Nueva Relación» → en <strong>Servicio</strong>, «Buscar» → AFIP → WebServices → «Facturación Electrónica».</li>
+          <li>
+            En <strong>Representante</strong>, «Buscar»: ahí tiene que aparecer el alias
+            <code className="text-white/70"> stockia</code> que creaste en el paso anterior. Seleccionalo.
+          </li>
+          <li>Confirmá la relación.</li>
         </ol>
-        <p className="mt-2 text-amber-400/70">
-          Este paso se saltea seguido y es el motivo más común de que la conexión falle
-          aunque el certificado esté bien subido.
-        </p>
+        <div className="mt-2 rounded-lg bg-amber-500/10 border border-amber-500/20 p-2">
+          <p className="text-amber-400/90 font-semibold">Si en «Representante» no aparece nada</p>
+          <p className="text-amber-400/60 mt-0.5">
+            Es porque todavía no existe el certificado. Volvé al paso 3, creá el alias y descargá
+            el <code className="text-white/70">.crt</code>; recién después vas a poder seleccionarlo acá.
+          </p>
+        </div>
       </>
     ),
   },

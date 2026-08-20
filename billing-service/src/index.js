@@ -307,11 +307,16 @@ app.post('/generate-csr', authMiddleware, (req, res) => {
     const privateKeyPem = forge.pki.privateKeyToPem(keys.privateKey)
 
     // Generate CSR
+    //
+    // AFIP exige el subject completo y en este orden: país, organización,
+    // nombre común y el CUIT como serialNumber. Sin countryName rechaza el
+    // pedido con "El Request enviado es inválido".
     const csr = forge.pki.createCertificationRequest()
     csr.publicKey = keys.publicKey
     csr.setSubject([
-      { name: 'commonName', value: `STOCKIA-${cleanCuit}` },
+      { name: 'countryName', value: 'AR' },
       { name: 'organizationName', value: razon_social || `CUIT ${cleanCuit}` },
+      { name: 'commonName', value: `stockia-${cleanCuit}` },
       { shortName: 'serialNumber', value: `CUIT ${cleanCuit}` },
     ])
     csr.sign(keys.privateKey, forge.md.sha256.create())
