@@ -16,7 +16,7 @@ import type { CartItem } from '@/types/database'
 
 import {
   documentStyles, emitterBlock, printOnReadyScript, openPrintWindow,
-  resolveAccent, type PrintMode,
+  resolveAccent, inlineImage, type PrintMode,
 } from '@/lib/documentLayout'
 
 export interface InvoicePDFData {
@@ -282,8 +282,9 @@ ${printOnReadyScript}
 }
 
 /** Abre la factura en ventana nueva para imprimir o guardar como PDF. */
-export function openInvoicePDF(data: InvoicePDFData, mode: PrintMode = 'color') {
-  openPrintWindow(generateInvoicePDF(data, mode))
+export async function openInvoicePDF(data: InvoicePDFData, mode: PrintMode = 'color') {
+  const logoUrl = await inlineImage(data.logoUrl)
+  openPrintWindow(generateInvoicePDF({ ...data, logoUrl }, mode))
 }
 
 /** Generate a WhatsApp share link with invoice summary */

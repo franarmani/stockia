@@ -9,7 +9,7 @@
 import { formatCurrency } from '@/lib/utils'
 import {
   documentStyles, emitterBlock, printOnReadyScript, openPrintWindow,
-  resolveAccent, type PrintMode,
+  resolveAccent, inlineImage, type PrintMode,
 } from '@/lib/documentLayout'
 
 export interface QuoteItemData {
@@ -198,8 +198,9 @@ ${printOnReadyScript}
 }
 
 /** Abre el presupuesto en ventana nueva para imprimir o guardar como PDF. */
-export function openQuotePDF(data: QuotePDFData, mode: PrintMode = 'color') {
-  openPrintWindow(generateQuotePDF(data, mode))
+export async function openQuotePDF(data: QuotePDFData, mode: PrintMode = 'color') {
+  const logoUrl = await inlineImage(data.logoUrl)
+  openPrintWindow(generateQuotePDF({ ...data, logoUrl }, mode))
 }
 
 /** Link de WhatsApp con el resumen del presupuesto. */

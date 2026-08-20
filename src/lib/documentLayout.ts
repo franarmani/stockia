@@ -20,6 +20,37 @@ export function absoluteUrl(url: string | null | undefined): string | null {
   return new URL(url, window.location.origin).href
 }
 
+/**
+ * Convierte el logo a data URI antes de armar el documento.
+ *
+ * El PDF se imprime desde una ventana about:blank, así que una URL suelta
+ * puede no resolver: las rutas relativas caen en el rewrite de Vercel, que
+ * devuelve index.html en lugar de la imagen, y el logo sale roto. Embebido
+ * no depende de la red ni del ruteo.
+ *
+ * Si la descarga falla se devuelve null y el documento cae al nombre del
+ * negocio, que es preferible a imprimir un ícono de imagen rota.
+ */
+export async function inlineImage(url: string | null | undefined): Promise<string | null> {
+  const src = absoluteUrl(url)
+  if (!src) return null
+  if (src.startsWith('data:')) return src
+  try {
+    const res = await fetch(src, { cache: 'no-cache' })
+    if (!res.ok) return null
+    const blob = await res.blob()
+    if (!blob.type.startsWith('image/')) return null // el rewrite devolvió HTML
+    return await new Promise<string | null>((resolve) => {
+      const reader = new FileReader()
+      reader.onloadend = () => resolve(typeof reader.result === 'string' ? reader.result : null)
+      reader.onerror = () => resolve(null)
+      reader.readAsDataURL(blob)
+    })
+  } catch {
+    return null
+  }
+}
+
 /** En blanco y negro el acento pasa a negro; el resto de la paleta ya es gris. */
 export function resolveAccent(color: string, mode: PrintMode): string {
   return mode === 'bw' ? '#111827' : color
@@ -232,7 +263,10 @@ export function emitterBlock(data: EmitterData): string {
   ].filter(Boolean)
 
   const contact = [
-    data.domicilioComercial || data.businessAddress || '',
+    // La dirección de "Datos del negocio" manda: es la única editable desde
+    // Configuración. domicilio_comercial no tiene input y suele traer datos
+    // viejos, así que sólo se usa si la otra está vacía.
+    data.businessAddress || data.domicilioComercial || '',
     data.businessPhone ? `Tel: ${data.businessPhone}` : '',
     data.businessEmail || '',
   ].filter(Boolean)

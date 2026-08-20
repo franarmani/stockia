@@ -590,6 +590,22 @@ export default function SettingsPage() {
                             className="w-full h-9 px-3 rounded-xl border border-white/10 bg-white/5 text-white text-sm focus:outline-none focus:border-primary/40" />
                         </div>
                       </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-xs text-white/50 mb-1">Razón social</label>
+                          <input type="text" value={form.razon_social} onChange={(e) => setForm({ ...form, razon_social: e.target.value })}
+                            placeholder={form.name || 'Como figura en AFIP'}
+                            className="w-full h-9 px-3 rounded-xl border border-white/10 bg-white/5 text-white text-sm focus:outline-none focus:border-primary/40 placeholder:text-white/20" />
+                          <p className="text-[11px] text-white/30 mt-1">Si lo dejás vacío se usa el nombre del negocio.</p>
+                        </div>
+                        <div>
+                          <label className="block text-xs text-white/50 mb-1">Domicilio comercial</label>
+                          <input type="text" value={form.domicilio_comercial} onChange={(e) => setForm({ ...form, domicilio_comercial: e.target.value })}
+                            placeholder={form.address || 'Como figura en AFIP'}
+                            className="w-full h-9 px-3 rounded-xl border border-white/10 bg-white/5 text-white text-sm focus:outline-none focus:border-primary/40 placeholder:text-white/20" />
+                          <p className="text-[11px] text-white/30 mt-1">Si lo dejás vacío se usa la dirección del negocio.</p>
+                        </div>
+                      </div>
                       <div className="flex justify-end">
                         <Button size="sm" onClick={handleSaveFiscalAndContinue} disabled={!fiscalComplete || saving}>
                           {saving ? 'Guardando...' : 'Guardar y continuar'}
