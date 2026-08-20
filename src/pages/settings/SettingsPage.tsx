@@ -226,8 +226,20 @@ export default function SettingsPage() {
       // dentro y se anunciaba como exitoso. AFIP lo rechazaba con "El Request
       // enviado es invalido" y no habia forma de saber por que.
       if (error || !data?.csr_pem) {
-        const detalle = (error as any)?.message || (data as any)?.error || 'el servicio de facturación no respondió'
-        toast.error(`No se pudo generar el CSR: ${detalle}`, { duration: 8000 })
+        // invoke() descarta el cuerpo de la respuesta cuando el status no es
+        // 2xx, asi que el motivo real queda en context.body y hay que leerlo.
+        let detalle = (data as any)?.error || (error as any)?.message || 'el servicio de facturación no respondió'
+        try {
+          const res = (error as any)?.context
+          if (res && typeof res.text === 'function') {
+            const body = await res.text()
+            const parsed = JSON.parse(body)
+            if (parsed?.error) detalle = parsed.error
+          }
+        } catch { /* nos quedamos con el mensaje generico */ }
+
+        console.error('[CSR] fallo:', detalle, error)
+        toast.error(`No se pudo generar el CSR: ${detalle}`, { duration: 12000 })
         setGeneratingCsr(false)
         return
       }
