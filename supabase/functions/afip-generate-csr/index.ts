@@ -82,7 +82,7 @@ serve(async (req) => {
 
     if (!csrRes.ok) {
       const errBody = await csrRes.text()
-      throw new Error(`El servicio de facturación respondió ${csrRes.status}: ${errBody.slice(0, 300)}`)
+      throw new Error(`El servicio de facturación (${BILLING_SERVICE_URL}) respondió ${csrRes.status}: ${errBody.slice(0, 200)}`)
     }
 
     const { csr_pem, private_key_enc } = await csrRes.json()
