@@ -17,12 +17,30 @@ interface FiscalState {
   updateCertStatus: (status: CertStatus) => void
 }
 
+/**
+ * El entorno elegido se recuerda: arrancaba siempre en 'homo', asi que un
+ * negocio con el certificado en produccion no encontraba su configuracion y
+ * el POS mostraba las facturas como no disponibles.
+ */
+const ENV_KEY = 'stockia_fiscal_env'
+
+function loadEnv(): FiscalEnv {
+  try {
+    const v = localStorage.getItem(ENV_KEY)
+    if (v === 'homo' || v === 'prod') return v
+  } catch {}
+  return 'homo'
+}
+
 export const useFiscalStore = create<FiscalState>((set, get) => ({
   settings: null,
   loading: false,
-  env: 'homo',
+  env: loadEnv(),
 
-  setEnv: (env) => set({ env }),
+  setEnv: (env) => {
+    try { localStorage.setItem(ENV_KEY, env) } catch {}
+    set({ env })
+  },
 
   fetchSettings: async (businessId, env) => {
     const currentEnv = env || get().env
@@ -38,6 +56,24 @@ export const useFiscalStore = create<FiscalState>((set, get) => ({
       if (error) {
         console.warn('Error fetching fiscal settings:', error.message)
       }
+
+      // Sin config en este entorno, probar el otro: el certificado puede estar
+      // cargado en produccion mientras el store arranco en homologacion.
+      if (!data) {
+        const otherEnv: FiscalEnv = currentEnv === 'prod' ? 'homo' : 'prod'
+        const { data: other } = await supabase
+          .from('fiscal_settings')
+          .select('*')
+          .eq('business_id', businessId)
+          .eq('env', otherEnv)
+          .maybeSingle()
+        if (other) {
+          try { localStorage.setItem(ENV_KEY, otherEnv) } catch {}
+          set({ settings: other as unknown as FiscalSettings, loading: false, env: otherEnv })
+          return
+        }
+      }
+
       set({ settings: (data as unknown as FiscalSettings) ?? null, loading: false, env: currentEnv })
     } catch {
       set({ loading: false })

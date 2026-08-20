@@ -56,6 +56,14 @@ const RECEIPT_TYPES: { id: ReceiptType; label: string; desc: string }[] = [
   { id: 'C', label: 'Factura C', desc: 'Monotributo' },
 ]
 
+/** Estado del certificado, en palabras que se entiendan en el POS. */
+const CERT_STATUS_LABELS: Record<string, string> = {
+  missing: 'sin iniciar',
+  csr_generated: 'pedido generado, falta subir el certificado de AFIP',
+  crt_uploaded: 'certificado subido, falta probar la conexión',
+  connected: 'conectada',
+}
+
 const CUOTA_OPTIONS = [
   { n: 1, label: '1 pago', surcharge: 0 },
   { n: 3, label: '3 cuotas', surcharge: 15 },
@@ -83,6 +91,13 @@ export default function POSPage() {
   const fiscalCertStatus = useFiscalStore((s) => s.settings?.cert_status)
   const isFiscalConnected = fiscalCertStatus === 'connected'
   const fiscalEnv = useFiscalStore((s) => s.env)
+  const fetchFiscalSettings = useFiscalStore((s) => s.fetchSettings)
+
+  // La config fiscal solo la cargaba SettingsPage, asi que entrando directo al
+  // POS cert_status quedaba undefined y las facturas aparecian deshabilitadas.
+  useEffect(() => {
+    if (profile?.business_id) fetchFiscalSettings(profile.business_id)
+  }, [profile?.business_id])
 
   // Con AFIP conectado se factura por defecto, con la letra que corresponde a
   // la condición de IVA del negocio. Sin elección previa el POS arrancaba
@@ -1395,9 +1410,19 @@ export default function POSPage() {
             )
           })}
           {!isFiscalConnected && (
-            <p className="text-xs text-amber-400/80 bg-amber-500/10 border border-amber-500/15 rounded-xl p-2.5 text-center mt-2">
-              Las facturas A/B/C requieren conexión AFIP. Configurala en Ajustes.
-            </p>
+            <div className="text-xs text-amber-400/80 bg-amber-500/10 border border-amber-500/15 rounded-xl p-2.5 mt-2 space-y-1.5">
+              <p className="text-center">
+                {fiscalCertStatus
+                  ? `La conexión con AFIP figura como "${CERT_STATUS_LABELS[fiscalCertStatus] || fiscalCertStatus}". Hay que terminar de configurarla para facturar.`
+                  : 'No encontramos la configuración de AFIP de este negocio.'}
+              </p>
+              <button
+                onClick={() => { setShowReceiptModal(false); navigate('/settings') }}
+                className="w-full h-8 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 font-semibold transition"
+              >
+                Ir a Facturación AFIP
+              </button>
+            </div>
           )}
         </div>
       </Modal>
