@@ -287,14 +287,39 @@ export default function SettingsPage() {
     setTestingAfip(true); setAfipTestResult('idle'); setAfipTestMsg('')
     try {
       const { data, error } = await supabase.functions.invoke('afip-test', { body: { env: fiscalEnv } })
+
+      // Antes, si la prueba fallaba se marcaba igual como "connected" y se
+      // mostraba "Conexión simulada OK". El negocio quedaba habilitado para
+      // facturar sin que nadie hubiera hablado con AFIP.
       if (error) {
-        updateCertStatus('connected'); setAfipTestResult('success')
-        setAfipTestMsg('Conexión simulada OK')
-        setTestingAfip(false); return
+        let detalle = (error as any)?.message || 'no se pudo contactar al servicio'
+        try {
+          const res = (error as any)?.context
+          if (res && typeof res.text === 'function') {
+            const parsed = JSON.parse(await res.text())
+            if (parsed?.error) detalle = parsed.error
+          }
+        } catch { /* nos quedamos con el mensaje generico */ }
+
+        console.error('[AFIP test] fallo:', detalle, error)
+        setAfipTestResult('error')
+        setAfipTestMsg(detalle)
+        setTestingAfip(false)
+        return
       }
-      if (data?.ok) { updateCertStatus('connected'); setAfipTestResult('success'); setAfipTestMsg(data.message || 'Conexión exitosa') }
-      else { setAfipTestResult('error'); setAfipTestMsg(data?.error || 'Error de conexión') }
-    } catch { setAfipTestResult('error'); setAfipTestMsg('Error al conectar') }
+
+      if (data?.ok) {
+        updateCertStatus('connected')
+        setAfipTestResult('success')
+        setAfipTestMsg(data.message || 'Conexión exitosa')
+      } else {
+        setAfipTestResult('error')
+        setAfipTestMsg(data?.error || 'Error de conexión')
+      }
+    } catch (err: any) {
+      setAfipTestResult('error')
+      setAfipTestMsg(err?.message || 'Error al conectar')
+    }
     setTestingAfip(false)
   }
 
