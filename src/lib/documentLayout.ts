@@ -56,6 +56,20 @@ export function resolveAccent(color: string, mode: PrintMode): string {
   return mode === 'bw' ? '#111827' : color
 }
 
+/**
+ * Pasa una fecha a dd/mm/aaaa. Los campos de tipo date llegan en ISO
+ * (2022-08-01) y así se imprimían en el documento.
+ */
+export function formatDateEs(value: string | null | undefined): string {
+  if (!value) return ''
+  const iso = /^(\d{4})-(\d{2})-(\d{2})/.exec(value)
+  if (iso) return `${iso[3]}/${iso[2]}/${iso[1]}`
+  // AFIP devuelve el vencimiento del CAE como aaaammdd, sin separadores.
+  const compact = /^(\d{4})(\d{2})(\d{2})$/.exec(value.trim())
+  if (compact) return `${compact[3]}/${compact[2]}/${compact[1]}`
+  return value
+}
+
 export interface EmitterData {
   businessName: string
   businessCuit?: string | null
@@ -117,6 +131,9 @@ export function documentStyles(color: string, mode: PrintMode = 'color'): string
     .emitter .name {
       font-size: 15px; font-weight: 700; color: #111827;
       margin-bottom: 2px; letter-spacing: -0.01em;
+    }
+    .emitter .legal-name {
+      font-size: 12px; font-weight: 600; color: #4b5563; margin-bottom: 2px;
     }
     .emitter .fiscal {
       margin-top: 7px; padding-top: 7px;
@@ -254,11 +271,19 @@ export function documentStyles(color: string, mode: PrintMode = 'color'): string
  */
 export function emitterBlock(data: EmitterData): string {
   const logoSrc = absoluteUrl(data.logoUrl)
+
+  // Sin logo el nombre ya va en grande arriba; repetirlo abajo es ruido.
+  // La razón social sólo se muestra aparte cuando difiere del nombre comercial.
+  const displayName = data.businessName || data.razonSocial || ''
+  const legalName = data.razonSocial && data.razonSocial !== displayName
+    ? data.razonSocial
+    : null
+
   const fiscal = [
     data.businessCuit ? `CUIT: ${data.businessCuit}` : '',
     data.ivaConditionLabel ? `Cond. IVA: ${data.ivaConditionLabel}` : '',
     data.iibb ? `IIBB: ${data.iibb}` : '',
-    data.inicioActividades ? `Inicio de actividades: ${data.inicioActividades}` : '',
+    data.inicioActividades ? `Inicio de actividades: ${formatDateEs(data.inicioActividades)}` : '',
     data.puntoVenta ? `Punto de venta: ${String(data.puntoVenta).padStart(5, '0')}` : '',
   ].filter(Boolean)
 
@@ -275,9 +300,10 @@ export function emitterBlock(data: EmitterData): string {
       <div class="brand">
         ${logoSrc
           ? `<img class="logo" src="${logoSrc}" alt="Logo" />`
-          : `<p class="logo-fallback">${data.razonSocial || data.businessName}</p>`}
+          : `<p class="logo-fallback">${displayName}</p>`}
         <div class="emitter">
-          <p class="name">${data.razonSocial || data.businessName}</p>
+          ${logoSrc ? `<p class="name">${displayName}</p>` : ''}
+          ${legalName ? `<p class="legal-name">${legalName}</p>` : ''}
           ${contact.map(l => `<p>${l}</p>`).join('')}
           ${fiscal.length > 0 ? `<div class="fiscal">${fiscal.map(l => `<p>${l}</p>`).join('')}</div>` : ''}
         </div>

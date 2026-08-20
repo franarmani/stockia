@@ -16,7 +16,7 @@ import type { CartItem } from '@/types/database'
 
 import {
   documentStyles, emitterBlock, printOnReadyScript, openPrintWindow,
-  resolveAccent, inlineImage, type PrintMode,
+  resolveAccent, inlineImage, formatDateEs, type PrintMode,
 } from '@/lib/documentLayout'
 
 export interface InvoicePDFData {
@@ -136,6 +136,14 @@ export function generateInvoicePDF(data: InvoicePDFData, mode: PrintMode = 'colo
   const discountAmount = data.subtotal * data.discount / 100
   const qrUrl = buildAfipQrUrlPdf(data)
 
+  // Los datos del cliente que no tenemos se omiten: una fila con un guion
+  // ocupa lugar sin decir nada.
+  const hasDoc = !!data.customerDocNro && data.customerDocNro !== '0'
+  const rawPayment = PAYMENT_LABELS[data.paymentMethod] || data.paymentMethod
+  const paymentLabel = rawPayment && rawPayment !== '-'
+    ? `${rawPayment}${data.installments && data.installments > 1 ? ` (${data.installments} cuotas)` : ''}`
+    : ''
+
   // Código AFIP del tipo de comprobante, para que la letra no quede ambigua.
   const cbteCode = ({ A: '01', B: '06', C: '11' } as Record<string, string>)[letter] || ''
 
@@ -192,10 +200,10 @@ ${emitterBlock({
       <p class="block-title">Datos del cliente</p>
       <p class="cname">${data.customerName || 'Consumidor Final'}</p>
       <div class="customer-grid">
-        <p class="field"><span>${getDocLabel(data.customerDocTipo)}:</span> ${data.customerDocNro && data.customerDocNro !== '0' ? data.customerDocNro : '-'}</p>
-        <p class="field"><span>Cond. IVA:</span> ${getIvaLabel(data.customerIvaCondition)}</p>
+        ${hasDoc ? `<p class="field"><span>${getDocLabel(data.customerDocTipo)}:</span> ${data.customerDocNro}</p>` : ''}
+        ${data.customerIvaCondition ? `<p class="field"><span>Cond. IVA:</span> ${getIvaLabel(data.customerIvaCondition)}</p>` : ''}
         ${data.customerAddress ? `<p class="field"><span>Domicilio:</span> ${data.customerAddress}</p>` : ''}
-        <p class="field"><span>Forma de pago:</span> ${PAYMENT_LABELS[data.paymentMethod] || data.paymentMethod}${data.installments && data.installments > 1 ? ` (${data.installments} cuotas)` : ''}</p>
+        ${paymentLabel ? `<p class="field"><span>Forma de pago:</span> ${paymentLabel}</p>` : ''}
       </div>
     </div>
 
@@ -257,7 +265,7 @@ ${emitterBlock({
         <p class="callout-label">CAE (Código de Autorización Electrónico)</p>
         <p class="callout-value">${data.cae}</p>
         <p class="callout-label" style="margin-top:8px;">Fecha Vto. CAE</p>
-        <p class="callout-sub">${data.caeExpiry || '-'}</p>
+        <p class="callout-sub">${formatDateEs(data.caeExpiry) || '-'}</p>
       </div>
       ${qrUrl ? `<div style="text-align:center;">
         <img class="qr" src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrUrl)}" alt="QR AFIP" />
