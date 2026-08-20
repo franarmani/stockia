@@ -189,40 +189,18 @@ export async function authorizeInvoice(invoiceId: string): Promise<AFIPInvoiceRe
 }
 
 /**
- * Local fallback when Edge Function isn't deployed.
- * Generates a fake CAE for development/testing.
- * In production, remove this and ensure the Edge Function is running.
+ * Antes esto devolvia un CAE inventado cuando AFIP no respondia, y la venta
+ * seguia como si estuviera autorizada: se entregaban facturas sin validez
+ * fiscal y sin declarar. Ahora falla de forma explicita para que el POS
+ * ofrezca el recibo no fiscal en su lugar.
  */
 async function generateLocalFallback(
-  cbteTipo: number,
-  iva: ReturnType<typeof calculateIVA>,
-  puntoVenta: number,
+  _cbteTipo: number,
+  _iva: ReturnType<typeof calculateIVA>,
+  _puntoVenta: number,
 ): Promise<AFIPInvoiceResult> {
-  // Get next invoice number from DB
-  const { data } = await supabase
-    .from('invoices')
-    .select('invoice_number')
-    .eq('punto_venta', puntoVenta)
-    .eq('cbte_tipo', cbteTipo)
-    .order('invoice_number', { ascending: false })
-    .limit(1)
-
-  const nextNumber = (data && data.length > 0 ? data[0].invoice_number : 0) + 1
-
-  // Generate fake CAE (14 digits) and expiry (+10 days)
-  const fakeCAE = `68${Date.now().toString().slice(-12)}`
-  const expiry = new Date()
-  expiry.setDate(expiry.getDate() + 10)
-  const caeExpiry = expiry.toISOString().split('T')[0].replace(/-/g, '')
-
   return {
-    success: true,
-    cae: fakeCAE,
-    caeExpiry,
-    cbteNro: nextNumber,
-    cbteTipo,
-    ...iva,
-    request: JSON.stringify({ mode: 'local_fallback', cbteTipo, puntoVenta, nextNumber }),
-    response: JSON.stringify({ mode: 'local_fallback', cae: fakeCAE }),
+    success: false,
+    error: 'No se pudo conectar con AFIP. Verificá la configuración en Ajustes → Facturación AFIP, o emití un recibo no fiscal.',
   }
 }

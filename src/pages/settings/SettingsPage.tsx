@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/authStore'
 import { useBusinessStore } from '@/stores/businessStore'
@@ -6,6 +7,7 @@ import { useFiscalStore } from '@/stores/fiscalStore'
 import { toast } from 'sonner'
 import Button from '@/components/ui/Button'
 import Badge from '@/components/ui/Badge'
+import AfipSetupGuide from '@/components/AfipSetupGuide'
 import Modal from '@/components/ui/Modal'
 import { IVA_CONDITIONS } from '@/types/database'
 import type { UserProfile, FiscalEnv } from '@/types/database'
@@ -44,7 +46,10 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [showUserModal, setShowUserModal] = useState(false)
-  const [activeTab, setActiveTab] = useState<TabId>('general')
+  // ?tab=afip permite entrar directo desde el punto de venta.
+  const [searchParams] = useSearchParams()
+  const initialTab = (TABS.find(t => t.id === searchParams.get('tab'))?.id ?? 'general') as TabId
+  const [activeTab, setActiveTab] = useState<TabId>(initialTab)
 
   // AFIP wizard
   const [wizardOpen, setWizardOpen] = useState(false)
@@ -524,11 +529,15 @@ export default function SettingsPage() {
               </div>
 
               {!afipConnected && (
-                <div className="bg-white/5 rounded-xl p-4 mb-4">
-                  <p className="text-sm text-white/60">
-                    <strong className="text-white">No necesitás configurar esto para usar la app.</strong>
-                    {' '}Los tickets funcionan siempre. Configurá AFIP solo cuando quieras emitir facturas electrónicas.
-                  </p>
+                <div className="space-y-3 mb-4">
+                  <div className="bg-white/5 rounded-xl p-4">
+                    <p className="text-sm text-white/60">
+                      <strong className="text-white">Podés seguir vendiendo sin esto.</strong>
+                      {' '}El punto de venta emite recibos en A4, que no son comprobantes fiscales.
+                      Configurá AFIP cuando necesites entregar facturas.
+                    </p>
+                  </div>
+                  <AfipSetupGuide />
                 </div>
               )}
 

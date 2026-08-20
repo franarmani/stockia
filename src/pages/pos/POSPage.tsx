@@ -1417,7 +1417,7 @@ export default function POSPage() {
                   : 'No encontramos la configuración de AFIP de este negocio.'}
               </p>
               <button
-                onClick={() => { setShowReceiptModal(false); navigate('/settings') }}
+                onClick={() => { setShowReceiptModal(false); navigate('/settings?tab=afip') }}
                 className="w-full h-8 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 font-semibold transition"
               >
                 Ir a Facturación AFIP
