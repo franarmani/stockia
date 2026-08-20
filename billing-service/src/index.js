@@ -105,15 +105,30 @@ function getTokenCacheKey(businessId, env) {
  */
 function generateTRA(service = 'wsfe') {
   const now = new Date()
-  const expiration = new Date(now.getTime() + 12 * 60 * 60 * 1000) // 12h
 
-  const formatDate = (d) => d.toISOString().replace(/\.\d{3}Z$/, '-03:00')
+  // AFIP rechaza el TRA si generationTime esta en el futuro. Antes se tomaba
+  // toISOString() —hora UTC— y se le pegaba el sufijo -03:00 sin convertir la
+  // hora, con lo que se declaraban 3 horas de mas y WSAA respondia
+  // "generationTime posee formato o dato invalido".
+  //
+  // Ademas se resta un margen: si el reloj del servidor adelanta unos
+  // segundos respecto al de AFIP, el ticket vuelve a caer en el futuro.
+  const OFFSET_MS = 3 * 60 * 60 * 1000        // Argentina, UTC-3
+  const SKEW_MS = 10 * 60 * 1000              // margen por desfasaje de reloj
+
+  const generation = new Date(now.getTime() - SKEW_MS)
+  const expiration = new Date(now.getTime() + 10 * 60 * 60 * 1000)
+
+  // Se desplaza la fecha para que los componentes locales del ISO ya sean
+  // hora argentina, y recien ahi se anexa el offset.
+  const formatDate = (d) =>
+    new Date(d.getTime() - OFFSET_MS).toISOString().replace(/\.\d{3}Z$/, '-03:00')
 
   return `<?xml version="1.0" encoding="UTF-8" ?>
 <loginTicketRequest version="1.0">
   <header>
-    <uniqueId>${Math.floor(Date.now() / 1000)}</uniqueId>
-    <generationTime>${formatDate(now)}</generationTime>
+    <uniqueId>${Math.floor(Date.now() / 1000) % 2147483647}</uniqueId>
+    <generationTime>${formatDate(generation)}</generationTime>
     <expirationTime>${formatDate(expiration)}</expirationTime>
   </header>
   <service>${service}</service>
