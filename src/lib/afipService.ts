@@ -40,6 +40,11 @@ export interface AFIPInvoiceRequest {
   businessIvaCondition: string
   /** Environment override (homo/prod) */
   env?: 'homo' | 'prod'
+  /** Venta que origina el comprobante — necesaria para crear el borrador */
+  saleId?: string
+  businessId?: string
+  customerName?: string
+  customerIvaCondition?: string
 }
 
 export interface AFIPInvoiceResult {
@@ -58,6 +63,8 @@ export interface AFIPInvoiceResult {
   /** Raw request/response for audit */
   request?: string
   response?: string
+  /** Id del comprobante creado, para vincular los items */
+  invoiceId?: string
 }
 
 /**
@@ -114,46 +121,61 @@ export async function requestCAE(req: AFIPInvoiceRequest): Promise<AFIPInvoiceRe
   const cbteTipo = getCbteTipo(req.invoiceType)
   const iva = calculateIVA(req.invoiceType, req.items, req.discount, req.surcharge)
 
+  // El flujo real es en dos pasos: se crea la factura en borrador y despues se
+  // autoriza contra AFIP con su id. Antes se llamaba a una Edge Function
+  // 'afip-invoice' que no existe desplegada, asi que siempre fallaba y se caia
+  // al CAE simulado.
+  if (!req.saleId || !req.businessId) {
+    return { success: false, error: 'Faltan datos de la venta para emitir la factura.' }
+  }
+
   try {
-    // Try the new authorize-invoice flow (requires draft invoice to exist)
-    // This is the production flow used by POSPage after creating invoice draft
-    const { data, error } = await supabase.functions.invoke('afip-invoice', {
-      body: {
-        puntoVenta: req.puntoVenta,
-        cbteTipo,
-        docTipo: req.docTipo,
-        docNro: req.docNro,
-        total: iva.total,
-        netoGravado: iva.netoGravado,
-        netoNoGravado: iva.netoNoGravado,
+    const env = req.env || 'homo'
+
+    const { data: draft, error: draftError } = await supabase
+      .from('invoices')
+      .insert({
+        sale_id: req.saleId,
+        business_id: req.businessId,
+        invoice_type: req.invoiceType,
+        cbte_tipo: cbteTipo,
+        invoice_number: 0,
+        punto_venta: req.puntoVenta,
+        doc_tipo: req.docTipo,
+        doc_nro: req.docNro,
+        customer_name: req.customerName || 'Consumidor Final',
+        iva_condition_customer: req.customerIvaCondition || 'consumidor_final',
+        neto_gravado: iva.netoGravado,
+        neto_no_gravado: iva.netoNoGravado,
         exento: iva.exento,
-        ivaAmount: iva.ivaAmount,
-        invoiceType: req.invoiceType,
-        businessIvaCondition: req.businessIvaCondition,
-        env: req.env || 'homo',
-      },
-    })
+        iva_amount: iva.ivaAmount,
+        total: iva.total,
+        status: 'draft',
+        env,
+      } as any)
+      .select('id')
+      .single()
 
-    if (error) {
-      console.warn('AFIP Edge Function error, using local fallback:', error)
-      return generateLocalFallback(cbteTipo, iva, req.puntoVenta)
+    if (draftError || !draft) {
+      return { success: false, error: draftError?.message || 'No se pudo registrar el comprobante.' }
     }
 
+    const result = await authorizeInvoice((draft as any).id)
+
+    // AFIP rechazo o no respondio: el borrador no sirve para nada y ensuciaria
+    // el listado de comprobantes.
+    if (!result.success) {
+      await supabase.from('invoices').delete().eq('id', (draft as any).id)
+      return result
+    }
+
+    return { ...result, cbteTipo, ...iva, invoiceId: (draft as any).id }
+  } catch (err: any) {
+    console.error('AFIP error:', err)
     return {
-      success: true,
-      cae: data.cae,
-      caeExpiry: data.caeExpiry || data.cae_vto,
-      cbteNro: data.cbteNro || data.cbte_nro,
-      cbteTipo,
-      ...iva,
-      pdfUrl: data.pdf_url,
-      request: data.request,
-      response: data.response,
+      success: false,
+      error: err?.message || 'No se pudo conectar con AFIP. Verificá la configuración en Ajustes → Facturación AFIP.',
     }
-  } catch {
-    // Edge Function not deployed yet – generate local placeholder
-    console.warn('AFIP Edge Function not available, using local fallback')
-    return generateLocalFallback(cbteTipo, iva, req.puntoVenta)
   }
 }
 

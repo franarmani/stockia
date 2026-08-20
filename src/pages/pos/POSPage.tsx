@@ -532,6 +532,11 @@ export default function POSPage() {
             discount,
             surcharge: surchargePct,
             businessIvaCondition: business.iva_condition || 'monotributo',
+            env: fiscalEnv,
+            saleId: (sale as any).id,
+            businessId: profile!.business_id,
+            customerName: selectedCustomer?.name || 'Consumidor Final',
+            customerIvaCondition: selectedCustomer ? (selectedCustomer as any).iva_condition : 'consumidor_final',
           })
 
           if (caeResult.success) {
@@ -542,46 +547,23 @@ export default function POSPage() {
             netoGravado = caeResult.netoGravado
             ivaAmount = caeResult.ivaAmount
 
-            const cbteTipo = getCbteTipo(receiptType)
-            const { data: invoiceData } = await supabase.from('invoices').insert({
-              sale_id: sale.id,
-              business_id: profile!.business_id,
-              invoice_type: receiptType,
-              cbte_tipo: cbteTipo,
-              invoice_number: caeResult.cbteNro || 0,
-              punto_venta: pv,
-              doc_tipo: docTipoNum,
-              doc_nro: docNro,
-              customer_name: selectedCustomer?.name || 'Consumidor Final',
-              iva_condition_customer: selectedCustomer ? (selectedCustomer as any).iva_condition : 'consumidor_final',
-              customer_address: selectedCustomer ? (selectedCustomer as any).address : null,
-              neto_gravado: caeResult.netoGravado || 0,
-              neto_no_gravado: caeResult.netoNoGravado || 0,
-              exento: caeResult.exento || 0,
-              iva_amount: caeResult.ivaAmount || 0,
-              total,
-              cae: caeResult.cae,
-              cae_expiry: caeResult.caeExpiry,
-              afip_request: caeResult.request,
-              afip_response: caeResult.response,
-              status: 'authorized',
-              env: fiscalEnv,
-            }).select().single()
+            // requestCAE ya creo el comprobante y lo autorizo contra AFIP;
+            // aca solo faltan el domicilio del cliente y el detalle de items.
+            const invoiceId = caeResult.invoiceId
+            if (invoiceId) {
+              if (selectedCustomer && (selectedCustomer as any).address) {
+                await supabase.from('invoices')
+                  .update({ customer_address: (selectedCustomer as any).address })
+                  .eq('id', invoiceId)
+              }
 
-            if (invoiceData) {
               const invoiceItemsData = items.map(item => {
                 const unitPrice = item.price
                 const itemTotal = unitPrice * item.quantity
                 const discountedTotal = itemTotal - (itemTotal * discount / 100)
                 const surchargedTotal = discountedTotal + (discountedTotal * surchargePct / 100)
-                const iva = business.iva_condition === 'responsable_inscripto'
-                  ? Math.round((surchargedTotal / 1.21) * 0.21 * 100) / 100
-                  : 0
-                const netoItem = business.iva_condition === 'responsable_inscripto'
-                  ? Math.round((surchargedTotal / 1.21) * 100) / 100
-                  : surchargedTotal
                 return {
-                  invoice_id: invoiceData.id,
+                  invoice_id: invoiceId,
                   product_id: item.product.id,
                   description: item.product.name,
                   qty: item.quantity,
@@ -590,7 +572,7 @@ export default function POSPage() {
                   total: surchargedTotal,
                 }
               })
-              await supabase.from('invoice_items').insert(invoiceItemsData)
+              await supabase.from('invoice_items').insert(invoiceItemsData as any)
             }
             toast.success(`Factura ${receiptType} autorizada — CAE: ${caeResult.cae}`)
           } else {
