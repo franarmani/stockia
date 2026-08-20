@@ -56,7 +56,15 @@ serve(async (req) => {
     const BILLING_SERVICE_KEY = Deno.env.get('BILLING_SERVICE_KEY') || ''
     const ENC_KEY = Deno.env.get('FISCAL_ENC_KEY') || ''
 
-    const csrRes = await fetch(`${BILLING_SERVICE_URL}/generate-csr`, {
+    // Diagnostico util: sin esto, cualquier problema del servicio aparecia
+    // como un generico "non-2xx status code" imposible de rastrear.
+    if (!BILLING_SERVICE_URL || BILLING_SERVICE_URL.includes('localhost')) {
+      throw new Error('El servicio de facturación no está configurado (BILLING_SERVICE_URL apunta a localhost).')
+    }
+
+    let csrRes: Response
+    try {
+      csrRes = await fetch(`${BILLING_SERVICE_URL}/generate-csr`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -67,11 +75,14 @@ serve(async (req) => {
         razon_social: fiscal.razon_social,
         enc_key: ENC_KEY,
       }),
-    })
+      })
+    } catch (netErr) {
+      throw new Error(`No se pudo contactar al servicio de facturación en ${BILLING_SERVICE_URL}: ${(netErr as Error).message}`)
+    }
 
     if (!csrRes.ok) {
       const errBody = await csrRes.text()
-      throw new Error(`Billing service error: ${errBody}`)
+      throw new Error(`El servicio de facturación respondió ${csrRes.status}: ${errBody.slice(0, 300)}`)
     }
 
     const { csr_pem, private_key_enc } = await csrRes.json()
