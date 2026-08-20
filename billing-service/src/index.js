@@ -317,7 +317,9 @@ app.post('/generate-csr', authMiddleware, (req, res) => {
       { name: 'countryName', value: 'AR' },
       { name: 'organizationName', value: razon_social || `CUIT ${cleanCuit}` },
       { name: 'commonName', value: `stockia-${cleanCuit}` },
-      { shortName: 'serialNumber', value: `CUIT ${cleanCuit}` },
+      // serialNumber por OID: node-forge no lo resuelve por shortName y
+      // rechaza el subject entero con "Attribute type not specified".
+      { type: '2.5.4.5', value: `CUIT ${cleanCuit}` },
     ])
     csr.sign(keys.privateKey, forge.md.sha256.create())
     const csrPem = forge.pki.certificationRequestToPem(csr)
