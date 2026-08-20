@@ -30,23 +30,54 @@ export default function LoginPage() {
     e.preventDefault()
     if (!email || !password) { toast.error('Completá todos los campos'); return }
     setLoading(true)
+
+    // El timeout evita que el botón quede colgado para siempre, pero antes
+    // cualquier fallo caía en el mismo catch y siempre se culpaba a la
+    // conexión, aunque el problema fuera otro.
+    const TIMEOUT_MS = 20000
+    let timedOut = false
+
     try {
       const timeout = new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error('timeout')), 15000)
+        setTimeout(() => { timedOut = true; reject(new Error('timeout')) }, TIMEOUT_MS)
       )
       const { error } = await Promise.race([
-        supabase.auth.signInWithPassword({ email, password }),
+        supabase.auth.signInWithPassword({ email: email.trim(), password }),
         timeout,
       ])
+
       if (error) {
-        toast.error('Email o contraseña incorrectos')
+        const msg = (error.message || '').toLowerCase()
+        if (msg.includes('invalid login') || msg.includes('credentials')) {
+          toast.error('Email o contraseña incorrectos')
+        } else if (msg.includes('email not confirmed')) {
+          toast.error('Falta confirmar el email de esta cuenta')
+        } else if (msg.includes('rate limit') || msg.includes('too many')) {
+          toast.error('Demasiados intentos seguidos. Esperá unos minutos.')
+        } else if (msg.includes('fetch') || msg.includes('network')) {
+          toast.error('No se pudo conectar con el servidor. Revisá tu conexión.')
+        } else {
+          // Sin esto, un error inesperado quedaba enmascarado como falla de red.
+          toast.error(`No se pudo iniciar sesión: ${error.message}`, { duration: 8000 })
+        }
+        console.warn('[Login] error:', error)
         setLoading(false)
-      } else {
-        // Navigate immediately — ProtectedRoute will show spinner while profile loads
-        navigate('/menu')
+        return
       }
-    } catch {
-      toast.error('No se pudo conectar. Revisá tu conexión e intentá de nuevo.')
+
+      // Navigate immediately — ProtectedRoute will show spinner while profile loads
+      navigate('/menu')
+    } catch (err: any) {
+      console.warn('[Login] excepción:', err)
+
+      if (timedOut) {
+        // Puede que la sesión haya quedado abierta igual: si es así, entramos.
+        const { data } = await supabase.auth.getSession()
+        if (data.session) { navigate('/menu'); return }
+        toast.error('El servidor tardó demasiado en responder. Probá de nuevo.', { duration: 8000 })
+      } else {
+        toast.error(`No se pudo conectar: ${err?.message || 'error desconocido'}`, { duration: 8000 })
+      }
       setLoading(false)
     }
   }
