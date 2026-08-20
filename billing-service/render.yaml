@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: stockia-billing-service
+    runtime: node
+    rootDir: billing-service
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      # Se carga a mano desde el panel: tiene que coincidir con el
+      # BILLING_SERVICE_KEY de los secrets de Supabase.
+      - key: BILLING_SERVICE_KEY
+        sync: false
