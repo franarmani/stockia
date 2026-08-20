@@ -8,69 +8,95 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || ''
  * Conexión con reintento por proxy.
  *
  * Los bloqueadores de publicidad y algunas redes cortan las llamadas a
- * supabase.co sin devolver error: la petición simplemente nunca vuelve y el
- * login queda colgado hasta que vence el timeout.
+ * supabase.co sin devolver error: la petición nunca vuelve y la app queda
+ * esperando. Ir siempre por el proxy tampoco sirve —se probó y rompía por otro
+ * lado—, así que se intenta primero la conexión directa con un límite corto y,
+ * si no responde, se repite la petición contra /supabase-api, que Vercel
+ * redirige del lado del servidor.
  *
- * Ir siempre por el proxy tampoco sirve —se probó y rompía por otro lado—, así
- * que este fetch intenta primero la conexión directa y, si se cuelga o falla,
- * repite la misma petición contra /supabase-api, que Vercel redirige del lado
- * del servidor. Una vez que el proxy funciona queda fijado para el resto de la
- * sesión y no se vuelve a pagar la espera.
+ * El resultado queda recordado para no volver a pagar la espera en cada
+ * llamada.
  */
 const PROXY_PATH = '/supabase-api'
 const DIRECT_TIMEOUT_MS = 6000
 const PREF_KEY = 'stockia_use_proxy'
 
-function proxyAvailable(): boolean {
-  return typeof window !== 'undefined' && !import.meta.env.DEV
-}
+const canProxy = typeof window !== 'undefined' && !import.meta.env.DEV
 
-function readProxyPref(): boolean {
-  try { return localStorage.getItem(PREF_KEY) === '1' } catch { return false }
-}
-
-let useProxy = proxyAvailable() && readProxyPref()
+let useProxy = false
+try { useProxy = canProxy && localStorage.getItem(PREF_KEY) === '1' } catch {}
 
 function toProxyUrl(url: string): string {
-  if (!url.startsWith(supabaseUrl)) return url
   return `${window.location.origin}${PROXY_PATH}${url.slice(supabaseUrl.length)}`
+}
+
+/** fetch con límite de tiempo propio, que no depende del signal del llamador. */
+async function fetchWithTimeout(url: string, init: RequestInit | undefined, ms: number) {
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), ms)
+  try {
+    return await fetch(url, { ...init, signal: controller.signal })
+  } finally {
+    clearTimeout(timer)
+  }
 }
 
 const fetchWithProxyFallback: typeof fetch = async (input, init) => {
   const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url
 
-  // Ya sabemos que la conexión directa no pasa: vamos derecho al proxy.
-  if (useProxy && proxyAvailable()) {
-    return fetch(toProxyUrl(url), init)
-  }
-
-  if (!proxyAvailable() || !url.startsWith(supabaseUrl)) {
+  // Peticiones que no van a Supabase (o en desarrollo): sin intermediarios.
+  if (!canProxy || !url.startsWith(supabaseUrl)) {
     return fetch(input, init)
   }
 
-  // El AbortController propio no debe pisar el del llamador.
-  const controller = new AbortController()
-  const timer = setTimeout(() => controller.abort(), DIRECT_TIMEOUT_MS)
-  const onCallerAbort = () => controller.abort()
-  init?.signal?.addEventListener('abort', onCallerAbort)
+  // El body de un RequestInit sólo puede leerse una vez, así que si hay que
+  // reintentar se necesita una copia. Los métodos con cuerpo llegan siempre
+  // como string desde supabase-js, pero por las dudas se resguarda.
+  const body = init?.body
+  const replayable = body == null || typeof body === 'string'
+
+  if (useProxy) {
+    return fetch(toProxyUrl(url), init)
+  }
 
   try {
-    const res = await fetch(input, { ...init, signal: controller.signal })
+    const res = await fetchWithTimeout(url, init, DIRECT_TIMEOUT_MS)
     return res
   } catch (err) {
-    // Si abortó el llamador, no es un problema de red: no reintentamos.
-    if (init?.signal?.aborted) throw err
+    if (!replayable) throw err
 
-    console.warn('[Supabase] conexión directa bloqueada, reintentando por proxy')
+    console.warn('[Supabase] la conexión directa no responde, reintentando por proxy')
     useProxy = true
     try { localStorage.setItem(PREF_KEY, '1') } catch {}
-    return fetch(toProxyUrl(url), init)
-  } finally {
-    clearTimeout(timer)
-    init?.signal?.removeEventListener('abort', onCallerAbort)
+
+    // Sin el signal abortado del intento anterior: con él, el reintento
+    // fallaría de inmediato o quedaría colgado.
+    const { signal: _discarded, ...rest } = init || {}
+    return fetch(toProxyUrl(url), rest)
   }
 }
 
+/**
+ * Sin el lock del navegador.
+ *
+ * supabase-js sincroniza la sesion entre pestañas con Navigator LockManager.
+ * Si ese candado queda tomado —una pestaña que no cerro bien, la PWA en
+ * segundo plano— toda operacion de auth espera 10 segundos y falla con
+ * "Acquiring an exclusive Navigator LockManager lock timed out", dejando el
+ * login colgado en "Ingresando...".
+ *
+ * Pasamos un lock que ejecuta la operacion directamente. Se pierde la
+ * coordinacion entre pestañas al refrescar el token, que en la practica es
+ * inofensivo, y a cambio la sesion nunca se traba.
+ */
+const noopLock = async <R>(_name: string, _acquireTimeout: number, fn: () => Promise<R>): Promise<R> => fn()
+
 export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    lock: noopLock,
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true,
+  },
   global: { fetch: fetchWithProxyFallback },
 })

@@ -26,6 +26,18 @@ export default function LoginPage() {
     if (user && profile) navigate('/menu')
   }, [user, profile, navigate])
 
+  // Si la sesion se cerro porque no se pudo cargar el perfil, mostramos el
+  // motivo real en vez de devolver al login sin explicacion.
+  useEffect(() => {
+    try {
+      const reason = sessionStorage.getItem('stockia_login_error')
+      if (reason) {
+        sessionStorage.removeItem('stockia_login_error')
+        toast.error(reason, { duration: 9000 })
+      }
+    } catch {}
+  }, [])
+
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault()
     if (!email || !password) { toast.error('Completá todos los campos'); return }

@@ -14,7 +14,7 @@ import SubscriptionGuard from '@/features/subscription/components/SubscriptionGu
 import UpdateNotificationModal from '@/components/modals/UpdateNotificationModal'
 
 // ── VERSIONING ──
-const APP_VERSION = '1.12.5' // Local version — bump together with public/version.json on every deploy
+const APP_VERSION = '1.12.6' // Local version — bump together with public/version.json on every deploy
 
 // ── localStorage cache helpers ──
 const PROFILE_CACHE_KEY = 'stockia_profile'
@@ -220,6 +220,7 @@ export default function App() {
     // On subsequent visits / tab switches, we use the cache instantly.
 
     let profileLoaded = false
+    let lastProfileError: string | null = null
 
     function applyProfile(data: any) {
       const profile = {
@@ -245,7 +246,8 @@ export default function App() {
           .maybeSingle()
 
         if (error || !data) {
-          console.warn('[Auth] network query failed:', error?.message ?? 'no row')
+          console.warn('[Auth] no se pudo leer el perfil:', error?.message ?? 'sin fila para este usuario')
+          lastProfileError = error?.message ?? 'No encontramos tu perfil de usuario.'
           return false
         }
 
@@ -267,7 +269,8 @@ export default function App() {
         console.log('[Auth] loaded from network OK')
         return true
       } catch (e: any) {
-        console.warn('[Auth] network error:', e.message)
+        console.warn('[Auth] error de red al leer el perfil:', e?.message)
+        lastProfileError = e?.message || 'No pudimos conectarnos para cargar tu cuenta.'
         return false
       }
     }
@@ -304,10 +307,21 @@ export default function App() {
       }
 
       // No cache → must load from network (with retries)
+      let loaded = false
       for (let i = 1; i <= 3; i++) {
-        const ok = await loadFromNetwork(session.user.id)
-        if (ok) break
+        loaded = await loadFromNetwork(session.user.id)
+        if (loaded) break
         if (i < 3) await new Promise(r => setTimeout(r, i * 2000))
+      }
+
+      // Sin perfil, ProtectedRoute se queda en el spinner indefinidamente
+      // porque su condicion es (user && !profile). Cerramos la sesion para
+      // volver al login con un motivo, en vez de dejar la pantalla colgada.
+      if (!loaded) {
+        console.warn('[Auth] no se pudo cargar el perfil, cerrando sesión')
+        try { sessionStorage.setItem('stockia_login_error', lastProfileError || '') } catch {}
+        await supabase.auth.signOut()
+        setUser(null)
       }
       setLoading(false)
     })
@@ -343,10 +357,17 @@ export default function App() {
         }
 
         setLoading(true)
+        let loaded = false
         for (let i = 1; i <= 3; i++) {
-          const ok = await loadFromNetwork(session.user.id)
-          if (ok) break
+          loaded = await loadFromNetwork(session.user.id)
+          if (loaded) break
           if (i < 3) await new Promise(r => setTimeout(r, i * 2000))
+        }
+        if (!loaded) {
+          console.warn('[Auth] no se pudo cargar el perfil tras iniciar sesión')
+          try { sessionStorage.setItem('stockia_login_error', lastProfileError || '') } catch {}
+          await supabase.auth.signOut()
+          setUser(null)
         }
         setLoading(false)
       }
