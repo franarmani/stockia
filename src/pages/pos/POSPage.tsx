@@ -50,7 +50,7 @@ const PAYMENT_METHODS: { id: PaymentMethodType; label: string; icon: typeof Bank
 ]
 
 const RECEIPT_TYPES: { id: ReceiptType; label: string; desc: string }[] = [
-  { id: 'ticket', label: 'Ticket', desc: 'Sin factura' },
+  { id: 'ticket', label: 'Recibo', desc: 'Documento no fiscal, en A4' },
   { id: 'A', label: 'Factura A', desc: 'Resp. Inscripto' },
   { id: 'B', label: 'Factura B', desc: 'Consumidor Final' },
   { id: 'C', label: 'Factura C', desc: 'Monotributo' },
@@ -1087,7 +1087,7 @@ export default function POSPage() {
                   }`}
                 >
                   <FileText className="w-3.5 h-3.5" />
-                  {receiptType === 'ticket' ? 'Ticket' : `${receiptType}`}
+                  {receiptType === 'ticket' ? 'Recibo' : `Factura ${receiptType}`}
                 </button>
               </div>
 
@@ -1371,7 +1371,7 @@ export default function POSPage() {
                     rt.id === 'B' ? 'bg-green-500/15 text-green-400' :
                     'bg-purple-500/15 text-purple-400'
                   }`}>
-                    {rt.id === 'ticket' ? <Receipt className="w-4 h-4" /> : rt.id}
+                    {rt.id === 'ticket' ? <FileText className="w-4 h-4" /> : rt.id}
                   </div>
                   <div>
                     <p className="text-sm font-semibold text-white">{rt.label}</p>
@@ -1423,7 +1423,7 @@ export default function POSPage() {
               )}
               <div className="flex justify-between items-center">
                 <span className="text-slate-500">Comprobante</span>
-                <span className="font-semibold text-white">{receiptType === 'ticket' ? 'Ticket' : `Factura ${receiptType}`}</span>
+                <span className="font-semibold text-white">{receiptType === 'ticket' ? 'Recibo (no fiscal)' : `Factura ${receiptType}`}</span>
               </div>
               {discount > 0 && (
                 <div className="flex justify-between items-center text-amber-400/80">

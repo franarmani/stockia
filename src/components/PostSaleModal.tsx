@@ -1,11 +1,9 @@
-import { useState, useEffect } from 'react'
 import Modal from '@/components/ui/Modal'
 import Button from '@/components/ui/Button'
-import TicketPrintModal from '@/components/TicketPrintModal'
 import { openInvoicePDF, getWhatsAppLink, type InvoicePDFData } from '@/lib/invoicePdf'
 import type { PrintMode } from '@/lib/documentLayout'
 import { formatCurrency } from '@/lib/utils'
-import { Printer, FileText, MessageCircle, CheckCircle2, X, Download, Palette } from 'lucide-react'
+import { Printer, MessageCircle, CheckCircle2, X, Palette } from 'lucide-react'
 import type { CartItem } from '@/types/database'
 
 export interface PostSaleData {
@@ -64,26 +62,13 @@ const PAYMENT_LABELS: Record<string, string> = {
 }
 
 export default function PostSaleModal({ open, onClose, data }: PostSaleModalProps) {
-  const [showTicket, setShowTicket] = useState(false)
-
-  // Auto-print ticket when autoPrint is enabled
-  useEffect(() => {
-    if (open && data?.autoPrint && !showTicket) {
-      setShowTicket(true)
-    }
-  }, [open, data?.autoPrint])
-
   if (!data) return null
 
   const isInvoice = data.receiptType !== 'ticket'
-  const letterLabel = isInvoice ? `Factura ${data.receiptType}` : 'Ticket'
-
-  function handlePrintTicket() {
-    setShowTicket(true)
-  }
+  const docLabel = isInvoice ? `Factura ${data.receiptType}` : 'Recibo'
 
   function handleDownloadPDF(mode: PrintMode = 'bw') {
-    if (!data || !isInvoice) return
+    if (!data) return
     const pdfData: InvoicePDFData = {
       businessName: data.businessName,
       businessCuit: data.businessCuit,
@@ -184,7 +169,7 @@ export default function PostSaleModal({ open, onClose, data }: PostSaleModalProp
 
   return (
     <>
-      <Modal open={open && !showTicket} onClose={onClose} title="" size="sm">
+      <Modal open={open} onClose={onClose} title="" size="sm">
         <div className="space-y-5">
           {/* Success header */}
           <div className="text-center pt-2">
@@ -193,7 +178,7 @@ export default function PostSaleModal({ open, onClose, data }: PostSaleModalProp
             </div>
             <h2 className="text-base font-bold text-foreground">Venta registrada</h2>
             <p className="text-sm text-muted-foreground mt-1">
-              {letterLabel} por <span className="font-bold text-foreground">{formatCurrency(data.total)}</span>
+              {docLabel} por <span className="font-bold text-foreground">{formatCurrency(data.total)}</span>
             </p>
             {data.cae && (
               <p className="text-xs text-muted-foreground mt-1">
@@ -202,54 +187,34 @@ export default function PostSaleModal({ open, onClose, data }: PostSaleModalProp
             )}
           </div>
 
-          {/* Action buttons */}
+          {/* Acciones: el A4 es la salida principal — ya no se usa la térmica. */}
           <div className="space-y-2">
-            {/* Always show ticket print */}
             <button
-              onClick={handlePrintTicket}
-              className="w-full flex items-center gap-3 p-3 rounded-xl border border-white/10 hover:border-green-300 hover:bg-green-500/10 transition-colors text-left group"
+              onClick={() => handleDownloadPDF('bw')}
+              className="w-full flex items-center gap-3 p-3 rounded-xl border border-white/10 hover:border-blue-300 hover:bg-blue-500/10 transition-colors text-left group"
             >
-              <div className="w-9 h-9 rounded-md bg-white/5 group-hover:bg-green-500/10 flex items-center justify-center shrink-0 transition-colors">
-                <Printer className="w-5 h-5 text-slate-400 group-hover:text-primary transition" />
+              <div className="w-9 h-9 rounded-md bg-blue-500/10 group-hover:bg-blue-500/15 flex items-center justify-center shrink-0 transition-colors">
+                <Printer className="w-5 h-5 text-blue-600 transition" />
               </div>
               <div>
-                <p className="text-sm font-semibold text-foreground">Imprimir ticket</p>
-                <p className="text-xs text-muted-foreground">Impresora térmica 58/80mm</p>
+                <p className="text-sm font-semibold text-foreground">Imprimir A4 · Blanco y negro</p>
+                <p className="text-xs text-muted-foreground">{docLabel} en hoja A4</p>
               </div>
             </button>
 
-            {/* PDF A4 – only for invoices. B/N primero: es como se imprime normalmente. */}
-            {isInvoice && (
-              <>
-                <button
-                  onClick={() => handleDownloadPDF('bw')}
-                  className="w-full flex items-center gap-3 p-3 rounded-xl border border-white/10 hover:border-blue-300 hover:bg-blue-500/10 transition-colors text-left group"
-                >
-                  <div className="w-9 h-9 rounded-md bg-blue-500/10 group-hover:bg-blue-500/15 flex items-center justify-center shrink-0 transition-colors">
-                    <Download className="w-5 h-5 text-blue-600 transition" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-foreground">Descargar PDF · Blanco y negro</p>
-                    <p className="text-xs text-muted-foreground">Factura {data.receiptType} en A4, lista para imprimir</p>
-                  </div>
-                </button>
+            <button
+              onClick={() => handleDownloadPDF('color')}
+              className="w-full flex items-center gap-3 p-3 rounded-xl border border-white/10 hover:border-violet-300 hover:bg-violet-500/10 transition-colors text-left group"
+            >
+              <div className="w-9 h-9 rounded-md bg-violet-500/10 group-hover:bg-violet-500/15 flex items-center justify-center shrink-0 transition-colors">
+                <Palette className="w-5 h-5 text-violet-500 transition" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-foreground">Imprimir A4 · Color</p>
+                <p className="text-xs text-muted-foreground">Con los colores de tu marca</p>
+              </div>
+            </button>
 
-                <button
-                  onClick={() => handleDownloadPDF('color')}
-                  className="w-full flex items-center gap-3 p-3 rounded-xl border border-white/10 hover:border-violet-300 hover:bg-violet-500/10 transition-colors text-left group"
-                >
-                  <div className="w-9 h-9 rounded-md bg-violet-500/10 group-hover:bg-violet-500/15 flex items-center justify-center shrink-0 transition-colors">
-                    <Palette className="w-5 h-5 text-violet-500 transition" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-foreground">Descargar PDF · Color</p>
-                    <p className="text-xs text-muted-foreground">Con los colores de tu marca</p>
-                  </div>
-                </button>
-              </>
-            )}
-
-            {/* WhatsApp – for invoices and tickets with phone */}
             {(isInvoice || data.customerPhone) && (
               <button
                 onClick={handleWhatsApp}
@@ -274,37 +239,6 @@ export default function PostSaleModal({ open, onClose, data }: PostSaleModalProp
         </div>
       </Modal>
 
-      <TicketPrintModal
-        open={showTicket}
-        onClose={() => setShowTicket(false)}
-        data={data ? {
-          businessName: data.businessName,
-          businessAddress: data.businessAddress,
-          businessPhone: data.businessPhone,
-          businessCuit: data.businessCuit,
-          logoUrl: data.logoUrl,
-          primaryColor: data.primaryColor,
-          receiptType: data.receiptType,
-          items: data.items,
-          subtotal: data.subtotal,
-          discount: data.discount,
-          surcharge: data.surcharge,
-          total: data.total,
-          paymentMethod: data.paymentMethod,
-          paymentSplits: data.paymentSplits,
-          installments: data.installments,
-          customerName: data.customerName,
-          sellerName: data.sellerName,
-          footer: data.footer,
-          date: data.date,
-          cae: data.cae,
-          caeExpiry: data.caeExpiry,
-          invoiceNumber: data.invoiceNumber,
-          puntoVenta: data.puntoVenta,
-          netoGravado: data.netoGravado,
-          ivaAmount: data.ivaAmount,
-        } : null}
-      />
     </>
   )
 }

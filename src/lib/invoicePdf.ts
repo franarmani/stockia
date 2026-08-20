@@ -126,6 +126,8 @@ function buildAfipQrUrlPdf(data: InvoicePDFData): string | null {
 export function generateInvoicePDF(data: InvoicePDFData, mode: PrintMode = 'color') {
   const letter = getInvoiceLetter(data.invoiceType)
   const color = resolveAccent(data.primaryColor || getInvoiceColor(data.invoiceType), mode)
+  // Venta sin factura AFIP: mismo diseño pero como recibo no fiscal.
+  const isReceipt = !data.cae && (data.invoiceType === 'ticket' || !letter || letter === 'TICKET')
   const isFacturaA = data.invoiceType === 'A'
   const fullNumber = `${pad(data.puntoVenta, 5)}-${pad(data.invoiceNumber, 8)}`
 
@@ -163,7 +165,7 @@ export function generateInvoicePDF(data: InvoicePDFData, mode: PrintMode = 'colo
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Factura ${letter} ${fullNumber}</title>
+  <title>${isReceipt ? 'Recibo' : `Factura ${letter} ${fullNumber}`}</title>
   <style>${documentStyles(color, mode)}</style>
 </head>
 <body>
@@ -185,13 +187,13 @@ ${emitterBlock({
     logoUrl: data.logoUrl,
   })}
       <div class="doc-block">
-        <div class="letter-badge">
+        ${isReceipt ? '' : `<div class="letter-badge">
           <span class="letter">${letter}</span>
           ${cbteCode ? `<span class="code">COD. ${cbteCode}</span>` : ''}
-        </div>
-        <p class="doc-title">FACTURA ${letter}</p>
-        <p class="doc-kind">Comprobante autorizado</p>
-        <p class="doc-number">Nº ${fullNumber}</p>
+        </div>`}
+        <p class="doc-title">${isReceipt ? 'RECIBO' : `FACTURA ${letter}`}</p>
+        <p class="doc-kind">${isReceipt ? 'Documento no fiscal' : 'Comprobante autorizado'}</p>
+        ${isReceipt ? '' : `<p class="doc-number">Nº ${fullNumber}</p>`}
         <p class="doc-meta">Fecha: <strong>${dateStr}</strong></p>
       </div>
     </div>
@@ -278,7 +280,9 @@ ${emitterBlock({
     <div class="footer">
       ${data.receiptFooter ? `<p class="message">${data.receiptFooter}</p>` : ''}
       <p>Ante cualquier consulta sobre este comprobante, comuníquese con nosotros${data.businessPhone ? ` al ${data.businessPhone}` : ''}.</p>
-      <p class="legal">Comprobante electrónico emitido según RG AFIP ${isFacturaA ? '4291' : '4004'}</p>
+      <p class="legal">${isReceipt
+        ? 'Este documento no constituye comprobante fiscal. Se entrega como constancia de la operación.'
+        : `Comprobante electrónico emitido según RG AFIP ${isFacturaA ? '4291' : '4004'}`}</p>
     </div>
 
   </div>
