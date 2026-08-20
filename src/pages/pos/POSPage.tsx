@@ -23,7 +23,7 @@ import {
   Search, Plus, Minus, Trash2, ShoppingCart, CreditCard,
   Banknote, ArrowRightLeft, X, CheckCircle2, User, Wallet,
   FileText, Receipt, Percent, CircleDollarSign, Camera, ChevronRight, Check, Package,
-  LogOut, Zap, ScanLine,
+  LogOut, Zap, ScanLine, ChevronDown,
 } from 'lucide-react'
 
 function playBeep() {
@@ -83,6 +83,15 @@ export default function POSPage() {
   const fiscalCertStatus = useFiscalStore((s) => s.settings?.cert_status)
   const isFiscalConnected = fiscalCertStatus === 'connected'
   const fiscalEnv = useFiscalStore((s) => s.env)
+
+  // Con AFIP conectado se factura por defecto, con la letra que corresponde a
+  // la condición de IVA del negocio. Sin elección previa el POS arrancaba
+  // siempre en Recibo y habia que cambiarlo a mano en cada venta.
+  useEffect(() => {
+    if (!isFiscalConnected || !business) return
+    if (localStorage.getItem('stockia_receipt_type')) return
+    setReceiptType(business.iva_condition === 'responsable_inscripto' ? 'B' : 'C')
+  }, [isFiscalConnected, business?.iva_condition])
 
   const [products, setProducts] = useState<Product[]>([])
   const [customers, setCustomers] = useState<Customer[]>([])
@@ -1088,6 +1097,7 @@ export default function POSPage() {
                 >
                   <FileText className="w-3.5 h-3.5" />
                   {receiptType === 'ticket' ? 'Recibo' : `Factura ${receiptType}`}
+                  <ChevronDown className="w-3 h-3 opacity-60" />
                 </button>
               </div>
 

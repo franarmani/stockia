@@ -55,11 +55,31 @@ export function isDecimalUnit(unit: string | undefined | null): boolean {
   return unit === 'kg' || unit === 'mts' || unit === 'lts'
 }
 
+/**
+ * Tipo de comprobante preferido, recordado entre ventas.
+ *
+ * El default vivia fijo en 'ticket', asi que despues de cada venta habia que
+ * volver a elegir Factura. Ahora se recuerda el ultimo usado.
+ */
+const RECEIPT_TYPE_KEY = 'stockia_receipt_type'
+
+function loadReceiptType(): ReceiptType {
+  try {
+    const v = localStorage.getItem(RECEIPT_TYPE_KEY)
+    if (v === 'ticket' || v === 'A' || v === 'B' || v === 'C') return v
+  } catch {}
+  return 'ticket'
+}
+
+function saveReceiptType(t: ReceiptType) {
+  try { localStorage.setItem(RECEIPT_TYPE_KEY, t) } catch {}
+}
+
 export const usePOSStore = create<POSState>((set, get) => ({
   items: [],
   discount: 0,
   paymentMethod: 'cash',
-  receiptType: 'ticket',
+  receiptType: loadReceiptType(),
   installments: 1,
   surchargePct: 0,
   pmDiscountPct: 0,
@@ -107,7 +127,7 @@ export const usePOSStore = create<POSState>((set, get) => ({
 
   setDiscount: (discount: number) => set({ discount: Math.max(0, Math.min(100, discount)) }),
   setPaymentMethod: (paymentMethod) => set({ paymentMethod, installments: paymentMethod === 'credit' ? 1 : 1, surchargePct: paymentMethod === 'credit' ? 0 : 0 }),
-  setReceiptType: (receiptType) => set({ receiptType }),
+  setReceiptType: (receiptType) => { saveReceiptType(receiptType); set({ receiptType }) },
   setInstallments: (installments) => set({ installments }),
   setSurchargePct: (surchargePct) => set({ surchargePct }),
   setPmDiscountPct: (pmDiscountPct) => set({ pmDiscountPct }),
@@ -135,7 +155,7 @@ export const usePOSStore = create<POSState>((set, get) => ({
     discount: opts?.discount ?? 0,
     customerId: opts?.customerId ?? null,
     paymentMethod: 'cash',
-    receiptType: 'ticket',
+    receiptType: loadReceiptType(),
     installments: 1,
     surchargePct: 0,
     pmDiscountPct: 0,
@@ -143,5 +163,5 @@ export const usePOSStore = create<POSState>((set, get) => ({
     sourceQuoteId: opts?.sourceQuoteId ?? null,
   }),
 
-  clearCart: () => set({ items: [], discount: 0, customerId: null, paymentMethod: 'cash', receiptType: 'ticket', installments: 1, surchargePct: 0, pmDiscountPct: 0, paymentSplits: [], sourceQuoteId: null }),
+  clearCart: () => set({ items: [], discount: 0, customerId: null, paymentMethod: 'cash', receiptType: loadReceiptType(), installments: 1, surchargePct: 0, pmDiscountPct: 0, paymentSplits: [], sourceQuoteId: null }),
 }))
