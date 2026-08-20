@@ -44,11 +44,14 @@ export default defineConfig({
             },
           },
           {
-            // Cache Supabase REST API calls (products list etc.)
-            urlPattern: /^https:\/\/.*\.supabase\.co\/rest\/v1\//,
-            handler: 'NetworkFirst', // Changed from StaleWhileRevalidate to NetworkFirst for core data
+            // Datos de Supabase, tanto directo como a traves del proxy.
+            // El timeout es imprescindible: sin el, una peticion que no vuelve
+            // deja la app colgada esperando para siempre.
+            urlPattern: /\/(rest)\/v1\//,
+            handler: 'NetworkFirst',
             options: {
               cacheName: 'api-data-cache',
+              networkTimeoutSeconds: 10,
               expiration: { maxEntries: 100, maxAgeSeconds: 3600 },
             },
           },
