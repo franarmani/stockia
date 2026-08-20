@@ -221,23 +221,35 @@ export default function SettingsPage() {
     setGeneratingCsr(true)
     try {
       const { data, error } = await supabase.functions.invoke('afip-generate-csr', { body: { env: fiscalEnv } })
+
+      // Antes, si esto fallaba se descargaba un archivo de relleno con un texto
+      // dentro y se anunciaba como exitoso. AFIP lo rechazaba con "El Request
+      // enviado es invalido" y no habia forma de saber por que.
       if (error || !data?.csr_pem) {
-        const cuit = form.cuit.replace(/[-\s]/g, '')
-        const blob = new Blob([`-----BEGIN CERTIFICATE REQUEST-----\nCSR para CUIT ${cuit}\n-----END CERTIFICATE REQUEST-----`], { type: 'application/pkcs10' })
-        const url = URL.createObjectURL(blob)
-        const a = document.createElement('a'); a.href = url; a.download = `stockia-${cuit}.csr`; a.click()
-        URL.revokeObjectURL(url)
-        updateCertStatus('csr_generated')
-        toast.success('CSR generado. Subilo a AFIP.')
-        setGeneratingCsr(false); return
+        const detalle = (error as any)?.message || (data as any)?.error || 'el servicio de facturación no respondió'
+        toast.error(`No se pudo generar el CSR: ${detalle}`, { duration: 8000 })
+        setGeneratingCsr(false)
+        return
       }
+
+      if (!data.csr_pem.includes('BEGIN CERTIFICATE REQUEST')) {
+        toast.error('El CSR generado no tiene el formato que espera AFIP. Avisale al soporte.', { duration: 8000 })
+        setGeneratingCsr(false)
+        return
+      }
+
       const blob = new Blob([data.csr_pem], { type: 'application/pkcs10' })
       const url = URL.createObjectURL(blob)
-      const a = document.createElement('a'); a.href = url; a.download = data.csr_download_name || `stockia-${form.cuit.replace(/[-\s]/g, '')}.csr`; a.click()
+      const a = document.createElement('a')
+      a.href = url
+      a.download = data.csr_download_name || `stockia-${form.cuit.replace(/[-\s]/g, '')}.csr`
+      a.click()
       URL.revokeObjectURL(url)
       updateCertStatus('csr_generated')
-      toast.success('CSR generado')
-    } catch { toast.error('Error al generar el CSR') }
+      toast.success('CSR generado y descargado')
+    } catch (err: any) {
+      toast.error(`Error al generar el CSR: ${err?.message || 'sin detalle'}`, { duration: 8000 })
+    }
     setGeneratingCsr(false)
   }
 
