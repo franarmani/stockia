@@ -23,7 +23,24 @@ const forge = require('node-forge')
 const soap = require('soap')
 const crypto = require('crypto')
 const { createClient } = require('@supabase/supabase-js')
+const https = require('https')
 const { generateInvoicePDF } = require('./pdf')
+
+/**
+ * Agente TLS para los webservices de AFIP.
+ *
+ * Los servidores de AFIP negocian Diffie-Hellman con claves de 1024 bits y
+ * TLS antiguo. Node moderno los rechaza con "dh key too small" / EPROTO, asi
+ * que hay que bajar el nivel de seguridad para estas conexiones puntuales.
+ *
+ * El ajuste queda acotado a este agente: el resto de las llamadas del
+ * servicio (Supabase, etc.) siguen con la configuracion estricta por defecto.
+ */
+// El agente por defecto es el que usa la libreria SOAP para descargar el WSDL
+// y para las llamadas; pasarle opciones por wsdl_options no alcanza, porque la
+// descarga inicial no las toma. @SECLEVEL=0 admite las claves DH cortas de AFIP.
+https.globalAgent.options.ciphers = 'DEFAULT@SECLEVEL=0'
+https.globalAgent.options.minVersion = 'TLSv1'
 
 const app = express()
 app.use(cors())
