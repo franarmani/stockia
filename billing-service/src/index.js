@@ -309,6 +309,24 @@ app.get('/health', (req, res) => {
   res.json({ ok: true, service: 'stockia-billing-service', time: new Date().toISOString() })
 })
 
+/**
+ * Diagnostico del TRA: permite verificar sin credenciales que la instancia
+ * desplegada esta generando las fechas que WSAA acepta.
+ */
+app.get('/debug-tra', (req, res) => {
+  const tra = generateTRA('wsfe')
+  const gen = tra.match(/<generationTime>(.*?)<\/generationTime>/)?.[1]
+  const exp = tra.match(/<expirationTime>(.*?)<\/expirationTime>/)?.[1]
+  const ageMin = gen ? (Date.now() - new Date(gen).getTime()) / 60000 : null
+  res.json({
+    now_utc: new Date().toISOString(),
+    generationTime: gen,
+    expirationTime: exp,
+    antiguedad_minutos: ageMin === null ? null : Number(ageMin.toFixed(1)),
+    valido: ageMin !== null && ageMin > 0 && ageMin < 1440,
+  })
+})
+
 // ------- Generate CSR -------
 app.post('/generate-csr', authMiddleware, (req, res) => {
   try {
