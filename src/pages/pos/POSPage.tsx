@@ -49,6 +49,24 @@ const PAYMENT_METHODS: { id: PaymentMethodType; label: string; icon: typeof Bank
   { id: 'account', label: 'Cta. Cte.', icon: CircleDollarSign },
 ]
 
+interface POSPaymentOption {
+  key: string
+  method: PaymentMethodType
+  label: string
+  icon: typeof Banknote
+  isCashDiscount?: boolean
+  isCashPlain?: boolean
+}
+
+const POS_PAYMENT_OPTIONS: POSPaymentOption[] = [
+  { key: 'cash_discount', method: 'cash', label: 'Efectivo', icon: Banknote, isCashDiscount: true },
+  { key: 'cash_plain', method: 'cash', label: 'Efectivo solo', icon: Banknote, isCashPlain: true },
+  { key: 'debit', method: 'debit', label: 'Débito', icon: CreditCard },
+  { key: 'credit', method: 'credit', label: 'Crédito', icon: CreditCard },
+  { key: 'transfer', method: 'transfer', label: 'Transfer.', icon: ArrowRightLeft },
+  { key: 'account', method: 'account', label: 'Cta. Cte.', icon: CircleDollarSign },
+]
+
 const RECEIPT_TYPES: { id: ReceiptType; label: string; desc: string }[] = [
   { id: 'ticket', label: 'Recibo', desc: 'Documento no fiscal, en A4' },
   { id: 'A', label: 'Factura A', desc: 'Resp. Inscripto' },
@@ -306,6 +324,20 @@ export default function POSPage() {
     setSurchargePct(opt.surcharge)
   }
 
+  function handleSelectPaymentOption(opt: POSPaymentOption) {
+    setPaymentMethod(opt.method)
+    const discounts = (business as any)?.payment_method_discounts as Record<string, number> | null
+    if (opt.isCashPlain) {
+      setPmDiscountPct(0)
+    } else if (opt.isCashDiscount) {
+      const pct = discounts?.cash ?? 10
+      setPmDiscountPct(pct)
+    } else {
+      const pct = discounts?.[opt.method] ?? 0
+      setPmDiscountPct(pct)
+    }
+  }
+
   function handleSelectPaymentMethod(method: PaymentMethodType) {
     setPaymentMethod(method)
     const discounts = (business as any)?.payment_method_discounts as Record<string, number> | null
@@ -315,8 +347,15 @@ export default function POSPage() {
 
   useEffect(() => {
     const discounts = (business as any)?.payment_method_discounts as Record<string, number> | null
-    const pct = discounts?.[paymentMethod] ?? 0
-    setPmDiscountPct(pct)
+    if (paymentMethod === 'cash') {
+      // Si el porcentaje actual es > 0, actualizarlo al configurado para cash (o 10)
+      if (pmDiscountPct > 0) {
+        setPmDiscountPct(discounts?.cash ?? 10)
+      }
+    } else {
+      const pct = discounts?.[paymentMethod] ?? 0
+      setPmDiscountPct(pct)
+    }
   }, [business])
 
   function addMixedSplit() {
@@ -640,7 +679,7 @@ export default function POSPage() {
   const surchargeAmt = (afterDiscount * surchargePct) / 100
   const totalDisplay = getTotal()
   const pmDiscounts = (business as any)?.payment_method_discounts as Record<string, number> | null
-  const currentPmDiscount = pmDiscounts?.[paymentMethod] ?? 0
+  const currentPmDiscount = pmDiscountPct
   const effectiveDiscountPct = discount + (paymentMethod !== 'account' ? currentPmDiscount : 0)
 
   // ──────────────────────────────────────────────── //
@@ -1050,19 +1089,28 @@ export default function POSPage() {
                 <div>
                   <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">Método de pago</p>
                   <div className="grid grid-cols-3 gap-1.5">
-                    {PAYMENT_METHODS.map((pm) => {
-                      const pmPct = pmDiscounts?.[pm.id] ?? 0
-                      const isSelected = paymentMethod === pm.id
+                    {POS_PAYMENT_OPTIONS.map((opt) => {
+                      const isSelected = opt.isCashDiscount
+                        ? paymentMethod === 'cash' && pmDiscountPct > 0
+                        : opt.isCashPlain
+                          ? paymentMethod === 'cash' && pmDiscountPct === 0
+                          : paymentMethod === opt.method
+                      const pmPct = opt.isCashDiscount
+                        ? (pmDiscounts?.cash ?? 10)
+                        : opt.isCashPlain
+                          ? 0
+                          : (pmDiscounts?.[opt.method] ?? 0)
+
                       return (
-                        <button key={pm.id} onClick={() => handleSelectPaymentMethod(pm.id)}
+                        <button key={opt.key} onClick={() => handleSelectPaymentOption(opt)}
                           className={`relative flex flex-col items-center justify-center gap-1 rounded-xl text-[10px] font-bold border transition-all active:scale-[0.97] min-h-[54px] ${
                             isSelected
                               ? 'border-primary/30 bg-primary/10 text-primary'
                               : 'border-white/8 bg-white/5 text-slate-400 hover:text-white hover:bg-white/5 hover:border-white/10'
                           }`}>
                           {isSelected && <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 rounded-full bg-primary" />}
-                          <pm.icon className={`w-4 h-4 ${isSelected ? 'text-primary' : 'text-slate-500'}`} />
-                          <span className="leading-tight">{pm.label}</span>
+                          <opt.icon className={`w-4 h-4 ${isSelected ? 'text-primary' : 'text-slate-500'}`} />
+                          <span className="leading-tight text-center px-1">{opt.label}</span>
                           {pmPct > 0 && <span className="text-[8px] font-bold text-primary">-{pmPct}%</span>}
                         </button>
                       )
@@ -1446,6 +1494,12 @@ export default function POSPage() {
                 <div className="flex justify-between items-center text-amber-400/80">
                   <span>Descuento {discount}%</span>
                   <span className="font-semibold">-{formatCurrency(discountAmt)}</span>
+                </div>
+              )}
+              {pmDiscountPct > 0 && (
+                <div className="flex justify-between items-center text-primary">
+                  <span>Desc. efectivo ({pmDiscountPct}%)</span>
+                  <span className="font-semibold">-{formatCurrency(afterDiscount * pmDiscountPct / 100)}</span>
                 </div>
               )}
               {surchargePct > 0 && (

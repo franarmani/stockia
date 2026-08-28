@@ -8,7 +8,7 @@
 
 import { formatCurrency } from '@/lib/utils'
 import {
-  documentStyles, emitterBlock, printOnReadyScript, openPrintWindow,
+  documentStyles, emitterBlock, watermarkBlock, printOnReadyScript, openPrintWindow,
   resolveAccent, inlineImage, type PrintMode,
 } from '@/lib/documentLayout'
 
@@ -96,6 +96,7 @@ export function generateQuotePDF(data: QuotePDFData, mode: PrintMode = 'color'):
 </head>
 <body>
   <div class="sheet">
+    ${watermarkBlock(data.logoUrl, data.businessName)}
 
     <div class="top">
 ${emitterBlock({

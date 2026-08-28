@@ -109,6 +109,50 @@ export function documentStyles(color: string, mode: PrintMode = 'color'): string
       padding: 18mm 18mm 16mm;
       display: flex;
       flex-direction: column;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* ── Marca de agua de fondo ── */
+    .watermark-container {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 70%;
+      max-width: 460px;
+      pointer-events: none;
+      z-index: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0.10;
+      user-select: none;
+    }
+    .watermark-logo {
+      width: 100%;
+      height: auto;
+      max-height: 400px;
+      object-fit: contain;
+      ${logoFilter}
+    }
+    .watermark-text {
+      font-size: 48px;
+      font-weight: 900;
+      color: #111827;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      transform: rotate(-25deg);
+      text-align: center;
+      line-height: 1.1;
+      opacity: 0.8;
+      max-width: 400px;
+      word-break: break-word;
+    }
+
+    .top, .customer, table, .totals, .callout, .notes, .spacer, .footer {
+      position: relative;
+      z-index: 1;
     }
 
     /* ── Header ── */
@@ -333,6 +377,21 @@ export const printOnReadyScript = `<script>
     setTimeout(go, 3000) // red lenta: imprimimos igual
   })()
 </script>`
+
+/**
+ * Marca de agua con el logo del negocio en el centro del comprobante
+ * con baja opacidad.
+ */
+export function watermarkBlock(logoUrl: string | null | undefined, fallbackText?: string | null): string {
+  const src = absoluteUrl(logoUrl)
+  if (src) {
+    return `<div class="watermark-container"><img class="watermark-logo" src="${src}" alt="" /></div>`
+  }
+  if (fallbackText) {
+    return `<div class="watermark-container"><div class="watermark-text">${fallbackText}</div></div>`
+  }
+  return ''
+}
 
 /** Abre un documento HTML en ventana nueva para imprimir o guardar como PDF. */
 export function openPrintWindow(html: string) {

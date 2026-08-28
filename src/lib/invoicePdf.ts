@@ -15,7 +15,7 @@ import { IVA_CONDITIONS, DOC_TIPOS, CBTE_TIPOS } from '@/types/database'
 import type { CartItem } from '@/types/database'
 
 import {
-  documentStyles, emitterBlock, printOnReadyScript, openPrintWindow,
+  documentStyles, emitterBlock, watermarkBlock, printOnReadyScript, openPrintWindow,
   resolveAccent, inlineImage, formatDateEs, type PrintMode,
 } from '@/lib/documentLayout'
 
@@ -170,6 +170,7 @@ export function generateInvoicePDF(data: InvoicePDFData, mode: PrintMode = 'colo
 </head>
 <body>
   <div class="sheet">
+    ${watermarkBlock(data.logoUrl, data.businessName)}
 
     <div class="top">
 ${emitterBlock({
