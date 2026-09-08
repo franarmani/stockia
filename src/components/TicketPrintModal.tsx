@@ -266,8 +266,14 @@ export default function TicketPrintModal({ open, onClose, data, width = '80mm' }
               )}
               <div className="flex justify-between">
                 <span>Cliente:</span>
-                <span>{data.customerName}</span>
+                <span>{data.customerName || 'Consumidor Final'}</span>
               </div>
+              {data.customerDocNro && data.customerDocNro !== '0' && (
+                <div className="flex justify-between">
+                  <span>{data.customerDocTipo === 80 ? 'CUIT:' : data.customerDocTipo === 96 ? 'DNI:' : 'Doc:'}</span>
+                  <span>{data.customerDocNro}</span>
+                </div>
+              )}
               <div className="flex justify-between">
                 <span>Vendedor:</span>
                 <span>{data.sellerName}</span>

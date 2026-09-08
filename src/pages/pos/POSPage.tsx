@@ -8,7 +8,7 @@ import { useBusinessStore } from '@/stores/businessStore'
 import { usePOSStore, isDecimalUnit, type PaymentMethodType, type ReceiptType, type PaymentSplit } from '@/stores/posStore'
 import { useFiscalStore } from '@/stores/fiscalStore'
 import { formatCurrency } from '@/lib/utils'
-import { UNIT_SHORT, DOC_TIPOS, type ProductUnit } from '@/types/database'
+import { UNIT_SHORT, DOC_TIPOS, IVA_CONDITIONS, type ProductUnit } from '@/types/database'
 import { requestCAE, calculateIVA, getCbteTipo } from '@/lib/afipService'
 import { queueSale } from '@/lib/offlineQueue'
 import { syncProductsCache, getCachedProducts, updateCachedStock, clearProductsCache } from '@/lib/offlineProductsCache'
@@ -147,6 +147,10 @@ export default function POSPage() {
   ])
   const [docTipoCustomer, setDocTipoCustomer] = useState('99')
   const [docNroCustomer, setDocNroCustomer] = useState('')
+  const [customerNameInput, setCustomerNameInput] = useState('')
+  const [customerIvaCondition, setCustomerIvaCondition] = useState('consumidor_final')
+  const [saveCustomerCheck, setSaveCustomerCheck] = useState(false)
+  const [showQuickCustomerForm, setShowQuickCustomerForm] = useState(false)
   const [qtyInputProduct, setQtyInputProduct] = useState<Product | null>(null)
   const [qtyInputValue, setQtyInputValue] = useState('')
   const [postSaleData, setPostSaleData] = useState<PostSaleData | null>(null)
@@ -319,6 +323,55 @@ export default function POSPage() {
 
   const selectedCustomer = customers.find((c) => c.id === customerId)
 
+  function handleSelectCustomer(c: Customer | null) {
+    if (c) {
+      setCustomerId(c.id)
+      setCustomerNameInput(c.name || '')
+      setDocTipoCustomer((c as any).doc_tipo ? String((c as any).doc_tipo) : '80')
+      setDocNroCustomer((c as any).doc_nro || '')
+      setCustomerIvaCondition((c as any).iva_condition || 'consumidor_final')
+    } else {
+      setCustomerId(null)
+      setCustomerNameInput('')
+      setDocTipoCustomer(receiptType === 'A' ? '80' : '99')
+      setDocNroCustomer('')
+      setCustomerIvaCondition('consumidor_final')
+      setSaveCustomerCheck(false)
+    }
+  }
+
+  function handleDocNroChange(val: string) {
+    setDocNroCustomer(val)
+    const clean = val.replace(/[^0-9]/g, '')
+    if (clean.length === 11 && (docTipoCustomer === '99' || docTipoCustomer === '96')) {
+      setDocTipoCustomer('80')
+      if (customerIvaCondition === 'consumidor_final') {
+        if (clean.startsWith('30') || clean.startsWith('33')) {
+          setCustomerIvaCondition('responsable_inscripto')
+        } else {
+          setCustomerIvaCondition('monotributo')
+        }
+      }
+    } else if ((clean.length === 7 || clean.length === 8) && docTipoCustomer === '99') {
+      setDocTipoCustomer('96')
+    } else if (clean.length === 0 && receiptType !== 'A') {
+      setDocTipoCustomer('99')
+      setCustomerIvaCondition('consumidor_final')
+    }
+  }
+
+  useEffect(() => {
+    if (customerId) {
+      const c = customers.find(cust => cust.id === customerId)
+      if (c) {
+        setCustomerNameInput(c.name || '')
+        setDocTipoCustomer((c as any).doc_tipo ? String((c as any).doc_tipo) : '80')
+        setDocNroCustomer((c as any).doc_nro || '')
+        setCustomerIvaCondition((c as any).iva_condition || 'consumidor_final')
+      }
+    }
+  }, [customerId, customers])
+
   function handleSelectCuota(opt: typeof CUOTA_OPTIONS[number]) {
     setInstallments(opt.n)
     setSurchargePct(opt.surcharge)
@@ -379,9 +432,40 @@ export default function POSPage() {
     if (receiptType !== 'ticket' && !isFiscalConnected) {
       toast.error('AFIP no está configurado. Andá a Configuración → Facturación AFIP para completar el wizard.'); return
     }
-    if (receiptType === 'A' && !docNroCustomer.trim()) {
-      toast.error('Ingresá el CUIT del cliente para Factura A'); return
+
+    const cleanDoc = docNroCustomer.replace(/[^0-9]/g, '')
+    let docTipoNum = Number(docTipoCustomer) || 99
+    let docNro = cleanDoc
+
+    if (!cleanDoc || cleanDoc === '0') {
+      if (receiptType === 'A') {
+        toast.error('Ingresá el CUIT del cliente para Factura A')
+        return
+      }
+      docTipoNum = 99
+      docNro = '0'
+    } else {
+      if (docTipoNum === 99) {
+        docTipoNum = cleanDoc.length === 11 ? 80 : 96
+      }
+      if (receiptType === 'A') {
+        docTipoNum = 80
+      }
     }
+
+    const resolvedCustomerName = customerNameInput.trim() || selectedCustomer?.name || (cleanDoc && cleanDoc !== '0' ? (docTipoNum === 80 ? `Cliente CUIT ${cleanDoc}` : `Cliente DNI ${cleanDoc}`) : 'Consumidor Final')
+
+    if (receiptType === 'A') {
+      if (cleanDoc.length !== 11) {
+        toast.error('El CUIT debe tener 11 dígitos para Factura A')
+        return
+      }
+      if (!customerNameInput.trim() && !selectedCustomer?.name) {
+        toast.error('Ingresá el nombre o razón social del cliente para Factura A')
+        return
+      }
+    }
+
     if (mixedPaymentMode && Math.abs(mixedRemaining) > 0.01) {
       toast.error('Los montos del pago mixto no coinciden con el total'); return
     }
@@ -476,11 +560,30 @@ export default function POSPage() {
         return
       }
 
+      let finalCustomerId = customerId
+      if (saveCustomerCheck && !customerId && resolvedCustomerName && resolvedCustomerName !== 'Consumidor Final') {
+        try {
+          const { data: newCust } = await supabase.from('customers').insert({
+            business_id: profile!.business_id,
+            name: resolvedCustomerName,
+            doc_tipo: String(docTipoNum),
+            doc_nro: cleanDoc || null,
+            iva_condition: customerIvaCondition || 'consumidor_final',
+          }).select().single()
+          if (newCust) {
+            finalCustomerId = newCust.id
+            setCustomers(prev => [...prev, newCust as Customer])
+          }
+        } catch (e) {
+          console.warn('No se pudo guardar el cliente en la base de datos:', e)
+        }
+      }
+
       const { data: sale, error: saleError } = await supabase
         .from('sales')
         .insert({
           business_id: profile!.business_id,
-          customer_id: customerId,
+          customer_id: finalCustomerId,
           total,
           discount,
           payment_method: primaryPayment,
@@ -557,8 +660,6 @@ export default function POSPage() {
       const business = useBusinessStore.getState().business
       if (receiptType !== 'ticket' && business) {
         const pv = business.punto_venta || 1
-        const docTipoNum = Number(docTipoCustomer) || 99
-        const docNro = docNroCustomer.replace(/[^0-9]/g, '') || '0'
 
         try {
           const caeResult = await requestCAE({
@@ -574,8 +675,8 @@ export default function POSPage() {
             env: fiscalEnv,
             saleId: (sale as any).id,
             businessId: profile!.business_id,
-            customerName: selectedCustomer?.name || 'Consumidor Final',
-            customerIvaCondition: selectedCustomer ? (selectedCustomer as any).iva_condition : 'consumidor_final',
+            customerName: resolvedCustomerName,
+            customerIvaCondition: customerIvaCondition || (selectedCustomer ? (selectedCustomer as any).iva_condition : 'consumidor_final'),
           })
 
           if (caeResult.success) {
@@ -646,10 +747,10 @@ export default function POSPage() {
         total,
         paymentMethod: mixedPaymentMode ? 'mixed' : paymentMethod,
         installments,
-        customerName: selectedCustomer?.name || '',
-        customerDocTipo: Number(docTipoCustomer) || 99,
-        customerDocNro: docNroCustomer || undefined,
-        customerIvaCondition: selectedCustomer ? (selectedCustomer as any).iva_condition : undefined,
+        customerName: resolvedCustomerName,
+        customerDocTipo: docTipoNum,
+        customerDocNro: docNro !== '0' ? docNro : undefined,
+        customerIvaCondition: customerIvaCondition || (selectedCustomer ? (selectedCustomer as any).iva_condition : undefined),
         customerPhone: selectedCustomer?.phone || undefined,
         sellerName: profile?.name || '',
         footer: business?.receipt_footer,
@@ -666,7 +767,15 @@ export default function POSPage() {
         autoPrint: business?.auto_print || false,
       })
 
-      clearCart(); setDocNroCustomer(''); setDocTipoCustomer('99'); setShowConfirmModal(false); setShowSuccess(true); setShowTicketModal(true)
+      clearCart()
+      setDocNroCustomer('')
+      setCustomerNameInput('')
+      setDocTipoCustomer('99')
+      setCustomerIvaCondition('consumidor_final')
+      setSaveCustomerCheck(false)
+      setShowConfirmModal(false)
+      setShowSuccess(true)
+      setShowTicketModal(true)
       setMixedPaymentMode(false); setMixedSplits([{ method: 'cash', amount: 0 }, { method: 'debit', amount: 0 }])
       playBeep(); fetchProducts()
       setTimeout(() => setShowSuccess(false), 2500)
@@ -988,37 +1097,48 @@ export default function POSPage() {
             </div>
 
             {/* Customer selector */}
-            <button
-              onClick={() => setShowCustomerModal(true)}
-              className={`flex items-center gap-2.5 w-full p-3 rounded-xl border transition-all ${
-                selectedCustomer
-                  ? 'border-primary/20 bg-primary/5'
-                  : 'border-white/8 bg-white/5 hover:bg-white/5 hover:border-white/10'
-              }`}
-            >
-              <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border ${
-                selectedCustomer ? 'bg-primary/15 text-primary border-primary/20' : 'bg-white/5 text-slate-500 border-white/8'
-              }`}>
-                <User className="w-4 h-4" />
-              </div>
-              <div className="flex-1 text-left min-w-0">
-                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Cliente</p>
-                <p className="text-sm font-bold text-white truncate">
-                  {selectedCustomer ? selectedCustomer.name : 'Consumidor Final'}
-                </p>
-                {selectedCustomer && (selectedCustomer as any).doc_nro && (
-                  <p className="text-[10px] text-slate-500">{(selectedCustomer as any).doc_nro}</p>
-                )}
-              </div>
-              {selectedCustomer ? (
-                <span onClick={(e) => { e.stopPropagation(); setCustomerId(null) }}
-                  className="w-6 h-6 rounded-md hover:bg-white/8 flex items-center justify-center text-slate-500 hover:text-red-400 transition">
-                  <X className="w-3.5 h-3.5" />
-                </span>
-              ) : (
-                <ChevronRight className="w-4 h-4 text-slate-600" />
-              )}
-            </button>
+            {(() => {
+              const displayName = customerNameInput.trim() || selectedCustomer?.name || 'Consumidor Final'
+              const displayDoc = docNroCustomer.trim() || (selectedCustomer as any)?.doc_nro
+              const hasCustomerData = !!selectedCustomer || !!customerNameInput.trim() || (!!docNroCustomer.trim() && docNroCustomer !== '0')
+
+              return (
+                <button
+                  onClick={() => setShowCustomerModal(true)}
+                  className={`flex items-center gap-2.5 w-full p-3 rounded-xl border transition-all ${
+                    hasCustomerData && displayName !== 'Consumidor Final'
+                      ? 'border-primary/20 bg-primary/5'
+                      : 'border-white/8 bg-white/5 hover:bg-white/5 hover:border-white/10'
+                  }`}
+                >
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border ${
+                    hasCustomerData && displayName !== 'Consumidor Final' ? 'bg-primary/15 text-primary border-primary/20' : 'bg-white/5 text-slate-500 border-white/8'
+                  }`}>
+                    <User className="w-4 h-4" />
+                  </div>
+                  <div className="flex-1 text-left min-w-0">
+                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Cliente</p>
+                    <p className="text-sm font-bold text-white truncate">
+                      {displayName}
+                    </p>
+                    {displayDoc && displayDoc !== '0' && (
+                      <p className="text-[10px] text-slate-400">
+                        {DOC_TIPOS.find(d => String(d.id) === String(docTipoCustomer))?.code || 'Doc'}: {displayDoc}
+                      </p>
+                    )}
+                  </div>
+                  {hasCustomerData && (displayName !== 'Consumidor Final' || (displayDoc && displayDoc !== '0')) ? (
+                    <span onClick={(e) => { e.stopPropagation(); handleSelectCustomer(null) }}
+                      className="w-6 h-6 rounded-md hover:bg-white/8 flex items-center justify-center text-slate-500 hover:text-red-400 transition"
+                      title="Quitar cliente">
+                      <X className="w-3.5 h-3.5" />
+                    </span>
+                  ) : (
+                    <ChevronRight className="w-4 h-4 text-slate-600" />
+                  )}
+                </button>
+              )
+            })()}
           </div>
 
           {/* Cart items */}
@@ -1285,7 +1405,7 @@ export default function POSPage() {
                 <button onClick={() => setShowCustomerModal(true)}
                   className="flex items-center gap-2 w-full p-2.5 rounded-xl border border-white/8 bg-white/5 hover:bg-white/5 transition-all text-left">
                   <User className="w-4 h-4 text-slate-500" />
-                  <span className="text-sm font-medium text-white">{selectedCustomer?.name || 'Consumidor Final'}</span>
+                  <span className="text-sm font-medium text-white">{customerNameInput.trim() || selectedCustomer?.name || 'Consumidor Final'}</span>
                   <ChevronRight className="w-3.5 h-3.5 text-slate-600 ml-auto" />
                 </button>
               </div>
@@ -1384,25 +1504,110 @@ export default function POSPage() {
       </Modal>
 
       {/* Customer modal */}
-      <Modal open={showCustomerModal} onClose={() => setShowCustomerModal(false)} title="Seleccionar cliente" size="sm">
-        <input type="text" placeholder="Buscar cliente..." value={customerSearch} onChange={(e) => setCustomerSearch(e.target.value)}
-          className="w-full h-10 px-3 rounded-xl border border-white/10 bg-[#0d1b2d] text-white placeholder:text-slate-500 text-sm mb-3 focus:outline-none focus:ring-2 focus:ring-primary/20" />
-        <div className="space-y-1.5 max-h-64 overflow-auto">
-          <button onClick={() => { setCustomerId(null); setDocTipoCustomer('99'); setDocNroCustomer(''); setShowCustomerModal(false) }}
-            className="w-full text-left p-3 rounded-xl border border-white/8 bg-white/5 hover:bg-white/8 text-sm font-medium text-white transition">
-            Consumidor Final
-          </button>
-          {customers.filter(c => c.name.toLowerCase().includes(customerSearch.toLowerCase())).map(c => (
-            <button key={c.id} onClick={() => { setCustomerId(c.id); setDocTipoCustomer((c as any).doc_tipo || '99'); setDocNroCustomer((c as any).doc_nro || ''); setShowCustomerModal(false) }}
-              className={`w-full text-left p-3 rounded-xl border transition ${
-                customerId === c.id ? 'border-primary/40 bg-primary/10' : 'border-white/8 bg-white/5 hover:bg-white/5'
-              }`}>
-              <p className="text-sm font-semibold text-white">{c.name}</p>
-              {c.phone && <p className="text-xs text-slate-500">{c.phone}</p>}
-              {(c as any).doc_nro && <p className="text-[11px] text-slate-600">{DOC_TIPOS.find(d => String(d.id) === (c as any).doc_tipo)?.code}: {(c as any).doc_nro}</p>}
-              {c.balance > 0 && <Badge variant="warning" className="mt-1">Deuda: {formatCurrency(c.balance)}</Badge>}
+      <Modal open={showCustomerModal} onClose={() => { setShowCustomerModal(false); setShowQuickCustomerForm(false) }} title="Seleccionar cliente" size="sm">
+        <div className="space-y-3">
+          <input
+            type="text"
+            placeholder="Buscar cliente por nombre o CUIT..."
+            value={customerSearch}
+            onChange={(e) => setCustomerSearch(e.target.value)}
+            className="w-full h-10 px-3 rounded-xl border border-white/10 bg-[#0d1b2d] text-white placeholder:text-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+          />
+
+          {/* Quick toggle to type CUIT and Name */}
+          {!showQuickCustomerForm ? (
+            <button
+              onClick={() => setShowQuickCustomerForm(true)}
+              className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl border border-dashed border-primary/40 bg-primary/5 hover:bg-primary/10 text-primary text-xs font-semibold transition"
+            >
+              <Plus className="w-3.5 h-3.5" /> Ingresar CUIT y nombre para esta venta
             </button>
-          ))}
+          ) : (
+            <div className="p-3 rounded-xl bg-white/[0.04] border border-white/10 space-y-2.5 animate-fade-in">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-white">Datos de facturación</span>
+                <button onClick={() => setShowQuickCustomerForm(false)} className="text-[11px] text-slate-400 hover:text-white">
+                  Ocultar
+                </button>
+              </div>
+              <div>
+                <label className="text-[10px] font-semibold text-slate-400 block mb-1 uppercase tracking-wider">Nombre o Razón Social</label>
+                <input
+                  type="text"
+                  placeholder="Ej: Juan Pérez / Empresa SRL"
+                  value={customerNameInput}
+                  onChange={(e) => setCustomerNameInput(e.target.value)}
+                  className="w-full h-9 px-3 rounded-lg border border-white/10 bg-[#0d1b2d] text-white placeholder:text-slate-500 text-xs focus:outline-none focus:border-primary/50"
+                />
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                <div>
+                  <label className="text-[10px] font-semibold text-slate-400 block mb-1 uppercase tracking-wider">Tipo</label>
+                  <select
+                    value={docTipoCustomer}
+                    onChange={(e) => setDocTipoCustomer(e.target.value)}
+                    className="w-full h-9 px-2 rounded-lg border border-white/10 bg-[#0d1b2d] text-white text-xs focus:outline-none"
+                  >
+                    {DOC_TIPOS.map(d => (
+                      <option key={d.id} value={d.id} className="bg-[#07111f]">{d.code}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="col-span-2">
+                  <label className="text-[10px] font-semibold text-slate-400 block mb-1 uppercase tracking-wider">CUIT / DNI</label>
+                  <input
+                    type="text"
+                    placeholder="20-12345678-9"
+                    value={docNroCustomer}
+                    onChange={(e) => handleDocNroChange(e.target.value)}
+                    className="w-full h-9 px-3 rounded-lg border border-white/10 bg-[#0d1b2d] text-white placeholder:text-slate-500 text-xs focus:outline-none focus:border-primary/50"
+                  />
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setCustomerId(null)
+                  setShowQuickCustomerForm(false)
+                  setShowCustomerModal(false)
+                  toast.success('Datos del cliente aplicados a la venta')
+                }}
+                className="w-full h-8 rounded-lg bg-primary hover:bg-primary/90 text-white text-xs font-bold transition"
+              >
+                Aplicar a la venta
+              </button>
+            </div>
+          )}
+
+          <div className="space-y-1.5 max-h-56 overflow-auto">
+            <button
+              onClick={() => { handleSelectCustomer(null); setShowCustomerModal(false) }}
+              className={`w-full text-left p-3 rounded-xl border transition ${
+                !customerId && !customerNameInput.trim() && !docNroCustomer.trim()
+                  ? 'border-primary/40 bg-primary/10'
+                  : 'border-white/8 bg-white/5 hover:bg-white/8'
+              } text-sm font-medium text-white`}
+            >
+              Consumidor Final (sin identificar)
+            </button>
+            {customers.filter(c => c.name.toLowerCase().includes(customerSearch.toLowerCase()) || (c as any).doc_nro?.includes(customerSearch)).map(c => (
+              <button
+                key={c.id}
+                onClick={() => { handleSelectCustomer(c); setShowCustomerModal(false) }}
+                className={`w-full text-left p-3 rounded-xl border transition ${
+                  customerId === c.id ? 'border-primary/40 bg-primary/10' : 'border-white/8 bg-white/5 hover:bg-white/5'
+                }`}
+              >
+                <p className="text-sm font-semibold text-white">{c.name}</p>
+                {c.phone && <p className="text-xs text-slate-500">{c.phone}</p>}
+                {(c as any).doc_nro && (
+                  <p className="text-[11px] text-slate-400">
+                    {DOC_TIPOS.find(d => String(d.id) === (c as any).doc_tipo)?.code || 'Doc'}: {(c as any).doc_nro}
+                  </p>
+                )}
+                {c.balance > 0 && <Badge variant="warning" className="mt-1">Deuda: {formatCurrency(c.balance)}</Badge>}
+              </button>
+            ))}
+          </div>
         </div>
       </Modal>
 
@@ -1413,7 +1618,15 @@ export default function POSPage() {
             const isFiscal = rt.id !== 'ticket'
             const isDisabled = isFiscal && !isFiscalConnected
             return (
-              <button key={rt.id} onClick={() => { if (!isDisabled) { setReceiptType(rt.id); setShowReceiptModal(false) } }} disabled={isDisabled}
+              <button key={rt.id} onClick={() => {
+                if (!isDisabled) {
+                  setReceiptType(rt.id);
+                  if (rt.id === 'A' && docTipoCustomer === '99') {
+                    setDocTipoCustomer('80');
+                  }
+                  setShowReceiptModal(false)
+                }
+              }} disabled={isDisabled}
                 className={`w-full text-left p-3 rounded-xl border transition-all ${
                   isDisabled ? 'border-white/5 bg-white/5 opacity-40 cursor-not-allowed'
                     : receiptType === rt.id ? 'border-primary/40 bg-primary/10'
@@ -1468,7 +1681,9 @@ export default function POSPage() {
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-slate-500">Cliente</span>
-                <span className="font-semibold text-white">{selectedCustomer?.name || 'Consumidor Final'}</span>
+                <span className="font-semibold text-white">
+                  {customerNameInput.trim() || selectedCustomer?.name || (docNroCustomer.trim() ? (docTipoCustomer === '80' ? `CUIT ${docNroCustomer}` : `Doc ${docNroCustomer}`) : 'Consumidor Final')}
+                </span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-slate-500">Medio de pago</span>
@@ -1530,41 +1745,97 @@ export default function POSPage() {
             </div>
           </div>
 
-          {receiptType === 'A' && (
-            <div className="space-y-2">
+          {receiptType !== 'ticket' && (
+            <div className="space-y-3 p-3.5 rounded-xl bg-white/[0.03] border border-white/10">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+                  <User className="w-3.5 h-3.5 text-primary" />
+                  Datos del cliente (Factura {receiptType})
+                </span>
+                {selectedCustomer && (
+                  <span className="text-[10px] bg-primary/15 text-primary px-2 py-0.5 rounded-md font-medium">
+                    Cliente seleccionado
+                  </span>
+                )}
+              </div>
+
+              {/* Nombre o Razón Social */}
+              <div>
+                <label className="text-[11px] font-semibold text-slate-400 block mb-1 uppercase tracking-wider">
+                  Nombre o Razón Social {receiptType === 'A' ? '*' : '(opcional)'}
+                </label>
+                <input
+                  type="text"
+                  placeholder={receiptType === 'A' ? 'Ej: Distribuidora Norte SA' : 'Consumidor Final (o nombre del cliente)'}
+                  value={customerNameInput}
+                  onChange={(e) => setCustomerNameInput(e.target.value)}
+                  className="w-full h-10 px-3.5 rounded-xl border border-white/10 bg-[#0d1b2d] text-white placeholder:text-slate-500 text-sm focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/15"
+                />
+              </div>
+
+              {/* Documento: Tipo y Número */}
               <div className="grid grid-cols-3 gap-2">
                 <div>
-                  <label className="text-[11px] font-semibold text-slate-500 block mb-1 uppercase tracking-wider">Tipo doc.</label>
-                  <select value={docTipoCustomer} onChange={(e) => setDocTipoCustomer(e.target.value)}
-                    className="w-full h-10 px-2.5 rounded-xl border border-white/10 bg-[#0d1b2d] text-white text-sm focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/15">
-                    {DOC_TIPOS.map(d => <option key={d.id} value={d.id} className="bg-[#07111f]">{d.code}</option>)}
+                  <label className="text-[11px] font-semibold text-slate-400 block mb-1 uppercase tracking-wider">Tipo doc.</label>
+                  <select
+                    value={docTipoCustomer}
+                    onChange={(e) => setDocTipoCustomer(e.target.value)}
+                    className="w-full h-10 px-2.5 rounded-xl border border-white/10 bg-[#0d1b2d] text-white text-sm focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/15"
+                  >
+                    {DOC_TIPOS.map(d => (
+                      <option key={d.id} value={d.id} className="bg-[#07111f]">{d.code}</option>
+                    ))}
                   </select>
                 </div>
                 <div className="col-span-2">
-                  <label className="text-[11px] font-semibold text-slate-500 block mb-1 uppercase tracking-wider">Nro. doc. *</label>
-                  <input type="text" placeholder="20-12345678-9" value={docNroCustomer} onChange={(e) => setDocNroCustomer(e.target.value)}
-                    className="w-full h-10 px-3.5 rounded-xl border border-white/10 bg-[#0d1b2d] text-white placeholder:text-slate-500 text-sm focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/15" />
+                  <label className="text-[11px] font-semibold text-slate-400 block mb-1 uppercase tracking-wider">
+                    {docTipoCustomer === '80' ? 'CUIT' : docTipoCustomer === '96' ? 'DNI' : 'Nro. de documento'} {receiptType === 'A' ? '*' : '(opcional)'}
+                  </label>
+                  <input
+                    type="text"
+                    placeholder={docTipoCustomer === '80' ? '20-12345678-9' : 'DNI / CUIT'}
+                    value={docNroCustomer}
+                    onChange={(e) => handleDocNroChange(e.target.value)}
+                    className="w-full h-10 px-3.5 rounded-xl border border-white/10 bg-[#0d1b2d] text-white placeholder:text-slate-500 text-sm focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/15"
+                  />
                 </div>
               </div>
-            </div>
-          )}
-          {receiptType === 'B' && (
-            <div className="space-y-2">
-              <div className="grid grid-cols-3 gap-2">
+
+              {/* Condición de IVA (si ingresaron CUIT o es Factura A) */}
+              {(docTipoCustomer === '80' || receiptType === 'A' || docNroCustomer.replace(/[^0-9]/g, '').length >= 10) && (
                 <div>
-                  <label className="text-[11px] font-semibold text-slate-500 block mb-1 uppercase tracking-wider">Tipo doc.</label>
-                  <select value={docTipoCustomer} onChange={(e) => setDocTipoCustomer(e.target.value)}
-                    className="w-full h-10 px-2.5 rounded-xl border border-white/10 bg-[#0d1b2d] text-white text-sm focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/15">
-                    {DOC_TIPOS.map(d => <option key={d.id} value={d.id} className="bg-[#07111f]">{d.code}</option>)}
+                  <label className="text-[11px] font-semibold text-slate-400 block mb-1 uppercase tracking-wider">Condición IVA</label>
+                  <select
+                    value={customerIvaCondition}
+                    onChange={(e) => setCustomerIvaCondition(e.target.value)}
+                    className="w-full h-10 px-2.5 rounded-xl border border-white/10 bg-[#0d1b2d] text-white text-sm focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/15"
+                  >
+                    {IVA_CONDITIONS.map(c => (
+                      <option key={c.id} value={c.id} className="bg-[#07111f]">{c.label}</option>
+                    ))}
                   </select>
                 </div>
-                <div className="col-span-2">
-                  <label className="text-[11px] font-semibold text-slate-500 block mb-1 uppercase tracking-wider">Nro. doc. (opc.)</label>
-                  <input type="text" placeholder="DNI / CUIT" value={docNroCustomer} onChange={(e) => setDocNroCustomer(e.target.value)}
-                    className="w-full h-10 px-3.5 rounded-xl border border-white/10 bg-[#0d1b2d] text-white placeholder:text-slate-500 text-sm focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/15" />
-                </div>
-              </div>
-              <p className="text-[10px] text-slate-600">Para montos mayores a $22.850 AFIP puede requerir identificación</p>
+              )}
+
+              {/* Opción para guardar cliente en base de datos si no existe */}
+              {!customerId && (customerNameInput.trim() || docNroCustomer.trim()) && (
+                <label className="flex items-center gap-2 pt-0.5 cursor-pointer text-xs text-slate-300">
+                  <input
+                    type="checkbox"
+                    checked={saveCustomerCheck}
+                    onChange={(e) => setSaveCustomerCheck(e.target.checked)}
+                    className="rounded border-white/20 bg-[#0d1b2d] text-primary focus:ring-0 focus:ring-offset-0"
+                  />
+                  <span>Guardar en clientes para futuras ventas</span>
+                </label>
+              )}
+
+              {receiptType === 'B' && !docNroCustomer.trim() && (
+                <p className="text-[10px] text-slate-500">Para montos mayores a $22.850 AFIP puede requerir identificación</p>
+              )}
+              {receiptType === 'C' && !docNroCustomer.trim() && (
+                <p className="text-[10px] text-slate-500">Opcional: Si el cliente no pide CUIT, se emite como Consumidor Final.</p>
+              )}
             </div>
           )}
 

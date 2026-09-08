@@ -84,6 +84,15 @@ function getDocLabel(docTipo: number | undefined) {
   return DOC_TIPOS.find(d => d.id === docTipo)?.label || 'Doc.'
 }
 
+function formatDocNumber(docNro: string | undefined, docTipo: number | undefined): string {
+  if (!docNro) return '-'
+  const clean = docNro.replace(/[^0-9]/g, '')
+  if ((docTipo === 80 || docTipo === 86) && clean.length === 11) {
+    return `${clean.slice(0, 2)}-${clean.slice(2, 10)}-${clean.slice(10)}`
+  }
+  return docNro
+}
+
 const PAYMENT_LABELS: Record<string, string> = {
   cash: 'Efectivo', debit: 'Tarjeta Débito', credit: 'Tarjeta Crédito',
   transfer: 'Transferencia', account: 'Cuenta Corriente', mixed: 'Pago mixto',
@@ -203,7 +212,7 @@ ${emitterBlock({
       <p class="block-title">Datos del cliente</p>
       <p class="cname">${data.customerName || 'Consumidor Final'}</p>
       <div class="customer-grid">
-        ${hasDoc ? `<p class="field"><span>${getDocLabel(data.customerDocTipo)}:</span> ${data.customerDocNro}</p>` : ''}
+        ${hasDoc ? `<p class="field"><span>${getDocLabel(data.customerDocTipo)}:</span> ${formatDocNumber(data.customerDocNro, data.customerDocTipo)}</p>` : ''}
         ${data.customerIvaCondition ? `<p class="field"><span>Cond. IVA:</span> ${getIvaLabel(data.customerIvaCondition)}</p>` : ''}
         ${data.customerAddress ? `<p class="field"><span>Domicilio:</span> ${data.customerAddress}</p>` : ''}
         ${paymentLabel ? `<p class="field"><span>Forma de pago:</span> ${paymentLabel}</p>` : ''}
@@ -313,6 +322,7 @@ export function getWhatsAppLink(data: InvoicePDFData, phone?: string): string {
     data.businessCuit ? `CUIT: ${data.businessCuit}` : '',
     ``,
     `Cliente: ${data.customerName || 'Consumidor Final'}`,
+    hasDoc ? `${getDocLabel(data.customerDocTipo)}: ${formatDocNumber(data.customerDocNro, data.customerDocTipo)}` : '',
     ``,
     ...data.items.map(i => `• ${i.product.name} x${i.quantity} → ${formatCurrency(i.price * i.quantity)}`),
     ``,
