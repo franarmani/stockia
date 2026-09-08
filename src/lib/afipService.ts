@@ -160,16 +160,39 @@ export async function requestCAE(req: AFIPInvoiceRequest): Promise<AFIPInvoiceRe
       return { success: false, error: draftError?.message || 'No se pudo registrar el comprobante.' }
     }
 
-    const result = await authorizeInvoice((draft as any).id)
+    const invoiceId = (draft as any).id
+
+    // Guardar los items del comprobante para que la Edge Function y AFIP puedan procesarlos
+    if (req.items && req.items.length > 0) {
+      const invoiceItemsData = req.items.map(item => {
+        const unitPrice = item.price
+        const itemTotal = unitPrice * item.quantity
+        const discountedTotal = itemTotal - (itemTotal * (req.discount || 0) / 100)
+        const surchargedTotal = discountedTotal + (discountedTotal * (req.surcharge || 0) / 100)
+        return {
+          invoice_id: invoiceId,
+          product_id: item.product.id,
+          description: item.product.name,
+          qty: item.quantity,
+          unit_price: unitPrice,
+          iva_rate: req.businessIvaCondition === 'responsable_inscripto' ? 21 : 0,
+          total: surchargedTotal,
+        }
+      })
+      await supabase.from('invoice_items').insert(invoiceItemsData as any)
+    }
+
+    const result = await authorizeInvoice(invoiceId)
 
     // AFIP rechazo o no respondio: el borrador no sirve para nada y ensuciaria
     // el listado de comprobantes.
     if (!result.success) {
-      await supabase.from('invoices').delete().eq('id', (draft as any).id)
+      await supabase.from('invoice_items').delete().eq('invoice_id', invoiceId)
+      await supabase.from('invoices').delete().eq('id', invoiceId)
       return result
     }
 
-    return { ...result, cbteTipo, ...iva, invoiceId: (draft as any).id }
+    return { ...result, cbteTipo, ...iva, invoiceId }
   } catch (err: any) {
     console.error('AFIP error:', err)
     return {
@@ -191,7 +214,28 @@ export async function authorizeInvoice(invoiceId: string): Promise<AFIPInvoiceRe
 
     if (error) {
       console.warn('Authorize invoice edge function error:', error)
-      return { success: false, error: error.message || 'Edge Function error' }
+      let detalle = error.message || 'Error al conectar con el servicio fiscal'
+      try {
+        const res = (error as any)?.context
+        if (res && typeof res.text === 'function') {
+          const body = await res.text()
+          try {
+            const parsed = JSON.parse(body)
+            if (parsed?.error) detalle = parsed.error
+            else if (typeof parsed === 'string') detalle = parsed
+          } catch {
+            if (body) detalle = body
+          }
+        }
+      } catch {
+        // nos quedamos con el mensaje existente
+      }
+
+      if (detalle.includes('non-2xx status code') || detalle.includes('Edge Function error')) {
+        detalle = 'El servicio de facturación AFIP no respondió o no está activo en este momento. Verificá la conexión en Ajustes → Facturación AFIP.'
+      }
+
+      return { success: false, error: detalle }
     }
 
     if (data?.error) {

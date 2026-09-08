@@ -134,7 +134,11 @@ export default function TicketPrintModal({ open, onClose, data, width = '80mm' }
     printWindow.document.close()
   }
 
-  const receiptLabel = data.receiptType === 'ticket' ? 'TICKET' : `FACTURA ${data.receiptType}`
+  const receiptLabel = data.receiptType === 'ticket'
+    ? 'TICKET'
+    : data.cae
+      ? `FACTURA ${data.receiptType}`
+      : `RECIBO (${data.receiptType} SIN CAE)`
 
   return (
     <Modal open={open} onClose={onClose} title="Imprimir ticket" size="sm">
@@ -177,6 +181,9 @@ export default function TicketPrintModal({ open, onClose, data, width = '80mm' }
             {/* Receipt type */}
             <div className="text-center border-t border-dashed border-gray-400 pt-1 mb-1">
               <p className="font-bold">{receiptLabel}</p>
+              {data.receiptType !== 'ticket' && !data.cae && (
+                <p className="text-[9px] text-gray-500 italic">Documento no válido como factura fiscal</p>
+              )}
               {data.invoiceNumber && data.puntoVenta && (
                 <p className="text-[10px] font-bold">
                   Nro: {String(data.puntoVenta).padStart(5, '0')}-{String(data.invoiceNumber).padStart(8, '0')}

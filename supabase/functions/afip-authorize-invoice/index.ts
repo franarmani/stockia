@@ -67,8 +67,12 @@ serve(async (req) => {
       .eq('invoice_id', invoice_id)
 
     // Call billing service
-    const BILLING_SERVICE_URL = Deno.env.get('BILLING_SERVICE_URL') || 'http://localhost:3001'
+    const BILLING_SERVICE_URL = Deno.env.get('BILLING_SERVICE_URL') || ''
     const BILLING_SERVICE_KEY = Deno.env.get('BILLING_SERVICE_KEY') || ''
+
+    if (!BILLING_SERVICE_URL || BILLING_SERVICE_URL.includes('localhost')) {
+      throw new Error('El servicio de facturación no está configurado (BILLING_SERVICE_URL no está definido en Supabase).')
+    }
 
     const authorizeRes = await fetch(`${BILLING_SERVICE_URL}/authorize`, {
       method: 'POST',

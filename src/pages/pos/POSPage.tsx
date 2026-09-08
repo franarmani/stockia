@@ -154,6 +154,7 @@ export default function POSPage() {
   const [qtyInputProduct, setQtyInputProduct] = useState<Product | null>(null)
   const [qtyInputValue, setQtyInputValue] = useState('')
   const [postSaleData, setPostSaleData] = useState<PostSaleData | null>(null)
+  const [lastSaleHadCae, setLastSaleHadCae] = useState(false)
   const searchRef = useRef<HTMLInputElement>(null)
   const barcodeBuffer = useRef('')
   const barcodeTimer = useRef<ReturnType<typeof setTimeout>>(undefined)
@@ -679,7 +680,8 @@ export default function POSPage() {
             customerIvaCondition: customerIvaCondition || (selectedCustomer ? (selectedCustomer as any).iva_condition : 'consumidor_final'),
           })
 
-          if (caeResult.success) {
+          if (caeResult.success && caeResult.cae) {
+            setLastSaleHadCae(true)
             invoiceCae = caeResult.cae || null
             invoiceCaeExpiry = caeResult.caeExpiry || null
             invoiceNumber = caeResult.cbteNro
@@ -687,41 +689,26 @@ export default function POSPage() {
             netoGravado = caeResult.netoGravado
             ivaAmount = caeResult.ivaAmount
 
-            // requestCAE ya creo el comprobante y lo autorizo contra AFIP;
-            // aca solo faltan el domicilio del cliente y el detalle de items.
+            // requestCAE ya guardo el comprobante y sus items; aca actualizamos
+            // el domicilio del cliente si lo tiene cargado.
             const invoiceId = caeResult.invoiceId
-            if (invoiceId) {
-              if (selectedCustomer && (selectedCustomer as any).address) {
-                await supabase.from('invoices')
-                  .update({ customer_address: (selectedCustomer as any).address })
-                  .eq('id', invoiceId)
-              }
-
-              const invoiceItemsData = items.map(item => {
-                const unitPrice = item.price
-                const itemTotal = unitPrice * item.quantity
-                const discountedTotal = itemTotal - (itemTotal * discount / 100)
-                const surchargedTotal = discountedTotal + (discountedTotal * surchargePct / 100)
-                return {
-                  invoice_id: invoiceId,
-                  product_id: item.product.id,
-                  description: item.product.name,
-                  qty: item.quantity,
-                  unit_price: unitPrice,
-                  iva_rate: business.iva_condition === 'responsable_inscripto' ? 21 : 0,
-                  total: surchargedTotal,
-                }
-              })
-              await supabase.from('invoice_items').insert(invoiceItemsData as any)
+            if (invoiceId && selectedCustomer && (selectedCustomer as any).address) {
+              await supabase.from('invoices')
+                .update({ customer_address: (selectedCustomer as any).address })
+                .eq('id', invoiceId)
             }
             toast.success(`Factura ${receiptType} autorizada — CAE: ${caeResult.cae}`)
           } else {
-            toast.warning('Venta registrada pero sin CAE: ' + (caeResult.error || 'Error AFIP'))
+            setLastSaleHadCae(false)
+            toast.warning('Venta registrada pero sin CAE: ' + (caeResult.error || 'Error AFIP'), { duration: 7000 })
           }
         } catch (err) {
+          setLastSaleHadCae(false)
           console.error('AFIP error:', err)
-          toast.warning('Venta registrada. Error al solicitar CAE.')
+          toast.warning('Venta registrada. Error al solicitar CAE.', { duration: 6000 })
         }
+      } else {
+        setLastSaleHadCae(false)
       }
 
       const subtotalRaw = items.reduce((s, i) => s + i.price * i.quantity, 0)
@@ -806,7 +793,11 @@ export default function POSPage() {
             </div>
             <p className="text-xl font-bold text-white">¡Venta registrada!</p>
             <p className="text-sm text-slate-400 mt-1">
-              {receiptType !== 'ticket' ? `Factura ${receiptType} generada` : 'Ticket generado'}
+              {receiptType !== 'ticket'
+                ? (lastSaleHadCae
+                    ? `Factura ${receiptType} autorizada por AFIP`
+                    : `Guardada sin CAE AFIP (Comprobante no fiscal)`)
+                : 'Ticket generado'}
             </p>
           </div>
         </div>
