@@ -193,17 +193,17 @@ export default function ReportsPage() {
   return (
     <div className="animate-fade-in flex flex-col gap-6 max-w-6xl mx-auto w-full pb-12">
       {/* Navigation tabs header */}
-      <div className="flex items-center gap-2 border-b border-white/5 pb-4 px-1">
-        <div className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black bg-orange-500/10 text-orange-300 border border-orange-500/30 shadow-[0_0_15px_rgba(249,115,22,0.15)]">
-          <BarChart3 className="w-4 h-4 text-orange-400" />
+      <div className="flex items-center gap-2 border-b border-white/5 pb-3 sm:pb-4 px-1 overflow-x-auto no-scrollbar flex-nowrap">
+        <div className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl text-xs font-black bg-orange-500/10 text-orange-300 border border-orange-500/30 shadow-[0_0_15px_rgba(249,115,22,0.15)] whitespace-nowrap shrink-0">
+          <BarChart3 className="w-4 h-4 text-orange-400 shrink-0" />
           Ventas Generales
         </div>
         <button
           onClick={() => navigate('/rentabilidad')}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-white/40 hover:text-cyan-300 hover:bg-cyan-500/10 transition-all"
+          className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl text-xs font-bold text-white/40 hover:text-cyan-300 hover:bg-cyan-500/10 transition-all whitespace-nowrap shrink-0"
         >
-          <TrendingUp className="w-4 h-4 text-cyan-400" />
-          Costos, Ganancias y Rentabilidad (por Material)
+          <TrendingUp className="w-4 h-4 text-cyan-400 shrink-0" />
+          Costos y Rentabilidad
         </button>
       </div>
 

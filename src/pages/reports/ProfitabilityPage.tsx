@@ -81,6 +81,7 @@ export default function ProfitabilityPage() {
   const [viewMode, setViewMode] = useState<ViewMode>('products')
   const [sortField, setSortField] = useState<SortField>('profit')
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc')
+  const [mobileTableView, setMobileTableView] = useState(false)
 
   useEffect(() => {
     if (profile?.business_id) {
@@ -540,72 +541,43 @@ export default function ProfitabilityPage() {
   }
 
   return (
-    <div className="animate-fade-in flex flex-col gap-6 max-w-7xl mx-auto w-full pb-16">
+    <div className="animate-fade-in flex flex-col gap-4 sm:gap-6 max-w-7xl mx-auto w-full px-3 sm:px-6 pb-24">
       {/* Navigation tabs header */}
-      <div className="flex items-center gap-2 border-b border-white/5 pb-4 px-1">
+      <div className="flex items-center gap-2 border-b border-white/5 pb-3 sm:pb-4 overflow-x-auto no-scrollbar flex-nowrap">
         <button
           onClick={() => navigate('/reports')}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-white/40 hover:text-white hover:bg-white/5 transition-all"
+          className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl text-xs font-bold text-white/40 hover:text-white hover:bg-white/5 transition-all whitespace-nowrap shrink-0"
         >
-          <BarChart3 className="w-4 h-4 text-orange-400" />
+          <BarChart3 className="w-4 h-4 text-orange-400 shrink-0" />
           Ventas Generales
         </button>
-        <div className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black bg-cyan-500/10 text-cyan-300 border border-cyan-500/30 shadow-[0_0_15px_rgba(6,182,212,0.15)]">
-          <TrendingUp className="w-4 h-4 text-cyan-400" />
-          Costos, Ganancias y Rentabilidad
+        <div className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl text-xs font-black bg-cyan-500/10 text-cyan-300 border border-cyan-500/30 shadow-[0_0_15px_rgba(6,182,212,0.15)] whitespace-nowrap shrink-0">
+          <TrendingUp className="w-4 h-4 text-cyan-400 shrink-0" />
+          Costos y Rentabilidad
         </div>
       </div>
 
       {/* Main Header */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 px-1">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <span className="text-[11px] text-cyan-400 uppercase tracking-widest font-black flex items-center gap-1.5">
+            <span className="text-[10px] sm:text-[11px] text-cyan-400 uppercase tracking-widest font-black flex items-center gap-1.5">
               <Sparkles className="w-3.5 h-3.5 text-cyan-400" /> Control Financiero
             </span>
           </div>
-          <h1 className="text-3xl sm:text-4xl font-black text-white mt-1 tracking-tight flex items-center gap-3">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-white mt-0.5 tracking-tight flex items-center gap-2 sm:gap-3">
             Rentabilidad y Costos
           </h1>
-          <p className="text-xs text-white/40 mt-1">
-            Análisis profundo de costos de adquisición, ingresos, ganancias reales y valorización de inventario por material y categorías.
+          <p className="text-[11px] sm:text-xs text-white/40 mt-1 max-w-2xl">
+            Análisis de costos de adquisición, ingresos, ganancias reales y valorización de inventario por material y categorías.
           </p>
         </div>
 
-        {/* Top Actions: Period Presets & Export */}
-        <div className="flex flex-wrap items-center gap-2">
-          {/* Period selector */}
-          <div className="flex bg-white/[0.03] border border-white/10 rounded-2xl p-1 gap-1">
-            {(
-              [
-                { id: 'today', label: 'Hoy' },
-                { id: '7days', label: '7D' },
-                { id: 'month', label: 'Mes' },
-                { id: '30days', label: '30D' },
-                { id: 'year', label: 'Año' },
-                { id: 'all', label: 'Histórico' },
-                { id: 'custom', label: 'Personalizado' },
-              ] as const
-            ).map((p) => (
-              <button
-                key={p.id}
-                onClick={() => setPeriod(p.id)}
-                className={cn(
-                  'px-3 py-1.5 rounded-xl text-[11px] font-black uppercase tracking-wider transition-all',
-                  period === p.id
-                    ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-sm'
-                    : 'text-white/40 hover:text-white hover:bg-white/5'
-                )}
-              >
-                {p.label}
-              </button>
-            ))}
-          </div>
-
-          <GlassButton size="sm" onClick={handleExportCSV} className="bg-white/5 hover:bg-white/10 text-white">
-            <Download className="w-3.5 h-3.5" /> Exportar CSV
+        {/* Top Actions: Export & Refresh */}
+        <div className="flex items-center gap-2 self-stretch sm:self-auto justify-end">
+          <GlassButton size="sm" onClick={handleExportCSV} className="bg-white/5 hover:bg-white/10 text-white text-xs h-9 px-3">
+            <Download className="w-3.5 h-3.5" /> <span className="hidden xs:inline">Exportar</span> CSV
           </GlassButton>
-
           <GlassButton
             size="sm"
             onClick={() => {
@@ -613,7 +585,7 @@ export default function ProfitabilityPage() {
               loadAllData()
             }}
             disabled={refreshing}
-            className="bg-white/5"
+            className="bg-white/5 h-9 w-9 p-0 flex items-center justify-center"
             title="Recargar datos"
           >
             <RefreshCw className={cn('w-3.5 h-3.5', (loading || refreshing) && 'animate-spin')} />
@@ -621,144 +593,177 @@ export default function ProfitabilityPage() {
         </div>
       </div>
 
+      {/* Period Selector - Scrollable horizontally on mobile */}
+      <div className="overflow-x-auto no-scrollbar -mx-3 px-3 sm:mx-0 sm:px-0">
+        <div className="inline-flex bg-white/[0.03] border border-white/10 rounded-2xl p-1 gap-1 min-w-max">
+          {(
+            [
+              { id: 'today', label: 'Hoy' },
+              { id: '7days', label: '7D' },
+              { id: 'month', label: 'Mes' },
+              { id: '30days', label: '30D' },
+              { id: 'year', label: 'Año' },
+              { id: 'all', label: 'Histórico' },
+              { id: 'custom', label: 'Personalizado' },
+            ] as const
+          ).map((p) => (
+            <button
+              key={p.id}
+              onClick={() => setPeriod(p.id)}
+              className={cn(
+                'px-3 py-1.5 rounded-xl text-[11px] font-black uppercase tracking-wider transition-all whitespace-nowrap',
+                period === p.id
+                  ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-sm'
+                  : 'text-white/40 hover:text-white hover:bg-white/5'
+              )}
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* Custom Date Range Picker */}
       {period === 'custom' && (
-        <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-4 flex flex-wrap items-center gap-4 animate-fade-in">
-          <div className="flex items-center gap-2">
-            <Calendar className="w-4 h-4 text-cyan-400" />
-            <span className="text-xs font-black uppercase text-white/50">Desde:</span>
+        <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center gap-3 animate-fade-in">
+          <div className="flex items-center gap-2 flex-1">
+            <Calendar className="w-4 h-4 text-cyan-400 shrink-0" />
+            <span className="text-[10px] font-black uppercase text-white/50 shrink-0">Desde:</span>
             <input
               type="date"
               value={customStart}
               onChange={(e) => setCustomStart(e.target.value)}
-              className="bg-black/40 border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:border-cyan-500"
+              className="w-full sm:w-auto bg-black/40 border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:border-cyan-500"
             />
           </div>
-          <div className="flex items-center gap-2">
-            <Calendar className="w-4 h-4 text-cyan-400" />
-            <span className="text-xs font-black uppercase text-white/50">Hasta:</span>
+          <div className="flex items-center gap-2 flex-1">
+            <Calendar className="w-4 h-4 text-cyan-400 shrink-0" />
+            <span className="text-[10px] font-black uppercase text-white/50 shrink-0">Hasta:</span>
             <input
               type="date"
               value={customEnd}
               onChange={(e) => setCustomEnd(e.target.value)}
-              className="bg-black/40 border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:border-cyan-500"
+              className="w-full sm:w-auto bg-black/40 border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:border-cyan-500"
             />
           </div>
         </div>
       )}
 
       {/* Filters Bar */}
-      <div className="bg-white/[0.02] border border-white/5 rounded-3xl p-4 shadow-xl shadow-black/20 flex flex-col lg:flex-row gap-3">
+      <div className="bg-white/[0.02] border border-white/5 rounded-2xl sm:rounded-3xl p-3 sm:p-4 shadow-xl shadow-black/20 flex flex-col gap-2.5 sm:gap-3">
         {/* Search */}
-        <div className="relative flex-1 group">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/25 group-focus-within:text-cyan-400 transition-colors" />
+        <div className="relative w-full group">
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/25 group-focus-within:text-cyan-400 transition-colors" />
           <input
             type="text"
-            placeholder="Buscar por producto, código o variante..."
+            placeholder="Buscar por producto, código, material..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full h-11 pl-11 pr-4 rounded-xl border border-white/10 bg-white/[0.03] text-white text-xs placeholder:text-white/20 focus:outline-none focus:ring-2 focus:ring-cyan-500/30 focus:border-cyan-500/40 transition-all"
+            className="w-full h-10 sm:h-11 pl-10 pr-4 rounded-xl border border-white/10 bg-white/[0.03] text-white text-xs placeholder:text-white/20 focus:outline-none focus:ring-2 focus:ring-cyan-500/30 focus:border-cyan-500/40 transition-all"
           />
         </div>
 
-        {/* Filter Material */}
-        <div className="flex-1 sm:max-w-[220px]">
-          <select
-            value={filterMaterial}
-            onChange={(e) => setFilterMaterial(e.target.value)}
-            className="w-full h-11 px-3 rounded-xl border border-white/10 bg-slate-900/90 text-white text-xs focus:outline-none focus:ring-2 focus:ring-cyan-500/30 focus:border-cyan-500/40 cursor-pointer"
-          >
-            <option value="">Todos los materiales</option>
-            <option value="__none__">Sin material asignado</option>
-            {availableMaterials.map((m) => (
-              <option key={m} value={m}>
-                Material: {m}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Filter Category */}
-        <div className="flex-1 sm:max-w-[200px]">
-          <select
-            value={filterCategory}
-            onChange={(e) => setFilterCategory(e.target.value)}
-            className="w-full h-11 px-3 rounded-xl border border-white/10 bg-slate-900/90 text-white text-xs focus:outline-none focus:ring-2 focus:ring-cyan-500/30 focus:border-cyan-500/40 cursor-pointer"
-          >
-            <option value="">Todas las categorías</option>
-            {categories.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Filter Brand */}
-        {availableBrands.length > 0 && (
-          <div className="flex-1 sm:max-w-[180px]">
+        {/* Dropdowns in responsive grid */}
+        <div className="grid grid-cols-2 lg:flex lg:flex-wrap items-center gap-2 w-full">
+          {/* Filter Material */}
+          <div className="col-span-1 lg:w-auto lg:min-w-[180px]">
             <select
-              value={filterBrand}
-              onChange={(e) => setFilterBrand(e.target.value)}
-              className="w-full h-11 px-3 rounded-xl border border-white/10 bg-slate-900/90 text-white text-xs focus:outline-none focus:ring-2 focus:ring-cyan-500/30 focus:border-cyan-500/40 cursor-pointer"
+              value={filterMaterial}
+              onChange={(e) => setFilterMaterial(e.target.value)}
+              className="w-full h-10 px-2.5 sm:px-3 rounded-xl border border-white/10 bg-slate-900/90 text-white text-xs focus:outline-none focus:ring-2 focus:ring-cyan-500/30 focus:border-cyan-500/40 cursor-pointer"
             >
-              <option value="">Todas las marcas</option>
-              {availableBrands.map((b) => (
-                <option key={b} value={b}>
-                  {b}
+              <option value="">Todos los materiales</option>
+              <option value="__none__">Sin material</option>
+              {availableMaterials.map((m) => (
+                <option key={m} value={m}>
+                  Material: {m}
                 </option>
               ))}
             </select>
           </div>
-        )}
 
-        {/* Filter Supplier */}
-        {suppliers.length > 0 && (
-          <div className="flex-1 sm:max-w-[180px]">
+          {/* Filter Category */}
+          <div className="col-span-1 lg:w-auto lg:min-w-[170px]">
             <select
-              value={filterSupplier}
-              onChange={(e) => setFilterSupplier(e.target.value)}
-              className="w-full h-11 px-3 rounded-xl border border-white/10 bg-slate-900/90 text-white text-xs focus:outline-none focus:ring-2 focus:ring-cyan-500/30 focus:border-cyan-500/40 cursor-pointer"
+              value={filterCategory}
+              onChange={(e) => setFilterCategory(e.target.value)}
+              className="w-full h-10 px-2.5 sm:px-3 rounded-xl border border-white/10 bg-slate-900/90 text-white text-xs focus:outline-none focus:ring-2 focus:ring-cyan-500/30 focus:border-cyan-500/40 cursor-pointer"
             >
-              <option value="">Todos los proveedores</option>
-              {suppliers.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name}
+              <option value="">Todas las categorías</option>
+              {categories.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
                 </option>
               ))}
             </select>
           </div>
-        )}
 
-        {/* Reset button if any filter is set */}
-        {(filterMaterial || filterCategory || filterBrand || filterSupplier || search) && (
-          <button
-            onClick={() => {
-              setFilterMaterial('')
-              setFilterCategory('')
-              setFilterBrand('')
-              setFilterSupplier('')
-              setSearch('')
-            }}
-            className="px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-white/50 hover:text-white text-xs font-semibold whitespace-nowrap transition-all"
-          >
-            Limpiar filtros
-          </button>
-        )}
+          {/* Filter Brand */}
+          {availableBrands.length > 0 && (
+            <div className="col-span-1 lg:w-auto lg:min-w-[160px]">
+              <select
+                value={filterBrand}
+                onChange={(e) => setFilterBrand(e.target.value)}
+                className="w-full h-10 px-2.5 sm:px-3 rounded-xl border border-white/10 bg-slate-900/90 text-white text-xs focus:outline-none focus:ring-2 focus:ring-cyan-500/30 focus:border-cyan-500/40 cursor-pointer"
+              >
+                <option value="">Todas las marcas</option>
+                {availableBrands.map((b) => (
+                  <option key={b} value={b}>
+                    {b}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {/* Filter Supplier */}
+          {suppliers.length > 0 && (
+            <div className="col-span-1 lg:w-auto lg:min-w-[160px]">
+              <select
+                value={filterSupplier}
+                onChange={(e) => setFilterSupplier(e.target.value)}
+                className="w-full h-10 px-2.5 sm:px-3 rounded-xl border border-white/10 bg-slate-900/90 text-white text-xs focus:outline-none focus:ring-2 focus:ring-cyan-500/30 focus:border-cyan-500/40 cursor-pointer"
+              >
+                <option value="">Todos los proveedores</option>
+                {suppliers.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {/* Reset button if any filter is set */}
+          {(filterMaterial || filterCategory || filterBrand || filterSupplier || search) && (
+            <button
+              onClick={() => {
+                setFilterMaterial('')
+                setFilterCategory('')
+                setFilterBrand('')
+                setFilterSupplier('')
+                setSearch('')
+              }}
+              className="col-span-2 lg:col-span-1 h-10 px-3 rounded-xl bg-white/5 hover:bg-white/10 text-white/50 hover:text-white text-xs font-semibold whitespace-nowrap transition-all flex items-center justify-center gap-1"
+            >
+              Limpiar filtros
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Bento Grid: Financial KPIs */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 px-1">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
         {/* Ganancia Neta Card (Hero) */}
-        <div className="bg-gradient-to-br from-emerald-600/30 to-emerald-950/40 border border-emerald-500/30 rounded-[2rem] p-6 relative overflow-hidden group shadow-xl shadow-emerald-900/20 col-span-2 sm:col-span-1">
+        <div className="bg-gradient-to-br from-emerald-600/30 to-emerald-950/40 border border-emerald-500/30 rounded-2xl sm:rounded-[2rem] p-4 sm:p-6 relative overflow-hidden group shadow-xl shadow-emerald-900/20 col-span-2 sm:col-span-1">
           <div className="absolute -right-4 -top-4 opacity-10 group-hover:scale-110 transition-transform text-emerald-400">
-            <TrendingUp className="w-28 h-28" />
+            <TrendingUp className="w-24 sm:w-28 h-24 sm:h-28" />
           </div>
           <p className="text-[10px] font-black uppercase tracking-[0.2em] mb-1 text-emerald-300/70">Ganancia Neta Real</p>
-          <p className="text-3xl sm:text-4xl font-black text-emerald-300 tracking-tighter">
+          <p className="text-2xl sm:text-3xl lg:text-4xl font-black text-emerald-300 tracking-tight truncate">
             {formatCurrency(totals.profit)}
           </p>
-          <div className="mt-4 flex items-center gap-2 flex-wrap">
+          <div className="mt-3 sm:mt-4 flex items-center gap-2 flex-wrap">
             <span className="px-2 py-0.5 rounded-md bg-emerald-500/20 border border-emerald-500/30 text-[10px] font-black text-emerald-200">
               Margen {totals.margin.toFixed(1)}%
             </span>
@@ -769,45 +774,45 @@ export default function ProfitabilityPage() {
         </div>
 
         {/* Facturación Total Card */}
-        <div className="bg-white/[0.03] border border-white/5 rounded-[2rem] p-6 relative overflow-hidden group">
+        <div className="bg-white/[0.03] border border-white/5 rounded-2xl sm:rounded-[2rem] p-4 sm:p-6 relative overflow-hidden group col-span-1">
           <div className="absolute -right-4 -top-4 opacity-5 group-hover:scale-110 transition-transform">
-            <DollarSign className="w-24 h-24 text-cyan-400" />
+            <DollarSign className="w-20 sm:w-24 h-20 sm:h-24 text-cyan-400" />
           </div>
           <p className="text-[10px] text-white/40 font-black uppercase tracking-[0.2em] mb-1">Ventas Totales</p>
-          <p className="text-3xl font-black text-white tracking-tighter">
+          <p className="text-xl sm:text-2xl lg:text-3xl font-black text-white tracking-tight truncate">
             {formatCurrency(totals.revenue)}
           </p>
-          <p className="text-[10px] text-white/40 font-bold uppercase tracking-widest mt-4">
-            {totals.soldUnits} unidades vendidas
+          <p className="text-[10px] text-white/40 font-bold uppercase tracking-widest mt-3 sm:mt-4 truncate">
+            {totals.soldUnits} u. vendidas
           </p>
         </div>
 
         {/* Costo de Ventas (COGS) Card */}
-        <div className="bg-white/[0.03] border border-white/5 rounded-[2rem] p-6 relative overflow-hidden group">
+        <div className="bg-white/[0.03] border border-white/5 rounded-2xl sm:rounded-[2rem] p-4 sm:p-6 relative overflow-hidden group col-span-1">
           <div className="absolute -right-4 -top-4 opacity-5 group-hover:scale-110 transition-transform">
-            <Tag className="w-24 h-24 text-orange-400" />
+            <Tag className="w-20 sm:w-24 h-20 sm:h-24 text-orange-400" />
           </div>
-          <p className="text-[10px] text-white/40 font-black uppercase tracking-[0.2em] mb-1">Costo de Mercadería Vendida</p>
-          <p className="text-3xl font-black text-orange-400/90 tracking-tighter">
+          <p className="text-[10px] text-white/40 font-black uppercase tracking-[0.2em] mb-1">Costo Ventas</p>
+          <p className="text-xl sm:text-2xl lg:text-3xl font-black text-orange-400/90 tracking-tight truncate">
             {formatCurrency(totals.cost)}
           </p>
-          <p className="text-[10px] text-white/40 font-bold uppercase tracking-widest mt-4">
-            {totals.revenue > 0 ? ((totals.cost / totals.revenue) * 100).toFixed(1) : 0}% de la venta
+          <p className="text-[10px] text-white/40 font-bold uppercase tracking-widest mt-3 sm:mt-4 truncate">
+            {totals.revenue > 0 ? ((totals.cost / totals.revenue) * 100).toFixed(1) : 0}% venta
           </p>
         </div>
 
         {/* Valorización de Stock Card */}
-        <div className="bg-white/[0.03] border border-white/5 rounded-[2rem] p-6 relative overflow-hidden group">
+        <div className="bg-white/[0.03] border border-white/5 rounded-2xl sm:rounded-[2rem] p-4 sm:p-6 relative overflow-hidden group col-span-2 sm:col-span-1">
           <div className="absolute -right-4 -top-4 opacity-5 group-hover:scale-110 transition-transform">
-            <Package className="w-24 h-24 text-violet-400" />
+            <Package className="w-20 sm:w-24 h-20 sm:h-24 text-violet-400" />
           </div>
           <p className="text-[10px] text-white/40 font-black uppercase tracking-[0.2em] mb-1">Stock Inmovilizado</p>
-          <p className="text-2xl font-black text-white tracking-tighter">
+          <p className="text-xl sm:text-2xl lg:text-3xl font-black text-white tracking-tight truncate">
             {formatCurrency(totals.stockCost)}
           </p>
-          <div className="mt-3 flex flex-col gap-0.5 text-[10px] text-white/40">
-            <span>Venta proyectada: {formatCurrency(totals.stockValue)}</span>
-            <span className="text-emerald-400 font-bold">
+          <div className="mt-2.5 pt-2 border-t border-white/5 flex flex-col gap-0.5 text-[10px] sm:text-[11px] text-white/40">
+            <span className="truncate">Venta proyectada: <strong className="text-white/70">{formatCurrency(totals.stockValue)}</strong></span>
+            <span className="text-emerald-400 font-bold truncate">
               Ganancia potencial: {formatCurrency(totals.potentialStockProfit)}
             </span>
           </div>
@@ -816,15 +821,15 @@ export default function ProfitabilityPage() {
 
       {/* Chart Section: Ganancia vs Costo */}
       {chartData.length > 0 && (
-        <div className="bg-white/[0.03] border border-white/5 rounded-[2.5rem] p-6 sm:p-8 relative overflow-hidden">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+        <div className="bg-white/[0.03] border border-white/5 rounded-2xl sm:rounded-[2.5rem] p-4 sm:p-8 relative overflow-hidden">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 mb-4 sm:mb-6">
             <div>
               <p className="text-[10px] text-white/30 font-black uppercase tracking-[0.2em]">Rendimiento Comparativo</p>
-              <h2 className="text-xl font-black text-white tracking-tight mt-0.5">
+              <h2 className="text-lg sm:text-xl font-black text-white tracking-tight mt-0.5">
                 Ventas, Costos y Ganancias por {viewMode === 'categories' ? 'Categoría' : 'Material'}
               </h2>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 self-start sm:self-auto">
               <span className="text-[11px] text-white/40 font-medium">Visualizando:</span>
               <div className="flex bg-black/30 border border-white/10 rounded-xl p-1 gap-1">
                 <button
@@ -849,16 +854,16 @@ export default function ProfitabilityPage() {
             </div>
           </div>
 
-          <div className="h-64 sm:h-80 w-full">
+          <div className="h-60 sm:h-80 w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={chartData} margin={{ top: 10, right: 10, left: -10, bottom: 20 }}>
+              <BarChart data={chartData} margin={{ top: 10, right: 5, left: -25, bottom: 20 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.03)" />
                 <XAxis
                   dataKey="name"
-                  tick={{ fontSize: 11, fontWeight: 700, fill: 'rgba(255,255,255,0.4)' }}
+                  tick={{ fontSize: 10, fontWeight: 700, fill: 'rgba(255,255,255,0.4)' }}
                   axisLine={false}
                   tickLine={false}
-                  dy={10}
+                  dy={8}
                 />
                 <YAxis
                   tick={{ fontSize: 10, fontWeight: 700, fill: 'rgba(255,255,255,0.3)' }}
@@ -870,22 +875,22 @@ export default function ProfitabilityPage() {
                   cursor={{ fill: 'rgba(255,255,255,0.03)' }}
                   contentStyle={{
                     backgroundColor: 'rgba(15, 23, 42, 0.95)',
-                    borderRadius: '18px',
+                    borderRadius: '16px',
                     border: '1px solid rgba(255,255,255,0.1)',
                     backdropFilter: 'blur(10px)',
-                    padding: '12px 16px',
+                    padding: '10px 14px',
                     boxShadow: '0 20px 40px rgba(0,0,0,0.4)',
                   }}
                   formatter={(value: any, name: any) => [formatCurrency(Number(value)), name]}
                 />
                 <Legend
-                  wrapperStyle={{ paddingTop: '10px' }}
+                  wrapperStyle={{ paddingTop: '8px' }}
                   iconType="circle"
-                  formatter={(value) => <span className="text-xs text-white/60 font-bold ml-1">{value}</span>}
+                  formatter={(value) => <span className="text-[11px] sm:text-xs text-white/60 font-bold ml-1">{value}</span>}
                 />
-                <Bar dataKey="Ventas" fill="#06b6d4" radius={[6, 6, 0, 0]} maxBarSize={32} />
-                <Bar dataKey="Costo" fill="#f97316" radius={[6, 6, 0, 0]} maxBarSize={32} />
-                <Bar dataKey="Ganancia" fill="#10b981" radius={[6, 6, 0, 0]} maxBarSize={32} />
+                <Bar dataKey="Ventas" fill="#06b6d4" radius={[6, 6, 0, 0]} maxBarSize={28} />
+                <Bar dataKey="Costo" fill="#f97316" radius={[6, 6, 0, 0]} maxBarSize={28} />
+                <Bar dataKey="Ganancia" fill="#10b981" radius={[6, 6, 0, 0]} maxBarSize={28} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -893,59 +898,177 @@ export default function ProfitabilityPage() {
       )}
 
       {/* Breakdown View Tabs & Detailed Table */}
-      <div className="bg-white/[0.03] border border-white/5 rounded-[2.5rem] overflow-hidden shadow-2xl shadow-black/40">
+      <div className="bg-white/[0.03] border border-white/5 rounded-2xl sm:rounded-[2.5rem] overflow-hidden shadow-2xl shadow-black/40">
         {/* Table header and view mode tabs */}
-        <div className="p-6 border-b border-white/5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <p className="text-[10px] text-white/30 font-black uppercase tracking-[0.2em]">Desglose Analítico</p>
-            <h2 className="text-xl font-black text-white tracking-tight mt-0.5">
-              {viewMode === 'products'
-                ? 'Rendimiento por Producto Individual'
-                : viewMode === 'materials'
-                ? 'Rendimiento Consolidado por Material'
-                : 'Rendimiento Consolidado por Categoría'}
-            </h2>
+        <div className="p-4 sm:p-6 border-b border-white/5 flex flex-col gap-3">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div>
+              <p className="text-[10px] text-white/30 font-black uppercase tracking-[0.2em]">Desglose Analítico</p>
+              <h2 className="text-lg sm:text-xl font-black text-white tracking-tight mt-0.5">
+                {viewMode === 'products'
+                  ? 'Rendimiento por Producto Individual'
+                  : viewMode === 'materials'
+                  ? 'Rendimiento Consolidado por Material'
+                  : 'Rendimiento Consolidado por Categoría'}
+              </h2>
+            </div>
+
+            {/* Mobile View Toggle */}
+            <div className="lg:hidden flex items-center gap-2 self-start">
+              <span className="text-[10px] text-white/40 uppercase font-black">Vista:</span>
+              <button
+                onClick={() => setMobileTableView(!mobileTableView)}
+                className="px-2.5 py-1 rounded-lg bg-white/5 border border-white/10 text-[11px] font-bold text-cyan-300 hover:bg-white/10 transition"
+              >
+                {mobileTableView ? '📱 Ver como Tarjetas' : '📊 Ver Tabla Completa'}
+              </button>
+            </div>
           </div>
 
-          <div className="flex bg-black/40 border border-white/10 rounded-2xl p-1 gap-1 self-start sm:self-auto">
-            <button
-              onClick={() => setViewMode('products')}
-              className={cn(
-                'px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all',
-                viewMode === 'products'
-                  ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
-                  : 'text-white/40 hover:text-white'
-              )}
-            >
-              Por Producto ({filteredRows.length})
-            </button>
-            <button
-              onClick={() => setViewMode('materials')}
-              className={cn(
-                'px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all',
-                viewMode === 'materials'
-                  ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
-                  : 'text-white/40 hover:text-white'
-              )}
-            >
-              Por Material ({groupedByMaterial.length})
-            </button>
-            <button
-              onClick={() => setViewMode('categories')}
-              className={cn(
-                'px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all',
-                viewMode === 'categories'
-                  ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
-                  : 'text-white/40 hover:text-white'
-              )}
-            >
-              Por Categoría ({groupedByCategory.length})
-            </button>
+          <div className="overflow-x-auto no-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0">
+            <div className="inline-flex bg-black/40 border border-white/10 rounded-xl sm:rounded-2xl p-1 gap-1 min-w-max">
+              <button
+                onClick={() => setViewMode('products')}
+                className={cn(
+                  'px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-black uppercase tracking-wider transition-all whitespace-nowrap',
+                  viewMode === 'products'
+                    ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
+                    : 'text-white/40 hover:text-white'
+                )}
+              >
+                Por Producto ({filteredRows.length})
+              </button>
+              <button
+                onClick={() => setViewMode('materials')}
+                className={cn(
+                  'px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-black uppercase tracking-wider transition-all whitespace-nowrap',
+                  viewMode === 'materials'
+                    ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
+                    : 'text-white/40 hover:text-white'
+                )}
+              >
+                Por Material ({groupedByMaterial.length})
+              </button>
+              <button
+                onClick={() => setViewMode('categories')}
+                className={cn(
+                  'px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-black uppercase tracking-wider transition-all whitespace-nowrap',
+                  viewMode === 'categories'
+                    ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
+                    : 'text-white/40 hover:text-white'
+                )}
+              >
+                Por Categoría ({groupedByCategory.length})
+              </button>
+            </div>
           </div>
         </div>
 
-        {/* Table Content */}
-        <div className="overflow-x-auto">
+        {/* Mobile Cards Feed (only shown on small screens when not in table mode) */}
+        {!mobileTableView && (
+          <div className="block lg:hidden divide-y divide-white/[0.04]">
+            {viewMode === 'products' ? (
+              sortedProductRows.length === 0 ? (
+                <div className="py-12 text-center text-white/20 italic text-xs">
+                  No se encontraron productos con los filtros seleccionados
+                </div>
+              ) : (
+                sortedProductRows.map((r) => (
+                  <div
+                    key={r.id}
+                    onClick={() => navigate(`/products/${r.id}`)}
+                    className="p-4 active:bg-white/[0.04] transition flex flex-col gap-2.5 cursor-pointer"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="font-bold text-sm text-white">{r.name}</span>
+                          {r.brand && r.brand !== 'Sin marca' && (
+                            <span className="text-[10px] text-white/30 uppercase">({r.brand})</span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                          {r.material !== 'Sin material' ? (
+                            <span className="px-2 py-0.5 rounded-md bg-cyan-500/10 border border-cyan-500/20 text-[10px] font-bold text-cyan-300">
+                              {r.material}
+                            </span>
+                          ) : (
+                            <span className="text-white/20 text-[10px] italic">Sin material</span>
+                          )}
+                          <span className="text-[11px] text-white/40">· {r.category}</span>
+                        </div>
+                      </div>
+                      <span className={cn('px-2 py-0.5 rounded-md border text-[10px] font-black shrink-0', getMarginBadgeClass(r.margin))}>
+                        {r.margin.toFixed(1)}%
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 pt-2 border-t border-white/5 text-xs">
+                      <div>
+                        <span className="text-[9px] text-white/40 uppercase font-black block">Stock Físico</span>
+                        <span className="font-mono text-white/90 font-bold">{r.stock} {r.unit}</span>
+                        <span className="text-[10px] text-white/40 font-mono block">Costo: {formatCurrency(r.stockCost)}</span>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-[9px] text-white/40 uppercase font-black block">Ganancia Real</span>
+                        <span className="font-mono font-black text-emerald-400 text-sm">{formatCurrency(r.profit)}</span>
+                        <span className="text-[10px] text-white/40 font-mono block">Ventas: {formatCurrency(r.revenue)}</span>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-1 pt-1.5 text-[10px] text-white/40 bg-white/[0.01] -mx-4 -mb-4 px-4 py-2 border-t border-white/5">
+                      <div>Costo: <span className="text-white/60 font-mono">{formatCurrency(r.purchasePrice)}</span></div>
+                      <div className="text-center">Venta: <span className="text-white/60 font-mono">{formatCurrency(r.salePrice)}</span></div>
+                      <div className="text-right">Vendidos: <span className="text-white font-bold">{r.soldQty}</span></div>
+                    </div>
+                  </div>
+                ))
+              )
+            ) : (
+              sortedGroupedRows.length === 0 ? (
+                <div className="py-12 text-center text-white/20 italic text-xs">
+                  Sin datos agrupados registrados
+                </div>
+              ) : (
+                sortedGroupedRows.map((g) => (
+                  <div key={g.groupKey} className="p-4 active:bg-white/[0.04] transition flex flex-col gap-2.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <div className="w-2.5 h-2.5 rounded-full bg-cyan-400 shrink-0" />
+                        <span className="font-black text-sm text-white truncate">{g.groupKey}</span>
+                        <span className="text-[10px] text-white/40 font-bold shrink-0">({g.productsCount} ítems)</span>
+                      </div>
+                      <span className={cn('px-2 py-0.5 rounded-md border text-[10px] font-black shrink-0', getMarginBadgeClass(g.margin))}>
+                        {g.margin.toFixed(1)}%
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 pt-2 border-t border-white/5 text-xs">
+                      <div>
+                        <span className="text-[9px] text-white/40 uppercase font-black block">Stock Total</span>
+                        <span className="font-mono text-white/90 font-bold">{g.stock} u</span>
+                        <span className="text-[10px] text-white/40 font-mono block">Costo Stock: {formatCurrency(g.stockCost)}</span>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-[9px] text-white/40 uppercase font-black block">Ganancia Neta</span>
+                        <span className="font-mono font-black text-emerald-400 text-sm">{formatCurrency(g.profit)}</span>
+                        <span className="text-[10px] text-cyan-300/80 font-mono block">Facturación: {formatCurrency(g.revenue)}</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-1.5 text-[10px] text-white/40 bg-white/[0.01] -mx-4 -mb-4 px-4 py-2 border-t border-white/5">
+                      <span>Costo Mercadería Vendida: <strong className="text-orange-400 font-mono">{formatCurrency(g.cost)}</strong></span>
+                      <span>Uds Vendidas: <strong className="text-white font-mono">{g.soldQty}</strong></span>
+                    </div>
+                  </div>
+                ))
+              )
+            )}
+          </div>
+        )}
+
+        {/* Full Desktop Table (and mobile when mobileTableView is true) */}
+        <div className={cn("overflow-x-auto", !mobileTableView && "hidden lg:block")}>
           {viewMode === 'products' ? (
             <table className="w-full text-left text-xs text-white">
               <thead>
