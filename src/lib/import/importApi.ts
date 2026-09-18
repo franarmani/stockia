@@ -34,6 +34,7 @@ export interface ProductRowInput {
   unit: string
   description: string | null
   brand: string | null
+  material: string | null
   active: boolean
 }
 
@@ -144,6 +145,10 @@ export function mapAndValidateRows(
     // brand
     const brandRaw = getRaw(raw, 'brand')
     mapped.brand = brandRaw !== undefined && String(brandRaw).trim() ? String(brandRaw).trim() : null
+
+    // material
+    const matRaw = getRaw(raw, 'material')
+    mapped.material = matRaw !== undefined && String(matRaw).trim() ? String(matRaw).trim() : null
 
     // active
     const activeRaw = getRaw(raw, 'active')
@@ -256,6 +261,7 @@ async function fallbackBatchUpsert(
       unit: m.unit || 'u',
       description: m.description || null,
       brand: m.brand || null,
+      material: m.material || null,
       active: m.active ?? true,
     }
 

@@ -42,6 +42,7 @@ export default function ProductDetailPage() {
     name: '', barcode: '', sale_price: '', purchase_price: '',
     stock: '', stock_min: '3', category_id: '', unit: 'u' as string,
     brand: '', size_label: '', model: '', presentation: '', supplier_id: '',
+    material: '',
   })
 
   useEffect(() => {
@@ -90,6 +91,7 @@ export default function ProductDetailPage() {
       model: product.model || '',
       presentation: product.presentation || '',
       supplier_id: product.supplier_id || '',
+      material: product.material || '',
     })
     setShowEditModal(true)
   }
@@ -111,6 +113,7 @@ export default function ProductDetailPage() {
       model: form.model || null,
       presentation: form.presentation || null,
       supplier_id: form.supplier_id || null,
+      material: form.material.trim() || null,
     }
 
     const { error } = await supabase.from('products').update(payload).eq('id', product.id)
@@ -205,8 +208,13 @@ export default function ProductDetailPage() {
               </div>
               
               <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">{product.name}</h1>
-              <p className="text-white/50 text-lg">
-                {product.brand} {product.model} · {product.presentation}
+              <p className="text-white/50 text-lg flex items-center gap-2 flex-wrap">
+                {[product.brand, product.model, product.presentation].filter(Boolean).join(' · ')}
+                {product.material && (
+                  <span className="px-2.5 py-0.5 rounded-lg bg-cyan-500/10 border border-cyan-500/20 text-xs font-black text-cyan-300 uppercase tracking-wider">
+                    {product.material}
+                  </span>
+                )}
               </p>
               
               <div className="grid grid-cols-2 md:grid-cols-3 gap-6 mt-8 pt-8 border-t border-white/10">
@@ -529,8 +537,15 @@ export default function ProductDetailPage() {
             </div>
 
             <div className="pt-2">
-              <p className="text-[10px] font-black text-violet-400 uppercase tracking-[0.2em] mb-3 ml-1">Variantes</p>
-              <div className="grid grid-cols-2 gap-4">
+              <p className="text-[10px] font-black text-violet-400 uppercase tracking-[0.2em] mb-3 ml-1">Variantes y Material</p>
+              <div className="grid grid-cols-3 gap-4">
+                <input 
+                  type="text" 
+                  value={form.material} 
+                  onChange={(e) => setForm({...form, material: e.target.value})} 
+                  placeholder="Material (ej: Acero)" 
+                  className="w-full h-11 px-4 rounded-xl border border-white/10 bg-white/5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-violet-500/30 focus:border-violet-500/50 transition-all" 
+                />
                 <input 
                   type="text" 
                   value={form.brand} 

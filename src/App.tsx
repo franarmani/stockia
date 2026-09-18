@@ -14,7 +14,7 @@ import SubscriptionGuard from '@/features/subscription/components/SubscriptionGu
 import UpdateNotificationModal from '@/components/modals/UpdateNotificationModal'
 
 // ── VERSIONING ──
-const APP_VERSION = '1.12.10' // Local version — bump together with public/version.json on every deploy
+const APP_VERSION = '1.12.11' // Local version — bump together with public/version.json on every deploy
 
 // ── localStorage cache helpers ──
 const PROFILE_CACHE_KEY = 'stockia_profile'
@@ -47,6 +47,7 @@ const CustomersPage = lazy(() => import('@/pages/customers/CustomersPage'))
 const CashRegisterPage = lazy(() => import('@/pages/cash-register/CashRegisterPage'))
 const SalesHistoryPage = lazy(() => import('@/pages/sales/SalesHistoryPage'))
 const ReportsPage = lazy(() => import('@/pages/reports/ReportsPage'))
+const ProfitabilityPage = lazy(() => import('@/pages/reports/ProfitabilityPage'))
 const SettingsPage = lazy(() => import('@/pages/settings/SettingsPage'))
 const PurchasesPage = lazy(() => import('@/pages/purchases/PurchasesPage'))
 const ComprobantesPage = lazy(() => import('@/pages/comprobantes/ComprobantesPage'))
@@ -401,6 +402,8 @@ export default function App() {
           <Route path="cash-register" element={<SubscriptionGuard mode="block"><CashRegisterPage /></SubscriptionGuard>} />
           <Route path="sales" element={<SubscriptionGuard mode="block"><SalesHistoryPage /></SubscriptionGuard>} />
           <Route path="reports" element={<SubscriptionGuard mode="block"><ReportsPage /></SubscriptionGuard>} />
+          <Route path="rentabilidad" element={<SubscriptionGuard mode="block"><ProfitabilityPage /></SubscriptionGuard>} />
+          <Route path="reports/rentabilidad" element={<SubscriptionGuard mode="block"><ProfitabilityPage /></SubscriptionGuard>} />
           <Route path="daily-summary" element={<SubscriptionGuard mode="block"><DailySummaryPage /></SubscriptionGuard>} />
           <Route path="settings" element={<SettingsPage />} />
           {/* New feature routes */}

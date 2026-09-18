@@ -15,6 +15,7 @@ export type ProductField =
   | 'unit'
   | 'description'
   | 'brand'
+  | 'material'
   | 'active'
 
 export const FIELD_LABELS: Record<ProductField, string> = {
@@ -28,6 +29,7 @@ export const FIELD_LABELS: Record<ProductField, string> = {
   unit: 'Unidad',
   description: 'Descripción',
   brand: 'Marca',
+  material: 'Material',
   active: 'Activo',
 }
 
@@ -44,6 +46,7 @@ const SYNONYMS: Record<ProductField, string[]> = {
   unit: ['unidad', 'unit', 'uom', 'medida', 'u_medida'],
   description: ['detalle', 'obs', 'observacion', 'notas', 'nota', 'info', 'informacion', 'description'],
   brand: ['marca', 'brand', 'fabricante', 'laboratorio'],
+  material: ['material', 'mat', 'tipo_material', 'composicion', 'materia_prima'],
   active: ['activo', 'habilitado', 'enabled', 'status', 'estado', 'vigente'],
 }
 

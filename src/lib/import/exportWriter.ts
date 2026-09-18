@@ -23,6 +23,7 @@ export const DEFAULT_EXPORT_COLUMNS: ExportColumn[] = [
   { field: 'barcode',        label: 'Código de barras', enabled: true  },
   { field: 'category_name',  label: 'Categoría',        enabled: true  },
   { field: 'unit',           label: 'Unidad',           enabled: true  },
+  { field: 'material',       label: 'Material',         enabled: true  },
   { field: 'brand',          label: 'Marca',            enabled: false },
   { field: 'description',    label: 'Descripción',      enabled: false },
   { field: 'active',         label: 'Activo',           enabled: false },

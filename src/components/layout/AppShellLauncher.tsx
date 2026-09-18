@@ -7,7 +7,7 @@ import {
   WifiOff, RefreshCw, Loader2, LogOut, LayoutDashboard,
   ShoppingCart, Package, Truck, Users, FileText, Wallet,
   Receipt, BarChart3, Settings, Bell, Menu, X, ChevronLeft, ChevronRight,
-  Music, Activity, CalendarDays, ClipboardList,
+  Music, Activity, CalendarDays, ClipboardList, TrendingUp,
 } from 'lucide-react'
 import logoSolo from '@/logosolo.png'
 import { cn } from '@/lib/utils'
@@ -34,6 +34,7 @@ const NAV_SECTIONS = [
     label: 'Gestión',
     items: [
       { name: 'Productos', href: '/products', icon: Package },
+      { name: 'Rentabilidad', href: '/rentabilidad', icon: TrendingUp },
       { name: 'Compras', href: '/purchases', icon: Truck },
       { name: 'Clientes', href: '/customers', icon: Users },
       { name: 'Comprobantes', href: '/comprobantes', icon: FileText },

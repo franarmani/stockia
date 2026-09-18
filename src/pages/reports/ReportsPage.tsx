@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
 import { fetchAllProductsInBatches } from '@/lib/productService'
 import { useAuthStore } from '@/stores/authStore'
@@ -53,6 +54,7 @@ async function fetchAllSalesInBatches(businessId: string, startISO: string): Pro
 }
 
 export default function ReportsPage() {
+  const navigate = useNavigate()
   const { profile } = useAuthStore()
   const [period, setPeriod] = useState<'month' | 'week'>('month')
   const [sales, setSales] = useState<any[]>([])
@@ -190,6 +192,21 @@ export default function ReportsPage() {
 
   return (
     <div className="animate-fade-in flex flex-col gap-6 max-w-6xl mx-auto w-full pb-12">
+      {/* Navigation tabs header */}
+      <div className="flex items-center gap-2 border-b border-white/5 pb-4 px-1">
+        <div className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black bg-orange-500/10 text-orange-300 border border-orange-500/30 shadow-[0_0_15px_rgba(249,115,22,0.15)]">
+          <BarChart3 className="w-4 h-4 text-orange-400" />
+          Ventas Generales
+        </div>
+        <button
+          onClick={() => navigate('/rentabilidad')}
+          className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-white/40 hover:text-cyan-300 hover:bg-cyan-500/10 transition-all"
+        >
+          <TrendingUp className="w-4 h-4 text-cyan-400" />
+          Costos, Ganancias y Rentabilidad (por Material)
+        </button>
+      </div>
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 px-1">
         <div>

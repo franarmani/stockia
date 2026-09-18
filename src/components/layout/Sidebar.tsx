@@ -19,7 +19,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Shield,
-  Music
+  Music,
+  TrendingUp,
 } from 'lucide-react'
 import { getSubscriptionDateState, formatShortDate } from '@/features/subscription/utils/subscriptionDates'
 
@@ -27,6 +28,7 @@ const NAV_ITEMS = [
   { name: 'Inicio',         href: '/dashboard',    icon: LayoutDashboard },
   { name: 'Punto de venta', href: '/pos',           icon: ShoppingCart },
   { name: 'Productos',      href: '/products',      icon: Package },
+  { name: 'Rentabilidad',   href: '/rentabilidad',  icon: TrendingUp },
   { name: 'Compras',        href: '/purchases',     icon: Truck },
   { name: 'Clientes',       href: '/customers',     icon: Users },
   { name: 'Comprobantes',   href: '/comprobantes',  icon: FileText },

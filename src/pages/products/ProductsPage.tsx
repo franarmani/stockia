@@ -37,6 +37,7 @@ export default function ProductsPage() {
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [filterCategory, setFilterCategory] = useState('')
+  const [filterMaterial, setFilterMaterial] = useState('')
   const [showProductModal, setShowProductModal] = useState(false)
   const [showCategoryModal, setShowCategoryModal] = useState(false)
   const [showStockModal, setShowStockModal] = useState(false)
@@ -57,6 +58,7 @@ export default function ProductsPage() {
     name: '', barcode: '', sale_price: '', purchase_price: '',
     stock: '', stock_min: '3', category_id: '', unit: 'u' as string,
     brand: '', size_label: '', model: '', presentation: '', supplier_id: '',
+    material: '',
   })
   const [catForm, setCatForm] = useState({ name: '' })
   const [supplierForm, setSupplierForm] = useState({ name: '', phone: '', cuit: '' })
@@ -76,15 +78,25 @@ export default function ProductsPage() {
     setLoading(false)
   }
 
+  const materials = useMemo(() => {
+    const set = new Set<string>()
+    products.forEach(p => {
+      if (p.material && p.material.trim()) set.add(p.material.trim())
+    })
+    return Array.from(set).sort((a, b) => a.localeCompare(b, 'es', { sensitivity: 'base' }))
+  }, [products])
+
   const filtered = useMemo(() => {
     return products.filter((p) => {
       const q = search.toLowerCase()
       const matchSearch = !search || p.name.toLowerCase().includes(q) || (p.barcode && p.barcode.includes(q)) ||
-        (p.brand && p.brand.toLowerCase().includes(q)) || (p.model && p.model.toLowerCase().includes(q))
+        (p.brand && p.brand.toLowerCase().includes(q)) || (p.model && p.model.toLowerCase().includes(q)) ||
+        (p.material && p.material.toLowerCase().includes(q))
       const matchCat = !filterCategory || p.category_id === filterCategory
-      return matchSearch && matchCat
+      const matchMat = !filterMaterial || (p.material && p.material.trim().toLowerCase() === filterMaterial.toLowerCase())
+      return matchSearch && matchCat && matchMat
     })
-  }, [products, search, filterCategory])
+  }, [products, search, filterCategory, filterMaterial])
 
   const visibleProducts = useMemo(() => filtered.slice(0, 30), [filtered])
 
@@ -92,7 +104,7 @@ export default function ProductsPage() {
 
   function openNew() {
     setEditingProduct(null)
-    setForm({ name: '', barcode: '', sale_price: '', purchase_price: '', stock: '', stock_min: '3', category_id: '', unit: 'u', brand: '', size_label: '', model: '', presentation: '', supplier_id: '' })
+    setForm({ name: '', barcode: '', sale_price: '', purchase_price: '', stock: '', stock_min: '3', category_id: '', unit: 'u', brand: '', size_label: '', model: '', presentation: '', supplier_id: '', material: '' })
     setShowProductModal(true)
   }
   function openEdit(p: Product) {
@@ -102,6 +114,7 @@ export default function ProductsPage() {
       stock: String(p.stock), stock_min: String(p.stock_min), category_id: p.category_id || '',
       unit: p.unit || 'u', brand: p.brand || '', size_label: p.size_label || '',
       model: p.model || '', presentation: p.presentation || '', supplier_id: p.supplier_id || '',
+      material: p.material || '',
     })
     setShowProductModal(true)
   }
@@ -122,6 +135,7 @@ export default function ProductsPage() {
       presentation: form.presentation || null,
       supplier_id: form.supplier_id || null,
       avg_cost: Number(form.purchase_price) || 0,
+      material: form.material.trim() || null,
     }
     if (editingProduct) {
       const { error } = await supabase.from('products').update(payload).eq('id', editingProduct.id)
@@ -343,7 +357,7 @@ export default function ProductsPage() {
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20 group-focus-within:text-violet-500 transition-colors" />
           <input 
             type="text" 
-            placeholder="Buscar producto, código, marca..." 
+            placeholder="Buscar producto, código, marca, material..." 
             value={search} 
             onChange={(e) => setSearch(e.target.value)}
             className="w-full h-12 pl-12 pr-4 rounded-2xl border border-white/10 bg-white/[0.03] text-white text-sm focus:outline-none focus:ring-4 focus:ring-violet-500/10 focus:border-violet-500/30 transition-all placeholder:text-white/20" 
@@ -352,10 +366,18 @@ export default function ProductsPage() {
         <select 
           value={filterCategory} 
           onChange={(e) => setFilterCategory(e.target.value)}
-          className="h-12 px-4 rounded-2xl border border-white/10 bg-white/[0.03] text-white text-sm focus:outline-none focus:ring-4 focus:ring-violet-500/10 focus:border-violet-500/30 transition-all appearance-none cursor-pointer min-w-[180px]"
+          className="h-12 px-4 rounded-2xl border border-white/10 bg-white/[0.03] text-white text-sm focus:outline-none focus:ring-4 focus:ring-violet-500/10 focus:border-violet-500/30 transition-all appearance-none cursor-pointer min-w-[170px]"
         >
           <option value="" className="bg-slate-900">Todas las categorías</option>
           {categories.map(c => (<option key={c.id} value={c.id} className="bg-slate-900">{c.name}</option>))}
+        </select>
+        <select 
+          value={filterMaterial} 
+          onChange={(e) => setFilterMaterial(e.target.value)}
+          className="h-12 px-4 rounded-2xl border border-white/10 bg-white/[0.03] text-white text-sm focus:outline-none focus:ring-4 focus:ring-violet-500/10 focus:border-violet-500/30 transition-all appearance-none cursor-pointer min-w-[170px]"
+        >
+          <option value="" className="bg-slate-900">Todos los materiales</option>
+          {materials.map(m => (<option key={m} value={m} className="bg-slate-900">{m}</option>))}
         </select>
       </div>
 
@@ -423,6 +445,11 @@ export default function ProductsPage() {
                     )}
                   </div>
                   <div className="flex flex-col items-end gap-1.5">
+                    {p.material && (
+                      <span className="px-2 py-0.5 rounded-lg bg-cyan-500/10 border border-cyan-500/20 text-[9px] font-black text-cyan-400 uppercase tracking-widest">
+                        {p.material}
+                      </span>
+                    )}
                     {p.category_id && (
                       <span className="px-2 py-0.5 rounded-lg bg-white/5 border border-white/5 text-[9px] font-black text-white/40 uppercase tracking-widest">
                         {categories.find(c => c.id === p.category_id)?.name}
@@ -552,8 +579,18 @@ export default function ProductsPage() {
             </div>
 
             <div className="pt-2">
-              <p className="text-[10px] font-black text-violet-400 uppercase tracking-[0.2em] mb-3 ml-1">Detalles de Variante</p>
-              <div className="grid grid-cols-2 gap-4">
+              <p className="text-[10px] font-black text-violet-400 uppercase tracking-[0.2em] mb-3 ml-1">Detalles de Variante y Material</p>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-[10px] font-black text-white/40 uppercase tracking-widest mb-1.5 ml-1">Material</label>
+                  <input 
+                    type="text" 
+                    value={form.material} 
+                    onChange={(e) => setForm({...form, material: e.target.value})} 
+                    placeholder="Ej: Acero, Madera, Vidrio" 
+                    className="w-full h-11 px-4 rounded-xl border border-white/10 bg-white/5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-violet-500/30 focus:border-violet-500/50 transition-all placeholder:text-white/10" 
+                  />
+                </div>
                 <div>
                   <label className="block text-[10px] font-black text-white/40 uppercase tracking-widest mb-1.5 ml-1">Marca</label>
                   <input 

@@ -234,6 +234,7 @@ export interface Database {
           presentation: string | null
           supplier_id: string | null
           avg_cost: number
+          material?: string | null
           created_at: string
         }
         Insert: {
@@ -256,6 +257,7 @@ export interface Database {
           presentation?: string | null
           supplier_id?: string | null
           avg_cost?: number
+          material?: string | null
           created_at?: string
         }
         Update: {
@@ -278,6 +280,7 @@ export interface Database {
           presentation?: string | null
           supplier_id?: string | null
           avg_cost?: number
+          material?: string | null
           created_at?: string
         }
         Relationships: []

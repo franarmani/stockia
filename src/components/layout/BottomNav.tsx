@@ -14,6 +14,7 @@ import {
   ClipboardList,
   BarChart3,
   Settings,
+  TrendingUp,
   X,
 } from 'lucide-react'
 
@@ -25,6 +26,7 @@ const MAIN_NAV = [
 ]
 
 const MORE_NAV = [
+  { name: 'Rentabilidad', href: '/rentabilidad',  icon: TrendingUp },
   { name: 'Compras',      href: '/purchases',     icon: Truck },
   { name: 'Comprobantes', href: '/comprobantes',  icon: FileText },
   { name: 'Presupuestos', href: '/presupuestos',  icon: ClipboardList },
