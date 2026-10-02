@@ -38,11 +38,11 @@ export default function SubscriptionBlockedPage() {
           }
         </div>
         <h1 className="text-lg font-bold text-foreground mb-1.5">
-          {isTrialExpired ? 'Tu período de prueba terminó' : 'Suscripción vencida'}
+          {isTrialExpired ? 'Pendiente de pago' : 'Suscripción vencida'}
         </h1>
         <p className="text-[13px] text-muted-foreground mb-6">
           {isTrialExpired
-            ? 'Los 7 días gratuitos llegaron a su fin. Suscribite para seguir usando STOCKIA HUB y no perder tu historial de ventas y datos.'
+            ? 'Tu cuenta está pendiente de pago. Abonala para seguir usando STOCKIA HUB y no perder tu historial de ventas y datos.'
             : 'Tu suscripción ha vencido. Para seguir usando STOCKIA HUB y registrar nuevas ventas, necesitás renovar tu plan.'
           }
         </p>

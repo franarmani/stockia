@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { addDays } from 'date-fns'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/authStore'
@@ -11,7 +11,7 @@ import {
 
 const ALIAS = 'farmani2.ppay'
 const WA_NUMBER = '5492915716099'
-const PRECIO = '$70.000'
+const PRECIO_MENSUAL = 70000
 
 export default function PaymentNotificationModal({ onClose, daysLeft }: { onClose?: () => void; daysLeft?: number }) {
   const { user, profile, signOut } = useAuthStore()
@@ -20,7 +20,15 @@ export default function PaymentNotificationModal({ onClose, daysLeft }: { onClos
   const [preview, setPreview] = useState<string | null>(null)
   const [uploading, setUploading] = useState(false)
   const [submitted, setSubmitted] = useState(false)
+  const [linked, setLinked] = useState<{ id: string; name: string }[]>([])
   const fileRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    supabase.rpc('get_linked_businesses').then(({ data }) => setLinked((data as unknown as { id: string; name: string }[]) ?? []))
+  }, [])
+
+  const PRECIO = '$' + (PRECIO_MENSUAL * (1 + linked.length)).toLocaleString('es-AR')
+  const linkedNames = linked.map(b => b.name).join(', ')
 
   function copyAlias() {
     navigator.clipboard.writeText(ALIAS)
@@ -73,6 +81,7 @@ export default function PaymentNotificationModal({ onClose, daysLeft }: { onClos
         : new Date()
       const newTrialEndsAt = addDays(baseDate, 30).toISOString()
       await updateBusiness({ subscription_status: 'active', trial_ends_at: newTrialEndsAt })
+      if (linked.length) await supabase.rpc('extend_linked_subscriptions')
 
       setSubmitted(true)
       toast.success('¡Pago acreditado! Tu cuenta ya está activa por 30 días más.')
@@ -107,6 +116,11 @@ export default function PaymentNotificationModal({ onClose, daysLeft }: { onClos
           <p className="text-[13px] text-white/40 leading-relaxed">
             Incluye facturación AFIP ilimitada, usuarios ilimitados y soporte prioritario.
           </p>
+          {linked.length > 0 && (
+            <p className="mt-3 text-[13px] text-primary bg-primary/10 border border-primary/20 rounded-xl px-3 py-2 leading-relaxed">
+              Esta cuenta está vinculada con <b>{linkedNames}</b>. Con este pago se renuevan ambas cuentas, no hace falta pagar desde cada panel.
+            </p>
+          )}
         </div>
 
         <div className="p-6 space-y-5">
@@ -117,7 +131,7 @@ export default function PaymentNotificationModal({ onClose, daysLeft }: { onClos
               </div>
               <h3 className="text-lg font-bold text-white mb-1">¡Cuenta activada!</h3>
               <p className="text-sm text-white/50 mb-6">
-                Ya extendimos tu mensualidad 30 días. Guardá el comprobante por las dudas.
+                Ya extendimos tu mensualidad 30 días{linked.length > 0 && <> (también la de {linkedNames})</>}. Guardá el comprobante por las dudas.
               </p>
               <button
                 onClick={sendWA}
