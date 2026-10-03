@@ -115,6 +115,7 @@ export default function SalesHistoryPage() {
     if (!search) return true
     const q = search.toLowerCase()
     return s.customer?.name?.toLowerCase().includes(q) ||
+      s.note?.toLowerCase().includes(q) ||
       s.sale_items?.some((i: SaleWithItems['sale_items'][number]) => i.product?.name?.toLowerCase().includes(q))
   })
 
@@ -257,6 +258,7 @@ export default function SalesHistoryPage() {
                       {new Date(sale.created_at).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}
                     </span>
                     {sale.customer && <span className="text-xs text-muted-foreground">• {sale.customer.name}</span>}
+                    {sale.note && <span className="text-xs text-muted-foreground">• {sale.note}</span>}
                     {sale.seller && <span className="text-xs text-muted-foreground">• {sale.seller.name}</span>}
                   </div>
                 </div>
@@ -314,6 +316,13 @@ export default function SalesHistoryPage() {
               <div className="bg-muted rounded-xl p-3 text-sm">
                 <span className="text-muted-foreground">Cliente:</span>{' '}
                 <span className="font-medium">{selectedSale.customer.name}</span>
+              </div>
+            )}
+
+            {selectedSale.note && (
+              <div className="bg-muted rounded-xl p-3 text-sm">
+                <span className="text-muted-foreground">Nota:</span>{' '}
+                <span className="font-medium">{selectedSale.note}</span>
               </div>
             )}
 

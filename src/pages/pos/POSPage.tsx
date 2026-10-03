@@ -151,6 +151,7 @@ export default function POSPage() {
   const [customerIvaCondition, setCustomerIvaCondition] = useState('consumidor_final')
   const [saveCustomerCheck, setSaveCustomerCheck] = useState(false)
   const [showQuickCustomerForm, setShowQuickCustomerForm] = useState(false)
+  const [accountNote, setAccountNote] = useState('')
   const [qtyInputProduct, setQtyInputProduct] = useState<Product | null>(null)
   const [qtyInputValue, setQtyInputValue] = useState('')
   const [postSaleData, setPostSaleData] = useState<PostSaleData | null>(null)
@@ -427,9 +428,6 @@ export default function POSPage() {
 
   async function handleConfirmSale() {
     if (items.length === 0) return
-    if (paymentMethod === 'account' && !customerId && !mixedPaymentMode) {
-      toast.error('Seleccioná un cliente para Cuenta Corriente'); return
-    }
     if (receiptType !== 'ticket' && !isFiscalConnected) {
       toast.error('AFIP no está configurado. Andá a Configuración → Facturación AFIP para completar el wizard.'); return
     }
@@ -592,6 +590,7 @@ export default function POSPage() {
           receipt_type: receiptType,
           installments,
           surcharge_pct: surchargePct,
+          ...(accountNote.trim() && paymentMethod === 'account' && !mixedPaymentMode ? { note: accountNote.trim() } : {}),
         })
         .select().single()
 
@@ -760,6 +759,7 @@ export default function POSPage() {
       setDocTipoCustomer('99')
       setCustomerIvaCondition('consumidor_final')
       setSaveCustomerCheck(false)
+      setAccountNote('')
       setShowConfirmModal(false)
       setShowSuccess(true)
       setShowTicketModal(true)
@@ -1227,6 +1227,14 @@ export default function POSPage() {
                       )
                     })}
                   </div>
+                  {paymentMethod === 'account' && !customerId && (
+                    <input
+                      value={accountNote}
+                      onChange={(e) => setAccountNote(e.target.value)}
+                      placeholder="¿Quién se lo lleva / para qué obra? (opcional)"
+                      className="mt-2 w-full h-10 px-3 rounded-xl border border-white/8 bg-white/5 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-primary/40"
+                    />
+                  )}
                 </div>
               )}
 

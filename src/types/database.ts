@@ -342,6 +342,7 @@ export interface Database {
           voided: boolean
           voided_at: string | null
           voided_by: string | null
+          note: string | null
           created_at: string
         }
         Insert: {
@@ -358,6 +359,7 @@ export interface Database {
           voided?: boolean
           voided_at?: string | null
           voided_by?: string | null
+          note?: string | null
           created_at?: string
         }
         Update: {
