@@ -9,12 +9,12 @@ import { useBusinessStore } from '@/stores/businessStore'
 import AppShellLauncher from '@/components/layout/AppShellLauncher'
 import PaymentNotificationModal from '@/components/modals/PaymentNotificationModal'
 import ScrollToTop from '@/components/layout/ScrollToTop'
-import { calculateRawRemainingDays } from '@/features/subscription/utils/subscriptionDates'
+import { calculateRawRemainingDays, isSubscriptionExpired } from '@/features/subscription/utils/subscriptionDates'
 import SubscriptionGuard from '@/features/subscription/components/SubscriptionGuard'
 import UpdateNotificationModal from '@/components/modals/UpdateNotificationModal'
 
 // ── VERSIONING ──
-const APP_VERSION = '1.12.14' // Local version — bump together with public/version.json on every deploy
+const APP_VERSION = '1.12.15' // Local version — bump together with public/version.json on every deploy
 
 // ── localStorage cache helpers ──
 const PROFILE_CACHE_KEY = 'stockia_profile'
@@ -138,10 +138,10 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
   // Recordatorio para negocios en trial o ya activos (mensualidad por vencer),
   // con pocos días restantes (excepto superadmin).
-  // No mostrar el recordatorio cerrable el día del vencimiento, porque ese caso ya se maneja con el modal de bloqueo.
+  // Incluye el día del vencimiento (daysLeft 0); una vez vencido lo maneja el modal de bloqueo.
   const shouldShowPaymentReminder = !isSuperAdmin &&
     (business?.subscription_status === 'trial' || business?.subscription_status === 'active') &&
-    daysLeft > 0 &&
+    !isSubscriptionExpired(business?.trial_ends_at) &&
     daysLeft <= 2 &&
     !sessionClosed
 
