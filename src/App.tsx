@@ -14,7 +14,7 @@ import SubscriptionGuard from '@/features/subscription/components/SubscriptionGu
 import UpdateNotificationModal from '@/components/modals/UpdateNotificationModal'
 
 // ── VERSIONING ──
-const APP_VERSION = '1.12.15' // Local version — bump together with public/version.json on every deploy
+const APP_VERSION = '1.12.16' // Local version — bump together with public/version.json on every deploy
 
 // ── localStorage cache helpers ──
 const PROFILE_CACHE_KEY = 'stockia_profile'
@@ -134,6 +134,18 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   if (!user) return <Navigate to="/login" replace />
 
   const isSuperAdmin = profile?.is_superadmin
+
+  // El superadmin entra directo al panel admin (solo la primera vez por sesión,
+  // así después puede volver al menú normalmente).
+  if (isSuperAdmin && window.location.pathname === '/menu') {
+    let redirected = false
+    try { redirected = !!sessionStorage.getItem('admin_redirected') } catch {}
+    if (!redirected) {
+      try { sessionStorage.setItem('admin_redirected', '1') } catch {}
+      return <Navigate to="/admin" replace />
+    }
+  }
+
   const daysLeft = calculateRawRemainingDays(business?.trial_ends_at)
 
   // Recordatorio para negocios en trial o ya activos (mensualidad por vencer),
