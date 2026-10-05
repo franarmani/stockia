@@ -100,6 +100,72 @@ export default function ProductsPage() {
 
   const visibleProducts = useMemo(() => filtered.slice(0, 30), [filtered])
 
+  // Selección múltiple para edición masiva
+  const [selected, setSelected] = useState<Set<string>>(new Set())
+  const [bulkCategory, setBulkCategory] = useState('')
+  const [bulkBusy, setBulkBusy] = useState(false)
+  const allFilteredSelected = filtered.length > 0 && filtered.every(p => selected.has(p.id))
+
+  function toggleSelect(id: string) {
+    setSelected(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id); else next.add(id)
+      return next
+    })
+  }
+
+  function toggleSelectAll() {
+    setSelected(allFilteredSelected ? new Set() : new Set(filtered.map(p => p.id)))
+  }
+
+  async function handleBulkCase(mode: 'upper' | 'lower' | 'title') {
+    const label = mode === 'upper' ? 'MAYÚSCULAS' : mode === 'lower' ? 'minúsculas' : 'Cada Palabra Con Mayúscula'
+    const toChange = products
+      .filter(p => selected.has(p.id))
+      .map(p => {
+        const lower = p.name.toLocaleLowerCase('es')
+        const name = mode === 'upper' ? p.name.toLocaleUpperCase('es')
+          : mode === 'lower' ? lower
+          : lower.replace(/(^|\s)(\S)/g, (_, sp, ch) => sp + ch.toLocaleUpperCase('es'))
+        return { id: p.id, name }
+      })
+      .filter(u => u.name !== products.find(p => p.id === u.id)!.name)
+    if (toChange.length === 0) { toast.info('No hay nombres para cambiar'); return }
+    if (!confirm(`¿Pasar ${toChange.length} nombres a ${label}?`)) return
+    setBulkBusy(true)
+    let errors = 0
+    for (let i = 0; i < toChange.length; i += 20) {
+      const results = await Promise.all(toChange.slice(i, i + 20).map(u =>
+        supabase.from('products').update({ name: u.name }).eq('id', u.id)
+      ))
+      errors += results.filter(r => r.error).length
+    }
+    setBulkBusy(false)
+    if (errors) toast.error(`Se actualizaron ${toChange.length - errors} de ${toChange.length} productos`)
+    else toast.success(`${toChange.length} nombres actualizados`)
+    fetchAll()
+  }
+
+  async function handleBulkCategory() {
+    if (!bulkCategory) { toast.error('Elegí una categoría'); return }
+    const ids = Array.from(selected)
+    const catName = bulkCategory === '__none__' ? 'Sin categoría' : categories.find(c => c.id === bulkCategory)?.name
+    if (!confirm(`¿Pasar ${ids.length} productos a "${catName}"?`)) return
+    setBulkBusy(true)
+    let errors = 0
+    for (let i = 0; i < ids.length; i += 200) {
+      const { error } = await supabase.from('products')
+        .update({ category_id: bulkCategory === '__none__' ? null : bulkCategory })
+        .in('id', ids.slice(i, i + 200))
+      if (error) errors++
+    }
+    setBulkBusy(false)
+    if (errors) toast.error('Algunos productos no se pudieron actualizar')
+    else toast.success(`${ids.length} productos pasados a "${catName}"`)
+    setBulkCategory('')
+    fetchAll()
+  }
+
   const lowStockProducts = useMemo(() => products.filter(p => p.stock <= p.stock_min), [products])
 
   function openNew() {
@@ -381,6 +447,40 @@ export default function ProductsPage() {
         </select>
       </div>
 
+      {/* Bulk selection bar */}
+      {filtered.length > 0 && (
+        <div className="px-1">
+          <div className="flex flex-wrap items-center gap-2 p-3 rounded-2xl bg-white/[0.03] border border-white/5">
+            <label className="flex items-center gap-2 cursor-pointer select-none text-xs font-bold text-white">
+              <input type="checkbox" checked={allFilteredSelected} onChange={toggleSelectAll} className="w-4 h-4 accent-violet-500 cursor-pointer" />
+              Seleccionar todos ({filtered.length})
+            </label>
+            {selected.size > 0 && (
+              <>
+                <span className="text-xs text-white/50">· {selected.size} seleccionados</span>
+                <button onClick={() => setSelected(new Set())} className="text-xs text-white/40 hover:text-white underline">Quitar selección</button>
+                <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto sm:ml-auto">
+                  <span className="text-[10px] font-black text-white/30 uppercase tracking-widest">Nombre:</span>
+                  <button disabled={bulkBusy} onClick={() => handleBulkCase('upper')} className="h-8 px-3 rounded-lg bg-white/5 hover:bg-white/10 text-xs font-bold text-white disabled:opacity-40">MAYÚSCULAS</button>
+                  <button disabled={bulkBusy} onClick={() => handleBulkCase('lower')} className="h-8 px-3 rounded-lg bg-white/5 hover:bg-white/10 text-xs font-bold text-white disabled:opacity-40">minúsculas</button>
+                  <button disabled={bulkBusy} onClick={() => handleBulkCase('title')} className="h-8 px-3 rounded-lg bg-white/5 hover:bg-white/10 text-xs font-bold text-white disabled:opacity-40">Cada Palabra</button>
+                  <span className="text-[10px] font-black text-white/30 uppercase tracking-widest sm:ml-2">Categoría:</span>
+                  <select value={bulkCategory} onChange={(e) => setBulkCategory(e.target.value)}
+                    className="h-8 px-2 rounded-lg border border-white/10 bg-white/[0.03] text-xs text-white focus:outline-none cursor-pointer">
+                    <option value="">Elegir...</option>
+                    {categories.map(c => (<option key={c.id} value={c.id}>{c.name}</option>))}
+                    <option value="__none__">Sin categoría</option>
+                  </select>
+                  <button disabled={bulkBusy || !bulkCategory} onClick={handleBulkCategory} className="h-8 px-3 rounded-lg bg-violet-500/80 hover:bg-violet-500 text-xs font-bold text-white disabled:opacity-40">
+                    {bulkBusy ? 'Guardando...' : 'Aplicar'}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Products grid */}
       <div className="px-1">
         {filtered.length === 0 ? (
@@ -403,6 +503,13 @@ export default function ProductsPage() {
                 )} />
 
                 <div className="flex items-start justify-between mb-4">
+                  <input
+                    type="checkbox"
+                    checked={selected.has(p.id)}
+                    onClick={(e) => e.stopPropagation()}
+                    onChange={() => toggleSelect(p.id)}
+                    className="w-4 h-4 mt-1 mr-3 shrink-0 accent-violet-500 cursor-pointer"
+                  />
                   <div className="min-w-0 flex-1">
                     <h3 className="text-base font-black text-white tracking-tight leading-tight group-hover:text-primary transition-colors">{p.name}</h3>
                     {(p.brand || p.model) && (
