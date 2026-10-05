@@ -255,6 +255,12 @@ body {
   backdrop-filter: blur(8px);
   transition: all 0.2s ease;
 }
+/* La lista desplegable usa el fondo del sistema (blanco); sin esto el texto blanco no se ve */
+.dark-shell select option,
+.dark-shell select optgroup {
+  background-color: #0d1b2d;
+  color: #fff;
+}
 .dark-shell input::placeholder,
 .dark-shell textarea::placeholder {
   color: var(--app-text-muted) !important;
