@@ -1,13 +1,14 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "CajaGo",
-  "version": "1.12.18",
+  "mainBinaryName": "CajaGo",
+  "version": "1.13.1",
   "identifier": "com.cajago.pos",
   "build": {
     "frontendDist": "../dist",
     "devUrl": "http://localhost:5173",
     "beforeDevCommand": "npm run dev",
-    "beforeBuildCommand": "npm run build"
+    "beforeBuildCommand": "npm run build:desktop"
   },
   "app": {
     "withGlobalTauri": true,
@@ -56,7 +57,7 @@
       "endpoints": [
         "https://mrpenblsmooeqzegtcqp.supabase.co/storage/v1/object/public/releases/latest.json"
       ],
-      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXkKUldSYUtDajFwQ01rQURrM0R3VlZ1ZStXQUVRQ3dJclF4RjRHRy9yZmh6clZicjM0WXZ2VT0K",
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEZERUFGODA1RDUxODgzRDkKUldUWmd4alZCZmpxL1ZlME51SXcvVS9QczFxb1kxeWlLanQzNFA0RHB1cFpSRGdZdEprU1NSZlcK",
       "windows": {
         "installMode": "passive"
       }

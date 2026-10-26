@@ -1,6 +1,6 @@
 import { Check, Crown } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { PLANS, formatPlanPrice, type PlanId } from '@/config/plans'
+import { PLANS, PLAN_ORDER, formatPlanPrice, type PlanId } from '@/config/plans'
 
 /** Selector de plan con el precio total (incluye las cuentas vinculadas que se pagan juntas). */
 export default function PlanPicker({
@@ -15,8 +15,8 @@ export default function PlanPicker({
   compact?: boolean
 }) {
   return (
-    <div className="grid grid-cols-2 gap-2">
-      {(['basic', 'premium'] as PlanId[]).map((id) => {
+    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+      {PLAN_ORDER.map((id) => {
         const plan = PLANS[id]
         const selected = value === id
         return (
@@ -31,7 +31,7 @@ export default function PlanPicker({
           >
             <div className="flex items-center justify-between gap-2">
               <span className="text-sm font-bold text-white flex items-center gap-1.5">
-                {id === 'premium' && <Crown className="w-3.5 h-3.5 text-amber-400" />}
+                {id !== 'basic' && <Crown className="w-3.5 h-3.5 text-amber-400" />}
                 {plan.name}
               </span>
               {selected && <Check className="w-4 h-4 text-primary" />}

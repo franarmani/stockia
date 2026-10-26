@@ -53,7 +53,7 @@ interface DashboardData {
 
 export default function DashboardPage() {
   const { profile } = useAuthStore()
-  const { isPremium } = usePlan()
+  const { isPremium, hasFeature } = usePlan()
   const navigate = useNavigate()
   const [data, setData] = useState<DashboardData | null>(null)
   const [loading, setLoading] = useState(true)
@@ -157,8 +157,8 @@ export default function DashboardPage() {
 
   async function runGlobalAnalysis() {
     if (!data) return
-    if (!isPremium) {
-      toast.info('El análisis inteligente con IA está en el plan Premium. Podés cambiar de plan en Configuración → Suscripción.')
+    if (!hasFeature('intelligence')) {
+      toast.info('El análisis inteligente con IA está en el plan VIP. Podés cambiar de plan en Configuración → Suscripción.')
       return
     }
     setAnalyzing(true)

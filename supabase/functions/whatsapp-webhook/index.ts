@@ -1,13 +1,13 @@
 // Mensajes de WhatsApp que llegan desde Z-API. Público: el negocio se identifica con la clave
 // secreta de la URL (?key=). El asistente responde con datos reales del catálogo.
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import { businessIsActive } from '../_shared/access.ts'
+import { businessIsActive, hasVipAccess } from '../_shared/access.ts'
 import {
   BOT_LIMITS, STAFF_PAUSE_HOURS, buildSystemPrompt, isPaused, parseIncoming, searchTerms, splitHumanMarker, wantsHuman,
 } from '../_shared/whatsappBot.ts'
 import { hasCredentials, sendText } from '../_shared/zapi.ts'
 
-const STORE_BASE = 'https://stockia-main.vercel.app/tienda/'
+const STORE_BASE = 'https://cajago.vercel.app/tienda/'
 
 Deno.serve(async request => {
   // Z-API reintenta ante errores: se responde 200 salvo fallas reales del servidor.
@@ -64,7 +64,7 @@ Deno.serve(async request => {
     const { data: business } = await admin.from('businesses')
       .select('name, address, city, phone, plan, subscription_status, trial_ends_at, store_enabled, store_slug')
       .eq('id', businessId).single()
-    const premium = business && (business.plan !== 'basic' || business.subscription_status === 'trial')
+    const premium = hasVipAccess(business)
     const current = business && business.subscription_status !== 'expired' &&
       (!business.trial_ends_at || new Date(business.trial_ends_at).getTime() > Date.now() - 3 * 86400000)
     if (!premium || !current) return new Response('ok')

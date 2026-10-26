@@ -23,3 +23,5 @@ supabase.exe
 
 # Configuración local de Claude Code
 .claude/settings.local.json
+
+.vercel

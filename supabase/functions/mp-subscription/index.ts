@@ -9,7 +9,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-const DEFAULT_BACK_URL = 'https://stockia-main.vercel.app/suscripcion/listo'
+const DEFAULT_BACK_URL = 'https://cajago.vercel.app/suscripcion/listo'
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 Deno.serve(async request => {

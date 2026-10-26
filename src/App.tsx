@@ -15,6 +15,7 @@ import PermissionGuard from '@/components/PermissionGuard'
 import PlanGate from '@/features/subscription/components/PlanGate'
 import UpdateNotificationModal from '@/components/modals/UpdateNotificationModal'
 import UpdateModal from '@/components/desktop/UpdateModal'
+import MusicDownloadPrompt from '@/features/music/MusicDownloadPrompt'
 import { checkIsTauriDesktop } from '@/sync/storage'
 import { syncEngine } from '@/sync/syncEngine'
 import { checkConnectivity, isOnline } from '@/sync/connectivity'
@@ -597,6 +598,7 @@ export default function App() {
         onReload={handleReloadApp}
       />
       <UpdateModal />
+      <MusicDownloadPrompt />
     </Suspense>
   )
 }

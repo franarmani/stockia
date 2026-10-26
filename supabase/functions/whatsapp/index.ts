@@ -1,7 +1,7 @@
 // Administración de WhatsApp con IA desde CajaGo (usuario autenticado).
 // Acciones: get_config, save_config, send, pause, resume, mark_read.
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import { businessIsActive, INACTIVE_MESSAGE } from '../_shared/access.ts'
+import { businessIsActive, hasVipAccess, INACTIVE_MESSAGE } from '../_shared/access.ts'
 import { STAFF_PAUSE_HOURS } from '../_shared/whatsappBot.ts'
 import { hasCredentials, instanceStatus, sendText, setReceivedWebhook } from '../_shared/zapi.ts'
 
@@ -33,8 +33,8 @@ Deno.serve(async request => {
     const isAdmin = profile.role === 'admin'
 
     const { data: business } = await admin.from('businesses').select('plan, subscription_status').eq('id', businessId).single()
-    if (!business || (business.plan === 'basic' && business.subscription_status !== 'trial')) {
-      return json({ error: 'WhatsApp con IA es parte del plan Premium' }, 403)
+    if (!hasVipAccess(business)) {
+      return json({ error: 'WhatsApp con IA es parte del plan VIP' }, 403)
     }
 
     const body = await request.json().catch(() => ({}))

@@ -1,7 +1,7 @@
 // Tienda online pública: catálogo y pedidos. Sin login (verify_jwt = false).
 // Usa service role pero solo expone negocios con la tienda activa y plan que la incluye.
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import { businessIsActive } from '../_shared/access.ts'
+import { businessIsActive, hasVipAccess } from '../_shared/access.ts'
 import { isValidSlug, orderMessage, validateOrder, whatsappOrderLink } from '../_shared/onlineStore.ts'
 
 const corsHeaders = {
@@ -24,7 +24,7 @@ Deno.serve(async request => {
       .maybeSingle()
 
     // La tienda es parte de Premium (o de la prueba) y requiere la suscripción al día.
-    const premium = business && (business.plan !== 'basic' || business.subscription_status === 'trial')
+    const premium = hasVipAccess(business)
     const current = business && await businessIsActive(admin, business.id)
     if (!business || !business.store_enabled || !premium || !current) return json({ error: 'Tienda no encontrada' }, 404)
 

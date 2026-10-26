@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { MusicPlaylist, MusicTrack } from '@/types/music'
+import { resolveTrackUrl } from '@/features/music/musicDownload'
 
 interface MusicStore {
   // State
@@ -77,15 +78,14 @@ export const useMusicStore = create<MusicStore>((set, get) => ({
     set({ playbackSource: source, currentTrack: track, isPlaying: true })
 
     if (source === 'file') {
-      if (!audio) {
-        initAudio()
-        const newAudio = get().audio!
-        newAudio.src = track.file_url
-        newAudio.play()
-      } else {
-        audio.src = track.file_url
-        audio.play()
-      }
+      if (!audio) initAudio()
+      const player = get().audio!
+      resolveTrackUrl(track.file_url).then(src => {
+        // Si mientras tanto eligieron otra canción, no la pisamos.
+        if (get().currentTrack?.id !== track.id) return
+        player.src = src
+        player.play()
+      })
     } else {
       // YouTube source: The YouTubePlayer component will react to store changes
       // Ensure local audio is paused

@@ -1,6 +1,7 @@
 import { Outlet, useNavigate, useLocation, NavLink } from 'react-router-dom'
 import OfflineIndicator from '@/components/OfflineIndicator'
 import { usePlan } from '@/hooks/usePlan'
+import { PLANS, type PlanId } from '@/config/plans'
 import { useAuthStore } from '@/stores/authStore'
 import { useBusinessStore } from '@/stores/businessStore'
 import { useHotkeys } from '@/hooks/useHotkeys'
@@ -36,16 +37,16 @@ const NAV_SECTIONS = [
     label: 'Mercadería',
     items: [
       { name: 'Productos y stock', href: '/products', icon: Package },
-      { name: 'Compras', href: '/purchases', icon: Truck, premium: true },
-      { name: 'Promociones', href: '/promociones', icon: Tag, premium: true },
+      { name: 'Compras', href: '/purchases', icon: Truck, plan: 'premium' as const },
+      { name: 'Promociones', href: '/promociones', icon: Tag, plan: 'premium' as const },
     ],
   },
   {
     label: 'Clientes',
     items: [
       { name: 'Clientes', href: '/customers', icon: Users },
-      { name: 'Presupuestos', href: '/presupuestos', icon: ClipboardList, premium: true },
-      { name: 'Club de puntos', href: '/club', icon: Gift, premium: true },
+      { name: 'Presupuestos', href: '/presupuestos', icon: ClipboardList, plan: 'premium' as const },
+      { name: 'Club de puntos', href: '/club', icon: Gift, plan: 'premium' as const },
     ],
   },
   {
@@ -53,16 +54,16 @@ const NAV_SECTIONS = [
     items: [
       { name: 'Comprobantes AFIP', href: '/comprobantes', icon: FileText },
       { name: 'Reportes', href: '/reports', icon: BarChart3 },
-      { name: 'Rentabilidad', href: '/rentabilidad', icon: TrendingUp, premium: true },
-      { name: 'Contabilidad', href: '/accounting', icon: Scale, premium: true },
+      { name: 'Rentabilidad', href: '/rentabilidad', icon: TrendingUp, plan: 'premium' as const },
+      { name: 'Contabilidad', href: '/accounting', icon: Scale, plan: 'vip' as const },
     ],
   },
   {
     label: 'Vender más',
     items: [
-      { name: 'Tienda online', href: '/tienda', icon: Globe, premium: true },
-      { name: 'WhatsApp IA', href: '/whatsapp', icon: MessageCircle, premium: true, upcoming: true },
-      { name: 'CajaGo Music', href: '/music', icon: Music, premium: true },
+      { name: 'Tienda online', href: '/tienda', icon: Globe, plan: 'vip' as const },
+      { name: 'WhatsApp IA', href: '/whatsapp', icon: MessageCircle, plan: 'vip' as const, upcoming: true },
+      { name: 'CajaGo Music', href: '/music', icon: Music, plan: 'premium' as const },
     ],
   },
 ]
@@ -74,7 +75,7 @@ export default function AppShellLauncher() {
   const location = useLocation()
   const { profile, signOut } = useAuthStore()
   const { business } = useBusinessStore()
-  const { isPremium } = usePlan()
+  const { hasPlan } = usePlan()
 
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false)
   const [profileMenuOpen, setProfileMenuOpen] = useState(false)
@@ -171,11 +172,15 @@ export default function AppShellLauncher() {
                         Próximo
                       </span>
                     )}
-                    {(item as { premium?: boolean; upcoming?: boolean }).premium && !(item as { upcoming?: boolean }).upcoming && !isPremium && (
-                      <span className="ml-auto inline-flex items-center gap-1 rounded-md bg-amber-400/10 px-1.5 py-0.5 text-[9.5px] font-bold uppercase tracking-wider text-amber-300" aria-label="Plan Premium">
-                        <Crown className="w-2.5 h-2.5" /> Pro
-                      </span>
-                    )}
+                    {(() => {
+                      const required = (item as { plan?: PlanId }).plan
+                      if (!required || (item as { upcoming?: boolean }).upcoming || hasPlan(required)) return null
+                      return (
+                        <span className="ml-auto inline-flex items-center gap-1 rounded-md bg-amber-400/10 px-1.5 py-0.5 text-[10px] font-semibold text-amber-300" aria-label={`Plan ${PLANS[required].name}`}>
+                          <Crown className="w-2.5 h-2.5" /> {PLANS[required].name}
+                        </span>
+                      )
+                    })()}
                   </NavLink>
                 )
               })}

@@ -8,7 +8,6 @@ import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/authStore'
 import { useBusinessStore } from '@/stores/businessStore'
 import { usePlan } from '@/hooks/usePlan'
-import { BASIC_LIMITS } from '@/config/plans'
 import { useFiscalStore } from '@/stores/fiscalStore'
 import { toast } from 'sonner'
 import Button from '@/components/ui/Button'
@@ -47,7 +46,7 @@ type TabId = typeof TABS[number]['id']
 export default function SettingsPage() {
   const { profile } = useAuthStore()
   const { business, updateBusiness } = useBusinessStore()
-  const { isPremium } = usePlan()
+  const { limits } = usePlan()
   const { settings: fiscalSettings, env: fiscalEnv, setEnv, fetchSettings, upsertSettings, updateCertStatus } = useFiscalStore()
   const [users, setUsers] = useState<UserProfile[]>([])
   const [loading, setLoading] = useState(true)
@@ -902,7 +901,7 @@ export default function SettingsPage() {
                   <p className="text-xs text-white/40">{users.length} colaboradores</p>
                 </div>
                 <button onClick={() => {
-                  if (!isPremium && users.length >= BASIC_LIMITS.users) { toast.error(`El plan Básico permite hasta ${BASIC_LIMITS.users} usuarios. Pasate a Premium para sumar más.`); return }
+                  if (limits.users !== null && users.length >= limits.users) { toast.error(`Tu plan permite hasta ${limits.users} usuarios. Pasate a un plan superior para sumar más.`); return }
                   setShowUserModal(true)
                 }}
                   className="flex items-center gap-2 h-9 px-4 rounded-xl bg-primary text-white text-xs font-bold hover:brightness-110 transition-all">

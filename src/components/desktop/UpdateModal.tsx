@@ -32,7 +32,7 @@ export default function UpdateModal() {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 animate-fade-in">
-      <div className="bg-surface-elevated border border-white/10 rounded-[16px] p-6 sm:p-7 max-w-md w-full shadow-[0_28px_90px_rgba(2,5,10,0.58)] text-white relative">
+      <div className="bg-[#10141c] border border-white/[0.09] rounded-[1.25rem] p-6 sm:p-7 max-w-md w-full shadow-[0_30px_90px_rgba(2,5,12,0.6)] text-white relative">
         {!updateInfo.isMandatory && !installing && (
           <button
             onClick={() => setIsOpen(false)}
@@ -52,7 +52,7 @@ export default function UpdateModal() {
           </div>
         </div>
 
-        <div className="bg-background border border-white/[0.08] rounded-[10px] p-3.5 mb-4 text-xs font-mono space-y-1.5">
+        <div className="bg-white/[0.03] border border-white/[0.07] rounded-[10px] p-3.5 mb-4 text-[13px] tabular-nums space-y-1.5">
           <div className="flex justify-between">
             <span className="text-slate-400">Versión instalada:</span>
             <span className="text-slate-300 font-bold">{updateInfo.currentVersion}</span>
@@ -62,7 +62,7 @@ export default function UpdateModal() {
             <span className="text-emerald-400 font-bold">{updateInfo.version}</span>
           </div>
           {updateInfo.isMandatory && (
-            <div className="pt-1.5 border-t border-white/[0.06] flex items-center gap-1.5 text-amber-300 font-sans font-semibold">
+            <div className="pt-1.5 border-t border-white/[0.06] flex items-center gap-1.5 text-amber-300 font-semibold">
               <AlertTriangle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
               <span>Actualización obligatoria para continuar operando</span>
             </div>
@@ -70,15 +70,15 @@ export default function UpdateModal() {
         </div>
 
         {updateInfo.body && (
-          <div className="mb-5 max-h-32 overflow-y-auto text-xs text-slate-300 bg-white/[0.02] border border-white/[0.04] p-3 rounded-lg leading-relaxed">
-            <p className="text-[10px] font-mono uppercase text-slate-400 font-semibold mb-1">Novedades:</p>
+          <div className="mb-5 max-h-32 overflow-y-auto text-[13px] text-slate-300 bg-white/[0.02] border border-white/[0.04] p-3 rounded-lg leading-relaxed">
+            <p className="text-[12px] text-slate-400 font-semibold mb-1">Novedades</p>
             <div className="whitespace-pre-line">{updateInfo.body}</div>
           </div>
         )}
 
         {installing ? (
           <div className="space-y-2 mb-2">
-            <div className="flex justify-between text-xs font-mono">
+            <div className="flex justify-between text-xs tabular-nums">
               <span className="text-primary flex items-center gap-1.5">
                 <RefreshCw className="w-3.5 h-3.5 animate-spin" />
                 <span>Descargando y verificando firma...</span>
@@ -91,7 +91,7 @@ export default function UpdateModal() {
                 style={{ width: `${progress}%` }}
               />
             </div>
-            <p className="text-[11px] text-slate-400 text-center pt-1 font-mono">
+            <p className="text-[11px] text-slate-400 text-center pt-1">
               CajaGo se reiniciará automáticamente al finalizar.
             </p>
           </div>
@@ -107,7 +107,7 @@ export default function UpdateModal() {
             )}
             <button
               onClick={handleUpdate}
-              className="flex items-center gap-2 px-5 py-2.5 bg-primary text-white text-xs font-bold rounded-[10px] hover:bg-primary-hover shadow-[0_10px_28px_rgba(70,94,194,0.24)] transition-all"
+              className="flex items-center gap-2 px-5 py-2.5 bg-[#6178ee] text-white text-[13px] font-semibold rounded-[10px] hover:bg-[#6f8cff] transition-colors"
             >
               <Download className="w-4 h-4" />
               <span>Actualizar ahora</span>

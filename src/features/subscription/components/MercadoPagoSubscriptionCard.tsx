@@ -13,7 +13,7 @@ import {
   syncMercadoPagoSubscription,
 } from '../mercadoPagoService'
 import PlanPicker from './PlanPicker'
-import { PLANS, formatPlanPrice, normalizePlan, type PlanId } from '@/config/plans'
+import { PLANS, formatPlanPrice, normalizePlan, type PlanId, PLAN_ORDER } from '@/config/plans'
 const POLL_INTERVAL_MS = 8000
 const POLL_DURATION_MS = 5 * 60 * 1000
 
@@ -144,15 +144,16 @@ export default function MercadoPagoSubscriptionCard({
               <button onClick={() => refresh(false)} disabled={!isOnline} className="px-3 h-8 rounded-lg bg-white/5 text-white/70 text-xs font-semibold hover:bg-white/10 disabled:opacity-40 flex items-center gap-1.5">
                 <RefreshCw className="w-3.5 h-3.5" /> Actualizar estado
               </button>
-              {isAdmin && (
+              {isAdmin && PLAN_ORDER.filter(id => id !== currentPlan).map(id => (
                 <button
-                  onClick={() => changePlan(currentPlan === 'premium' ? 'basic' : 'premium')}
+                  key={id}
+                  onClick={() => changePlan(id)}
                   disabled={busy || !isOnline}
                   className="px-3 h-8 rounded-lg bg-primary/15 text-primary text-xs font-semibold hover:bg-primary/25 disabled:opacity-40"
                 >
-                  {currentPlan === 'premium' ? 'Pasar a Básico' : 'Pasar a Premium'}
+                  Pasar a {PLANS[id].name}
                 </button>
-              )}
+              ))}
               {isAdmin && (
                 <button onClick={cancel} disabled={busy || !isOnline} className="px-3 h-8 rounded-lg text-red-300/80 text-xs font-semibold hover:bg-red-500/10 disabled:opacity-40">
                   Cancelar débito automático

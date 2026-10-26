@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { normalizePlan } from '@/config/plans'
 import { Navigate } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/authStore'
@@ -236,7 +237,7 @@ export default function AdminPage() {
 
   function openWA(business: BusinessRow, type: 'activar' | 'vencido') {
     const msg = type === 'activar'
-      ? `Hola! Tu cuenta en CajaGo ha sido activada ✅. Ya podés ingresar en https://stockia-main.vercel.app — Cualquier consulta avisame. Saludos, Fran`
+      ? `Hola! Tu cuenta en CajaGo ha sido activada ✅. Ya podés ingresar en https://cajago.vercel.app — Cualquier consulta avisame. Saludos, Fran`
       : `Hola! Tu período de prueba en CajaGo ha vencido 📅. Para seguir usando el sistema transferí $70.000 al alias *${ALIAS}* y avisame por acá. Saludos, Fran`
 
     const phone = business.phone?.replace(/\D/g, '') || ''
@@ -561,13 +562,14 @@ export default function AdminPage() {
                         <td className="px-4 py-3">
                           {canManagePlans ? (
                             <select
-                              value={b.plan === 'basic' ? 'basic' : 'premium'}
+                              value={normalizePlan(b.plan)}
                               onChange={(e) => updatePlan(b.id, e.target.value)}
                               disabled={updating === b.id}
                               className="bg-white/5 border border-white/10 rounded-lg text-[11px] font-bold px-2 py-1 text-white focus:outline-none focus:border-green-500/50"
                             >
                               <option value="basic" className="bg-slate-900">Básico</option>
                               <option value="premium" className="bg-slate-900">Premium</option>
+                              <option value="vip" className="bg-slate-900">VIP</option>
                             </select>
                           ) : (
                             <span className="text-[11px] font-bold text-white/60 uppercase">

@@ -24,12 +24,14 @@ describe('Mercado Pago subscriptions', () => {
   it('keeps server prices in sync with the plans shown in the app', () => {
     expect(PLAN_PRICES_ARS).toEqual(PLAN_PRICES)
     expect(isSubscriptionPlan('premium')).toBe(true)
-    expect(isSubscriptionPlan('vip')).toBe(false)
+    expect(isSubscriptionPlan('vip')).toBe(true)
+    expect(isSubscriptionPlan('pro')).toBe(false)
   })
 
-  it('treats legacy and empty plans as Premium', () => {
+  it('keeps basic and vip, and treats legacy and empty plans as Premium', () => {
     expect(normalizePlan('basic')).toBe('basic')
-    for (const legacy of ['vip', 'free', 'pro', 'premium', null, undefined]) expect(normalizePlan(legacy)).toBe('premium')
+    expect(normalizePlan('vip')).toBe('vip')
+    for (const legacy of ['free', 'pro', 'premium', null, undefined]) expect(normalizePlan(legacy)).toBe('premium')
   })
 
   it('builds a pending monthly ARS preapproval tied to the business', () => {

@@ -4,12 +4,12 @@
 export const MP_API = 'https://api.mercadopago.com'
 
 // Mismos precios que src/config/plans.ts (el servidor es quien cobra).
-export const PLAN_PRICES_ARS = { basic: 38000, premium: 70000 } as const
+export const PLAN_PRICES_ARS = { basic: 38000, premium: 70000, vip: 110000 } as const
 export type SubscriptionPlan = keyof typeof PLAN_PRICES_ARS
-const PLAN_NAMES: Record<SubscriptionPlan, string> = { basic: 'Básico', premium: 'Premium' }
+const PLAN_NAMES: Record<SubscriptionPlan, string> = { basic: 'Básico', premium: 'Premium', vip: 'VIP' }
 
 export function isSubscriptionPlan(value: unknown): value is SubscriptionPlan {
-  return value === 'basic' || value === 'premium'
+  return value === 'basic' || value === 'premium' || value === 'vip'
 }
 
 /** Cuentas vinculadas (billing_group) se pagan juntas: una mensualidad por negocio. */

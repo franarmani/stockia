@@ -8,3 +8,8 @@ export async function businessIsActive(client: any, businessId: string): Promise
   const { data, error } = await client.rpc('business_is_active', { p_business_id: businessId })
   return !error && data === true
 }
+
+/** Durante la prueba gratis se habilita todo, igual que en el programa (usePlan.effectivePlan). */
+export function hasVipAccess(business: { plan?: string | null; subscription_status?: string | null } | null): boolean {
+  return !!business && (business.plan === 'vip' || business.subscription_status === 'trial')
+}

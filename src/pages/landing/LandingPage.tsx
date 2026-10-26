@@ -442,8 +442,8 @@ export default function LandingPage() {
         <section id="planes" className="border-y border-white/[0.08] bg-[#0c1119]">
           <div className="mx-auto max-w-[1120px] px-4 py-28 sm:px-6 sm:py-40 lg:px-8">
             <Reveal className="mx-auto max-w-3xl text-center"><Eyebrow centered>Planes simples</Eyebrow><h2 className="text-balance text-4xl font-extrabold tracking-[-0.05em] text-white sm:text-6xl">Pagás por el sistema. No por cada caja.</h2><p className="mx-auto mt-6 max-w-xl text-base leading-8 text-slate-500">Probá todas las funciones durante {TRIAL_DAYS} días. Después elegís el nivel de gestión que necesita tu negocio.</p></Reveal>
-            <div className="mt-16 grid gap-4 lg:grid-cols-2 lg:items-start">
-              {(['basic', 'premium'] as PlanId[]).map((id, index) => {
+            <div className="mt-16 grid gap-4 lg:grid-cols-3 lg:items-start">
+              {(['basic', 'premium', 'vip'] as PlanId[]).map((id, index) => {
                 const plan = PLANS[id]
                 const highlighted = id === 'premium'
                 return (

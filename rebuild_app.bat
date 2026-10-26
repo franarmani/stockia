@@ -19,12 +19,11 @@ if %errorlevel% neq 0 (
 
 echo.
 echo Actualizando CajaGo.exe en la raiz del proyecto...
-copy /Y "src-tauri\target\release\app.exe" "CajaGo.exe" >nul
+copy /Y "src-tauri\target\release\CajaGo.exe" "CajaGo.exe" >nul
 if %errorlevel% neq 0 (
     echo [ERROR] No se pudo reemplazar CajaGo.exe. Cerra el programa y volve a correr este script.
     exit /b 1
 )
-copy /Y "src-tauri\target\release\app.exe" "src-tauri\target\release\CajaGo.exe" >nul
 
 if exist "src-tauri\target\release\WebView2Loader.dll" (
     copy /Y "src-tauri\target\release\WebView2Loader.dll" "WebView2Loader.dll" >nul
