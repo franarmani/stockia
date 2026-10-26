@@ -4,8 +4,27 @@ import type { SubscriptionDateState } from '../types/subscription.types'
 
 const AR_TIMEZONE = 'America/Argentina/Buenos_Aires'
 
+const CLOCK_KEY = 'cajago_clock_hw'
+
+/** Hora que no retrocede: si atrasan el reloj de la PC, se sigue usando la última hora vista. */
+export function trustedNow(): number {
+  const now = Date.now()
+  let seen = 0
+  try { seen = Number(localStorage.getItem(CLOCK_KEY)) || 0 } catch {}
+  if (now >= seen) {
+    try { localStorage.setItem(CLOCK_KEY, String(now)) } catch {}
+    return now
+  }
+  return seen
+}
+
+/** Con el negocio recién leído del servidor, el reloj local vuelve a ser confiable. */
+export function resetTrustedClock() {
+  try { localStorage.setItem(CLOCK_KEY, String(Date.now())) } catch {}
+}
+
 function nowInArgentina(): Date {
-  const now = new Date()
+  const now = new Date(trustedNow())
   const formatter = new Intl.DateTimeFormat('en-CA', {
     timeZone: AR_TIMEZONE,
     year: 'numeric', month: '2-digit', day: '2-digit',

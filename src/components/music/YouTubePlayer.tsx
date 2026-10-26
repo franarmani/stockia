@@ -83,9 +83,13 @@ export default function YouTubePlayer() {
 
   // Handle Play/Pause and Source changes
   useEffect(() => {
-    if (!playerRef.current || !isReady.current || playbackSource !== 'youtube' || !currentTrack?.youtube_id) return
+    if (!playerRef.current || !isReady.current || playbackSource !== 'youtube') return
 
     const player = playerRef.current
+    if (!isPlaying || !currentTrack?.youtube_id) {
+      player.pauseVideo()
+      return
+    }
     const currentVideoId = player.getVideoData?.()?.video_id
 
     if (currentVideoId !== currentTrack.youtube_id) {
@@ -94,11 +98,7 @@ export default function YouTubePlayer() {
       return
     }
 
-    if (isPlaying) {
-      player.playVideo()
-    } else {
-      player.pauseVideo()
-    }
+    player.playVideo()
   }, [isPlaying, currentTrack?.youtube_id, playbackSource])
 
   // Polish for current time and duration updates

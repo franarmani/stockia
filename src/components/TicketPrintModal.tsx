@@ -76,6 +76,8 @@ const PAYMENT_LABELS: Record<string, string> = {
   credit: 'Tarjeta Crédito',
   transfer: 'Transferencia',
   account: 'Cuenta Corriente',
+  mixed: 'Pago mixto',
+  qr: 'QR Mercado Pago',
 }
 
 export default function TicketPrintModal({ open, onClose, data, width = '80mm' }: TicketPrintModalProps) {
@@ -96,7 +98,7 @@ export default function TicketPrintModal({ open, onClose, data, width = '80mm' }
     const printWindow = window.open('', '_blank', 'width=400,height=600')
     if (!printWindow) return
 
-    const accentColor = data.primaryColor || '#1DB954'
+    const accentColor = data?.primaryColor || '#1DB954'
     printWindow.document.write(`
       <!DOCTYPE html>
       <html>

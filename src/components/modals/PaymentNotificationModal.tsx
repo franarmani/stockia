@@ -1,5 +1,7 @@
+import MercadoPagoSubscriptionCard from '@/features/subscription/components/MercadoPagoSubscriptionCard'
+import PlanPicker from '@/features/subscription/components/PlanPicker'
+import { PLANS, formatPlanPrice, normalizePlan, type PlanId } from '@/config/plans'
 import { useState, useRef, useEffect } from 'react'
-import { addDays } from 'date-fns'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/authStore'
 import { useBusinessStore } from '@/stores/businessStore'
@@ -11,15 +13,15 @@ import {
 
 const ALIAS = 'farmani2.ppay'
 const WA_NUMBER = '5492915716099'
-const PRECIO_MENSUAL = 70000
 
 export default function PaymentNotificationModal({ onClose, daysLeft }: { onClose?: () => void; daysLeft?: number }) {
   const { user, profile, signOut } = useAuthStore()
-  const { business, updateBusiness } = useBusinessStore()
+  const { business } = useBusinessStore()
   const [file, setFile] = useState<File | null>(null)
   const [preview, setPreview] = useState<string | null>(null)
   const [uploading, setUploading] = useState(false)
   const [submitted, setSubmitted] = useState(false)
+  const [plan, setPlan] = useState<PlanId>(normalizePlan(useBusinessStore.getState().business?.plan))
   const [linked, setLinked] = useState<{ id: string; name: string }[]>([])
   const fileRef = useRef<HTMLInputElement>(null)
 
@@ -27,7 +29,7 @@ export default function PaymentNotificationModal({ onClose, daysLeft }: { onClos
     supabase.rpc('get_linked_businesses').then(({ data }) => setLinked((data as unknown as { id: string; name: string }[]) ?? []))
   }, [])
 
-  const PRECIO = '$' + (PRECIO_MENSUAL * (1 + linked.length)).toLocaleString('es-AR')
+  const PRECIO = formatPlanPrice(PLANS[plan].price * (1 + linked.length))
   const linkedNames = linked.map(b => b.name).join(', ')
 
   function copyAlias() {
@@ -36,7 +38,7 @@ export default function PaymentNotificationModal({ onClose, daysLeft }: { onClos
   }
 
   function sendWA() {
-    const msg = `Hola! Quisiera activar mi cuenta en STOCKIA HUB. Ya realicé el pago de ${PRECIO} al alias ${ALIAS}. Mi email es: ${user?.email ?? ''} — Negocio: ${business?.name ?? ''}. Adjunto el comprobante, gracias!`
+    const msg = `Hola! Quisiera activar mi cuenta en CajaGo (plan ${PLANS[plan].name}). Ya realicé el pago de ${PRECIO} al alias ${ALIAS}. Mi email es: ${user?.email ?? ''} — Negocio: ${business?.name ?? ''}. Adjunto el comprobante, gracias!`
     window.open(`https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(msg)}`, '_blank')
   }
 
@@ -68,23 +70,15 @@ export default function PaymentNotificationModal({ onClose, daysLeft }: { onClos
         amount: PRECIO,
         proof_url: urlData.publicUrl,
         status: 'pending',
-        notes: 'Solicitud de activación inicial'
+        plan,
+        note: 'Solicitud de activación inicial'
       })
 
       if (reqErr) throw new Error(reqErr.message)
 
-      // Activación automática: confiamos en el comprobante y extendemos la
-      // mensualidad al instante. Si luego resulta falso o no llegó, el
-      // superadmin da de baja la cuenta manualmente desde /admin.
-      const baseDate = business.trial_ends_at && new Date(business.trial_ends_at) > new Date()
-        ? new Date(business.trial_ends_at)
-        : new Date()
-      const newTrialEndsAt = addDays(baseDate, 30).toISOString()
-      await updateBusiness({ subscription_status: 'active', trial_ends_at: newTrialEndsAt })
-      if (linked.length) await supabase.rpc('extend_linked_subscriptions')
-
+      // La cuenta se activa cuando el superadmin aprueba el comprobante (approve_payment_request).
       setSubmitted(true)
-      toast.success('¡Pago acreditado! Tu cuenta ya está activa por 30 días más.')
+      toast.success('Recibimos tu comprobante. Te activamos la cuenta apenas lo revisemos.')
     } catch (e: any) {
       toast.error(e.message || 'Error al enviar')
     }
@@ -108,13 +102,13 @@ export default function PaymentNotificationModal({ onClose, daysLeft }: { onClos
             </div>
             <div>
               <h2 className="text-lg font-bold text-white">
-                {daysLeft === 0 ? 'Tu mensualidad vence hoy' : daysLeft === 1 ? 'Mañana se vence tu mensualidad' : daysLeft ? `Tu mensualidad vence en ${daysLeft} días` : 'Activá tu Plan Negocio'}
+                {daysLeft === 0 ? 'Tu mensualidad vence hoy' : daysLeft === 1 ? 'Mañana se vence tu mensualidad' : daysLeft ? `Tu mensualidad vence en ${daysLeft} días` : 'Activá tu plan'}
               </h2>
               <p className="text-sm text-white/50">Pagala ahora así no te quedás sin sistema: <span className="text-primary font-bold">{PRECIO}</span></p>
             </div>
           </div>
           <p className="text-[13px] text-white/40 leading-relaxed">
-            Incluye facturación AFIP ilimitada, usuarios ilimitados y soporte prioritario.
+            {PLANS[plan].tagline} Facturación ARCA ilimitada y usuarios ilimitados en los dos planes.
           </p>
           {linked.length > 0 && (
             <p className="mt-3 text-[13px] text-primary bg-primary/10 border border-primary/20 rounded-xl px-3 py-2 leading-relaxed">
@@ -129,9 +123,9 @@ export default function PaymentNotificationModal({ onClose, daysLeft }: { onClos
               <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
                 <CheckCircle2 className="w-8 h-8 text-primary" />
               </div>
-              <h3 className="text-lg font-bold text-white mb-1">¡Cuenta activada!</h3>
+              <h3 className="text-lg font-bold text-white mb-1">¡Comprobante recibido!</h3>
               <p className="text-sm text-white/50 mb-6">
-                Ya extendimos tu mensualidad 30 días{linked.length > 0 && <> (también la de {linkedNames})</>}. Guardá el comprobante por las dudas.
+                Lo revisamos y activamos tu cuenta por 30 días{linked.length > 0 && <> (también la de {linkedNames})</>}, normalmente en el día. Si querés acelerarlo, avisanos por WhatsApp.
               </p>
               <button
                 onClick={sendWA}
@@ -143,6 +137,10 @@ export default function PaymentNotificationModal({ onClose, daysLeft }: { onClos
             </div>
           ) : (
             <>
+              <PlanPicker value={plan} onChange={setPlan} linkedCount={linked.length} compact />
+              <MercadoPagoSubscriptionCard compact plan={plan} onPlanChange={setPlan} />
+              <p className="text-center text-[11px] font-semibold uppercase tracking-widest text-white/30">o pagá por transferencia</p>
+
               {/* Step 1 - Transfer */}
               <div>
                 <div className="flex items-center gap-2 mb-3">

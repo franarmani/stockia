@@ -16,16 +16,16 @@ interface PageTitleProps {
  */
 export default function PageTitle({ title, subtitle, actions, className, breadcrumb }: PageTitleProps) {
   return (
-    <div className={cn('flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6', className)}>
-      <div>
+    <div className={cn('flex flex-col min-[760px]:flex-row min-[760px]:items-end min-[760px]:justify-between gap-4 mb-5 sm:mb-7 min-w-0', className)}>
+      <div className="min-w-0">
         {breadcrumb && (
-          <p className="text-[11px] text-white/35 font-medium mb-0.5">{breadcrumb}</p>
+          <p className="text-[11px] text-[#9aa9ff] font-semibold mb-1 tracking-[0.02em]">{breadcrumb}</p>
         )}
-        <h1 className="text-xl font-bold text-white leading-tight">{title}</h1>
-        {subtitle && <p className="text-[13px] text-white/55 mt-0.5">{subtitle}</p>}
+        <h1 className="cg-title text-[clamp(1.6rem,3.5vw,2.25rem)]">{title}</h1>
+        {subtitle && <p className="text-[13px] text-white/55 mt-1 max-w-2xl text-pretty">{subtitle}</p>}
       </div>
       {actions && (
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="page-title-actions grid grid-cols-2 sm:flex items-center gap-2 w-full min-[760px]:w-auto">
           {actions}
         </div>
       )}

@@ -65,6 +65,12 @@ function triggerDownload(blob: Blob, filename: string) {
   URL.revokeObjectURL(url)
 }
 
+function toArrayBuffer(bytes: Uint8Array): ArrayBuffer {
+  const copy = new Uint8Array(bytes.byteLength)
+  copy.set(bytes)
+  return copy.buffer
+}
+
 export function exportProducts(products: ProductWithCategory[], options: ExportOptions) {
   const rows = buildRows(products, options.columns)
   const baseName = options.filename || `productos_${new Date().toISOString().slice(0, 10)}`
@@ -80,14 +86,14 @@ export function exportProducts(products: ProductWithCategory[], options: ExportO
     const wb = XLSX.utils.book_new()
     XLSX.utils.book_append_sheet(wb, ws, 'Productos')
     const buf = XLSX.write(wb, { type: 'array', bookType: 'xlsx' }) as Uint8Array
-    triggerDownload(new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), `${baseName}.xlsx`)
+    triggerDownload(new Blob([toArrayBuffer(buf)], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), `${baseName}.xlsx`)
   }
 }
 
 export function downloadTemplate() {
   const buf = generateTemplate()
   triggerDownload(
-    new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }),
+    new Blob([toArrayBuffer(buf)], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }),
     'plantilla_productos.xlsx'
   )
 }

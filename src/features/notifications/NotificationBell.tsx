@@ -27,18 +27,10 @@ function timeAgo(dateStr: string) {
 
 export default function NotificationBell() {
   const { business } = useBusinessStore()
-  const { notifications, unreadCount, fetch, markRead, markAllRead, generate, startPolling, stopPolling } = useNotificationsStore()
+  const { notifications, unreadCount, markRead, markAllRead } = useNotificationsStore()
   const [open, setOpen] = useState(false)
   const dropRef = useRef<HTMLDivElement>(null)
   const navigate = useNavigate()
-
-  useEffect(() => {
-    if (business?.id) {
-      startPolling(business.id)
-      generate(business.id)
-      return () => stopPolling()
-    }
-  }, [business?.id])
 
   // Close on outside click
   useEffect(() => {
@@ -55,17 +47,19 @@ export default function NotificationBell() {
     setOpen(false)
   }
 
-  const recent = notifications.slice(0, 8)
+  const recent = notifications.filter(notification => !notification.is_read).slice(0, 8)
 
   return (
     <div className="relative" ref={dropRef}>
       <button
         onClick={() => setOpen(v => !v)}
-        className="relative flex items-center justify-center w-8 h-8 rounded-xl hover:bg-white/10 transition text-white/70 hover:text-white"
+        className="relative flex items-center justify-center w-8 sm:w-9 h-8 sm:h-9 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] hover:border-white/20 transition text-white/70 hover:text-white shrink-0"
+        aria-label="Notificaciones"
+        title="Notificaciones"
       >
-        <Bell className="w-4.5 h-4.5" />
+        <Bell className="w-4 h-4" />
         {unreadCount > 0 && (
-          <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-[16px] px-0.5 rounded-full bg-red-500 text-[9px] font-bold text-white flex items-center justify-center">
+          <span className="absolute -top-1 -right-1 min-w-[17px] h-[17px] px-1 rounded-full bg-rose-500 text-[9px] font-bold text-white flex items-center justify-center shadow-md">
             {unreadCount > 99 ? '99+' : unreadCount}
           </span>
         )}
@@ -100,7 +94,7 @@ export default function NotificationBell() {
             {recent.length === 0 ? (
               <div className="py-8 text-center">
                 <Bell className="w-8 h-8 text-white/20 mx-auto mb-2" />
-                <p className="text-[12px] text-white/40">Sin notificaciones</p>
+                <p className="text-[12px] text-white/40">Sin notificaciones nuevas</p>
               </div>
             ) : (
               recent.map(n => (

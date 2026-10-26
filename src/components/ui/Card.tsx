@@ -11,8 +11,8 @@ export function Card({ children, className, onClick }: CardProps) {
     <div
       onClick={onClick}
       className={cn(
-        'bg-surface/60 backdrop-blur-xl rounded-2xl p-5 border border-border shadow-[0_4px_24px_rgba(0,0,0,0.2)] transition-all duration-300',
-        onClick && 'cursor-pointer hover:border-primary/50 hover:shadow-[0_0_24px_rgba(0,240,255,0.15)] hover:bg-surface/80',
+        'cg-card p-5 transition-all duration-200',
+        onClick && 'cursor-pointer hover:border-[#9aa9ff]/30 hover:-translate-y-0.5',
         className
       )}
     >
@@ -26,7 +26,7 @@ export function CardHeader({ children, className }: { children: React.ReactNode;
 }
 
 export function CardTitle({ children, className }: { children: React.ReactNode; className?: string }) {
-  return <h3 className={cn('text-lg font-semibold text-foreground', className)}>{children}</h3>
+  return <h3 className={cn('text-base font-bold tracking-[-0.015em] text-foreground', className)}>{children}</h3>
 }
 
 export function CardDescription({ children, className }: { children: React.ReactNode; className?: string }) {

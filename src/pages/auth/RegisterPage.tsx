@@ -2,204 +2,51 @@ import { useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
 import { toast } from 'sonner'
-import logo from '@/logo.png'
-import { Mail, Lock, User, Store, ArrowRight, Eye, EyeOff, Check, Gift } from 'lucide-react'
+import AuthShell from '@/components/auth/AuthShell'
+import { TRIAL_DAYS } from '@/features/onboarding/registration'
+import RegistrationForm from '@/features/onboarding/RegistrationForm'
+import { Mail, Lock, User, Store, ArrowRight, Eye, EyeOff, Check, Gift, MapPin } from 'lucide-react'
 
 const BENEFITS = [
   'Sin tarjeta de crédito',
-  'Configuración en 2 minutos',
-  'Soporte incluido',
+  'Listo en 2 minutos',
+  'Soporte directo incluido',
 ]
 
 export default function RegisterPage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
-  const [form, setForm] = useState({ fullName: '', businessName: '', email: '', password: '', referralCode: searchParams.get('ref') || '' })
-  const [showPassword, setShowPassword] = useState(false)
-  const [loading, setLoading] = useState(false)
-
-  async function handleRegister(e: React.FormEvent) {
-    e.preventDefault()
-    if (!form.fullName || !form.businessName || !form.email || !form.password) {
-      toast.error('Completá todos los campos'); return
-    }
-    if (form.password.length < 6) { toast.error('La contraseña debe tener al menos 6 caracteres'); return }
-
-    setLoading(true)
-    try {
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: form.email, password: form.password,
-      })
-      if (authError || !authData.user) { toast.error(authError?.message || 'Error al registrar'); setLoading(false); return }
-
-      const userId = authData.user.id
-
-      const trialEnd = new Date()
-      trialEnd.setDate(trialEnd.getDate() + 7)
-
-      const { data: business, error: bizError } = await supabase
-        .from('businesses')
-        .insert({
-          name: form.businessName.trim(),
-          email: form.email,
-          subscription_status: 'trial',
-          trial_ends_at: trialEnd.toISOString(),
-        })
-        .select().single()
-
-      if (bizError || !business) { toast.error('Error al crear negocio'); setLoading(false); return }
-
-      const { error: profileError } = await supabase
-        .from('users')
-        .insert({
-          id: userId,
-          business_id: business.id,
-          name: form.fullName.trim(),
-          email: form.email,
-          role: 'admin',
-        })
-
-      if (profileError) { toast.error('Error al crear perfil'); setLoading(false); return }
-
-      if (form.referralCode.trim()) {
-        const { data: referral } = await supabase.rpc('redeem_referral_code', {
-          p_code: form.referralCode.trim(),
-          p_business_id: business.id,
-        })
-        if (referral?.ok) toast.success('¡Código de referido aplicado! 10% off tu primer mes')
-      }
-
-      await supabase.auth.signOut()
-      toast.success('¡Cuenta creada! Ahora iniciá sesión')
-      navigate('/login')
-    } catch { toast.error('Error inesperado') }
-    setLoading(false)
-  }
-
-  const inputCls = 'w-full h-12 pl-11 pr-3 rounded-xl text-sm bg-white/5 backdrop-blur-md text-foreground placeholder:text-white/40 border border-white/10 hover:border-white/20 focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary focus:shadow-[0_0_12px_rgba(0,240,255,0.2)] transition-all'
+  const inputCls =
+    'w-full h-12 pl-11 pr-3 rounded-[10px] text-sm bg-white/[0.035] text-[#FCFCFD] placeholder:text-[#9CA6BA]/60 border border-white/[0.10] hover:border-white/20 focus:outline-none focus:ring-[3px] focus:ring-primary/10 focus:border-primary/70 transition-all'
 
   return (
-    <div className="min-h-screen flex bg-background">
-      {/* ─── Desktop left brand panel ─── */}
-      <div className="hidden lg:flex lg:w-[46%] relative flex-col justify-between p-12 overflow-hidden border-r border-white/5">
-        <div className="absolute -top-32 -left-32 w-[600px] h-[600px] bg-primary/15 rounded-full blur-[100px] pointer-events-none" />
-        <div className="absolute -bottom-32 -right-32 w-[500px] h-[500px] bg-secondary/15 rounded-full blur-[100px] pointer-events-none" />
-        <div className="relative z-10 flex items-center gap-3">
-          <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-white/95 shadow-[0_0_12px_rgba(255,255,255,0.2)]">
-            <img src="/og-image.png" alt="Icono STOCKIA" className="h-6 w-auto object-contain" />
-          </div>
-          <img src="/2.png" alt="STOCKIA" className="h-5 sm:h-6 w-auto object-contain brightness-0 invert" />
-        </div>
-        <div className="relative z-10">
-          <h1 className="font-display text-4xl text-white leading-[0.95] mb-3 uppercase">
-            Empezá a vender<br />de forma profesional
-          </h1>
-          <p className="text-white/50 text-sm leading-relaxed mb-8">
-            7 días de prueba gratis. Sin tarjeta de crédito.
-          </p>
-          <div className="space-y-3">
-            {BENEFITS.map((b) => (
-              <div key={b} className="flex items-center gap-3">
-                <div className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
-                  <Check className="w-3 h-3 text-primary" />
-                </div>
-                <span className="text-white/70 text-sm">{b}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-        <p className="relative z-10 text-white/20 text-xs">© {new Date().getFullYear()} STOCKIA HUB</p>
-      </div>
-
-      {/* ─── Right column / mobile full screen ─── */}
-      <div className="flex-1 flex flex-col min-h-screen">
-        {/* Mobile header */}
-        <div className="lg:hidden flex flex-col px-6 pt-14 pb-8">
-          <div className="flex items-center gap-3 mb-10">
-            <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-white/95 shadow-[0_0_12px_rgba(255,255,255,0.2)]">
-              <img src="/og-image.png" alt="Icono STOCKIA" className="h-6 w-auto object-contain" />
-            </div>
-            <img src="/2.png" alt="STOCKIA" className="h-5 sm:h-6 w-auto object-contain brightness-0 invert" />
-          </div>
-          <h1 className="font-display text-4xl text-white leading-[0.95] uppercase">Crear cuenta</h1>
-          <p className="text-white/50 text-sm mt-2">7 días gratis, sin compromiso</p>
-        </div>
-
-        {/* Form area */}
-        <div className="flex-1 lg:flex lg:items-center lg:justify-center lg:px-12 lg:py-10">
-          <div className="w-full lg:max-w-sm bg-surface-elevated lg:bg-transparent rounded-t-[28px] lg:rounded-none px-6 lg:px-0 pt-8 lg:pt-0 pb-12 lg:pb-0">
-            {/* Desktop heading */}
-            <div className="hidden lg:block mb-7">
-              <h2 className="text-2xl font-black text-white">Crear cuenta</h2>
-              <p className="text-white/50 text-sm mt-1">7 días gratis, sin compromiso</p>
-            </div>
-
-            <form onSubmit={handleRegister} className="space-y-4">
-              <div>
-                <label className="block text-[13px] font-medium text-white/70 mb-1.5">Tu nombre</label>
-                <div className="relative group">
-                  <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40 group-focus-within:text-primary transition-colors" />
-                  <input type="text" value={form.fullName} onChange={(e) => setForm({ ...form, fullName: e.target.value })}
-                    placeholder="Juan Pérez" autoComplete="name" required className={inputCls} />
-                </div>
-              </div>
-              <div>
-                <label className="block text-[13px] font-medium text-white/70 mb-1.5">Nombre del negocio</label>
-                <div className="relative group">
-                  <Store className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40 group-focus-within:text-primary transition-colors" />
-                  <input type="text" value={form.businessName} onChange={(e) => setForm({ ...form, businessName: e.target.value })}
-                    placeholder="Mi Comercio" autoComplete="organization" required className={inputCls} />
-                </div>
-              </div>
-              <div>
-                <label className="block text-[13px] font-medium text-white/70 mb-1.5">Email</label>
-                <div className="relative group">
-                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40 group-focus-within:text-primary transition-colors" />
-                  <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })}
-                    placeholder="tu@email.com" autoComplete="email" required className={inputCls} />
-                </div>
-              </div>
-              <div>
-                <label className="block text-[13px] font-medium text-white/70 mb-1.5">Contraseña</label>
-                <div className="relative group">
-                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40 group-focus-within:text-primary transition-colors" />
-                  <input type={showPassword ? 'text' : 'password'} value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })}
-                    placeholder="Mínimo 6 caracteres" autoComplete="new-password" required minLength={6}
-                    className={inputCls + ' pr-10'} />
-                  <button type="button" onClick={() => setShowPassword(!showPassword)}
-                    aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-white/35 hover:text-white/70 transition-colors">
-                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
-                </div>
-              </div>
-              <div>
-                <label className="block text-[13px] font-medium text-white/70 mb-1.5">Código de referido (opcional)</label>
-                <div className="relative group">
-                  <Gift className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40 group-focus-within:text-primary transition-colors" />
-                  <input type="text" value={form.referralCode} onChange={(e) => setForm({ ...form, referralCode: e.target.value.toUpperCase() })}
-                    placeholder="Ej: ABC123" autoComplete="off" className={inputCls} />
-                </div>
-              </div>
-
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full h-12 rounded-xl font-bold text-sm text-background flex items-center justify-center gap-2 gradient-primary hover:scale-[1.02] shadow-[0_4px_16px_rgba(0,240,255,0.25)] hover:shadow-[0_4px_24px_rgba(0,240,255,0.4)] transition-all disabled:opacity-60"
-              >
-                {loading ? 'Creando cuenta...' : <>Crear cuenta gratis <ArrowRight className="w-4 h-4" /></>}
-              </button>
-            </form>
-
-            <p className="text-center text-[13px] text-white/40 mt-6">
-              ¿Ya tenés cuenta?{' '}
-              <Link to="/login" className="text-primary font-semibold hover:underline">
-                Iniciar sesión
-              </Link>
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>
+    <AuthShell
+      wide
+      eyebrow={`${TRIAL_DAYS} días gratis con todo Premium`}
+      title="Creá tu cuenta."
+      accent="Tu negocio, en orden."
+      subtitle="Completá los datos una sola vez y empezá a vender hoy. Sin tarjeta."
+      footer={
+        <p className="text-sm text-slate-400">
+          ¿Ya tenés cuenta?{' '}
+          <Link to="/login" className="font-semibold text-[#9aa9ff] hover:text-white">Ingresá</Link>
+        </p>
+      }
+    >
+            <RegistrationForm
+              initialReferral={searchParams.get('ref') || ''}
+              onRegistered={async ({ referralApplied }) => {
+                if (referralApplied) toast.success('¡Código de referido aplicado! 10% off tu primer mes')
+                await supabase.auth.signOut()
+                toast.success('¡Cuenta creada! Ahora iniciá sesión')
+                navigate('/login')
+              }}
+              legalNotice={
+                <p className="text-[11px] text-center text-[#9CA6BA]">
+                  Al crear tu cuenta aceptás los <Link to="/terminos" className="underline hover:text-white">Términos</Link> y la <Link to="/privacidad" className="underline hover:text-white">Política de privacidad</Link>.
+                </p>
+              }
+            />
+    </AuthShell>
   )
 }

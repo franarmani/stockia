@@ -35,7 +35,7 @@ export default function PremiumMusicLock() {
 
         <h1 className="text-4xl md:text-5xl font-black text-white tracking-tight leading-tight">
           Sincronizá la energía de <br />
-          tu negocio con <span className="text-primary">Stockia Music</span>
+          tu negocio con <span className="text-primary">CajaGo Music</span>
         </h1>
         
         <p className="text-white/50 text-lg md:text-xl max-w-lg mx-auto leading-relaxed">
@@ -62,7 +62,7 @@ export default function PremiumMusicLock() {
         {/* ── Actions ── */}
         <div className="flex flex-col sm:flex-row items-center gap-4 justify-center pt-2">
           <button 
-            onClick={() => window.open('https://wa.me/5492915716099?text=Hola,%20quisiera%20mejorar%20mi%20plan%20a%20Premium%20para%20usar%20Stockia Hub%20Music%20en%20mi%20negocio.', '_blank')}
+            onClick={() => navigate('/settings?tab=subscription')}
             className="w-full sm:w-auto px-10 py-4.5 rounded-[1.5rem] bg-primary hover:bg-primary-hover text-white font-black text-base flex items-center justify-center gap-3 transition-all active:scale-95 group"
           >
             ACTUALIZAR A PREMIUM

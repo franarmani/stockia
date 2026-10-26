@@ -35,7 +35,7 @@ interface PaymentRequest {
   user_id: string
   amount: string
   proof_url: string | null
-  status: 'pending' | 'approved' | 'rejected'
+  status: string
   note: string | null
   reviewed_at: string | null
   created_at: string
@@ -91,27 +91,33 @@ export default function AdminPage() {
     setLoadingPayments(true)
     const { data, error } = await supabase
       .from('payment_requests')
-      .select('*, business:businesses(name, email, pending_discount_pct, pending_discount_note)')
+      .select('*')
       .order('created_at', { ascending: false })
     if (error) toast.error('Error cargando solicitudes: ' + error.message)
-    else setPaymentRequests(data ?? [])
+    else {
+      const requests = data ?? []
+      const businessIds = [...new Set(requests.map(request => request.business_id))]
+      const { data: linkedBusinesses } = businessIds.length
+        ? await supabase
+            .from('businesses')
+            .select('id, name, email, pending_discount_pct, pending_discount_note')
+            .in('id', businessIds)
+        : { data: [] }
+      const businessesById = new Map((linkedBusinesses ?? []).map(business => [business.id, business]))
+      setPaymentRequests(requests.map(request => ({
+        ...request,
+        business: businessesById.get(request.business_id),
+      })))
+    }
     setLoadingPayments(false)
   }
 
   async function approvePayment(req: PaymentRequest) {
     setUpdating(req.id)
-    const { error: reqErr } = await supabase
-      .from('payment_requests')
-      .update({ status: 'approved', reviewed_at: new Date().toISOString() })
-      .eq('id', req.id)
+    // Extiende 30 días el negocio (y los vinculados), aplica el plan elegido y marca los referidos.
+    const { error: reqErr } = await supabase.rpc('approve_payment_request' as any, { p_request_id: req.id })
     if (reqErr) { toast.error(reqErr.message); setUpdating(null); return }
-    await supabase
-      .from('businesses')
-      .update({ subscription_status: 'active', pending_discount_pct: 0, pending_discount_note: null })
-      .eq('id', req.business_id)
-    await supabase.from('referrals').update({ referrer_rewarded: true }).eq('referrer_business_id', req.business_id)
-    await supabase.from('referrals').update({ referred_rewarded: true }).eq('referred_business_id', req.business_id)
-    toast.success('✅ Pago aprobado y cuenta activada')
+    toast.success('✅ Pago aprobado: cuenta activa por 30 días')
     setPaymentRequests(prev => prev.map(r => r.id === req.id ? { ...r, status: 'approved' } : r))
     setUpdating(null)
   }
@@ -148,7 +154,7 @@ export default function AdminPage() {
     const yesterday = new Date(Date.now() - 86400000).toISOString()
     const updates: Partial<BusinessRow> =
       status === 'active'
-        ? { subscription_status: 'active' }
+        ? { subscription_status: 'active', trial_ends_at: new Date(Date.now() + 30 * 86400000).toISOString() }
         : { subscription_status: 'expired', trial_ends_at: yesterday }
 
     const { error } = await supabase
@@ -230,8 +236,8 @@ export default function AdminPage() {
 
   function openWA(business: BusinessRow, type: 'activar' | 'vencido') {
     const msg = type === 'activar'
-      ? `Hola! Tu cuenta en STOCKIA HUB ha sido activada ✅. Ya podés ingresar en https://stockia-two.vercel.app — Cualquier consulta avisame. Saludos, Fran`
-      : `Hola! Tu período de prueba en STOCKIA HUB ha vencido 📅. Para seguir usando el sistema transferí $70.000 al alias *${ALIAS}* y avisame por acá. Saludos, Fran`
+      ? `Hola! Tu cuenta en CajaGo ha sido activada ✅. Ya podés ingresar en https://stockia-main.vercel.app — Cualquier consulta avisame. Saludos, Fran`
+      : `Hola! Tu período de prueba en CajaGo ha vencido 📅. Para seguir usando el sistema transferí $70.000 al alias *${ALIAS}* y avisame por acá. Saludos, Fran`
 
     const phone = business.phone?.replace(/\D/g, '') || ''
     const url = phone
@@ -284,7 +290,7 @@ export default function AdminPage() {
               <Building2 className="w-4 h-4 text-green-400" />
             </div>
             <div>
-              <h1 className="text-sm font-bold text-white">Panel Admin — STOCKIA HUB</h1>
+              <h1 className="text-sm font-bold text-white">Panel Admin — CajaGo</h1>
               <p className="text-[10px] text-white/35">{user?.email}</p>
             </div>
           </div>
@@ -324,7 +330,7 @@ export default function AdminPage() {
             <div>
               <p className="text-[10px] text-green-400 font-black uppercase tracking-[0.2em] mb-1">Alias de cobro principal</p>
               <p className="text-2xl font-black text-white tracking-tight">{ALIAS}</p>
-              <p className="text-xs text-white/40 font-medium">Sugerido: $70.000 / mes · Plan Negocio</p>
+              <p className="text-xs text-white/40 font-medium">Básico $38.000 · Premium $70.000 por mes</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -555,13 +561,13 @@ export default function AdminPage() {
                         <td className="px-4 py-3">
                           {canManagePlans ? (
                             <select
-                              value={b.plan}
+                              value={b.plan === 'basic' ? 'basic' : 'premium'}
                               onChange={(e) => updatePlan(b.id, e.target.value)}
                               disabled={updating === b.id}
                               className="bg-white/5 border border-white/10 rounded-lg text-[11px] font-bold px-2 py-1 text-white focus:outline-none focus:border-green-500/50"
                             >
-                              <option value="free" className="bg-slate-900">Inicial</option>
-                              <option value="vip" className="bg-slate-900">Negocio</option>
+                              <option value="basic" className="bg-slate-900">Básico</option>
+                              <option value="premium" className="bg-slate-900">Premium</option>
                             </select>
                           ) : (
                             <span className="text-[11px] font-bold text-white/60 uppercase">

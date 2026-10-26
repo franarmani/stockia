@@ -1,7 +1,9 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
-import { fetchAllProductsInBatches } from '@/lib/productService'
+import { syncEngine } from '@/sync/syncEngine'
+import { cachedRead } from '@/sync/remote'
+import { toast } from 'sonner'
 import { useAuthStore } from '@/stores/authStore'
 import { cn, formatCurrency } from '@/lib/utils'
 import { GlassButton } from '@/components/ui/GlassCard'
@@ -122,14 +124,16 @@ export default function ProfitabilityPage() {
       const bizId = profile!.business_id
       const { startISO, endISO } = getDateLimits()
 
-      // Fetch products, categories, suppliers
-      const [prods, catsRes, supsRes] = await Promise.all([
-        fetchAllProductsInBatches(bizId),
-        supabase.from('categories').select('*').eq('business_id', bizId).order('name'),
-        supabase.from('suppliers').select('*').eq('business_id', bizId).eq('active', true).order('name'),
+      // Productos, categorías y proveedores salen de la base local (se actualizan si hay conexión)
+      const [prods, cats, sups] = await Promise.all([
+        syncEngine.pullLatestProducts(bizId),
+        syncEngine.pullRows<any>('categories', bizId, () => supabase.from('categories').select('*').eq('business_id', bizId)),
+        syncEngine.pullRows<any>('suppliers', bizId, () => supabase.from('suppliers').select('*').eq('business_id', bizId)),
       ])
+      const byName = (a: any, b: any) => String(a.name).localeCompare(String(b.name), 'es')
 
-      // Fetch sales in period in batches of 1000
+      // Ventas del período (sin conexión: las últimas descargadas en este equipo)
+      const allSales: any[] = await cachedRead(`profitability:${bizId}:${startISO ?? ''}:${endISO?.slice(0, 10) ?? ''}`, async () => {
       let allSales: any[] = []
       let from = 0
       const batchSize = 1000
@@ -156,13 +160,16 @@ export default function ProfitabilityPage() {
           hasMore = false
         }
       }
+      return allSales
+      })
 
-      setProducts(prods || [])
-      setCategories(catsRes.data || [])
-      setSuppliers(supsRes.data || [])
+      setProducts((prods || []).filter((p: any) => p.active !== false) as any)
+      setCategories([...cats].sort(byName))
+      setSuppliers(sups.filter((s: any) => s.active !== false).sort(byName))
       setSales(allSales)
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error fetching profitability data:', err)
+      toast.error(err?.message || 'No se pudieron cargar los datos de rentabilidad')
     } finally {
       setLoading(false)
       setRefreshing(false)
@@ -542,18 +549,18 @@ export default function ProfitabilityPage() {
 
   return (
     <div className="animate-fade-in flex flex-col gap-4 sm:gap-6 max-w-7xl mx-auto w-full px-3 sm:px-6 pb-24">
-      {/* Navigation tabs header */}
-      <div className="flex items-center gap-2 border-b border-white/5 pb-3 sm:pb-4 overflow-x-auto no-scrollbar flex-nowrap">
+      {/* Navigation segmented pill switcher */}
+      <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-[#0E1629] border border-white/[0.08] w-fit shadow-inner">
         <button
           onClick={() => navigate('/reports')}
-          className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl text-xs font-bold text-white/40 hover:text-white hover:bg-white/5 transition-all whitespace-nowrap shrink-0"
+          className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-white/50 hover:text-white hover:bg-white/[0.04] transition-all"
         >
           <BarChart3 className="w-4 h-4 text-orange-400 shrink-0" />
-          Ventas Generales
+          <span>Ventas Generales</span>
         </button>
-        <div className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl text-xs font-black bg-cyan-500/10 text-cyan-300 border border-cyan-500/30 shadow-[0_0_15px_rgba(6,182,212,0.15)] whitespace-nowrap shrink-0">
-          <TrendingUp className="w-4 h-4 text-cyan-400 shrink-0" />
-          Costos y Rentabilidad
+        <div className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-md bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow-cyan-950/40">
+          <TrendingUp className="w-4 h-4 text-white shrink-0" />
+          <span>Costos y Rentabilidad</span>
         </div>
       </div>
 
@@ -565,7 +572,7 @@ export default function ProfitabilityPage() {
               <Sparkles className="w-3.5 h-3.5 text-cyan-400" /> Control Financiero
             </span>
           </div>
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-white mt-0.5 tracking-tight flex items-center gap-2 sm:gap-3">
+          <h1 className="cg-title text-[clamp(1.6rem,3.5vw,2.25rem)] mt-0.5 flex items-center gap-2 sm:gap-3">
             Rentabilidad y Costos
           </h1>
           <p className="text-[11px] sm:text-xs text-white/40 mt-1 max-w-2xl">

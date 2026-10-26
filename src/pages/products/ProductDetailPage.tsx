@@ -50,6 +50,7 @@ export default function ProductDetailPage() {
   }, [id])
 
   async function fetchProduct() {
+    if (!id) return
     setLoading(true)
     const { data, error } = await supabase
       .from('products')
@@ -351,7 +352,7 @@ export default function ProductDetailPage() {
                  <div>
                    <p className="text-[11px] font-bold text-white uppercase tracking-wider">Beneficio VIP Incluido</p>
                    <p className="text-[10px] text-white/50 leading-tight mt-0.5">
-                      Este modo está incluido en tu <span className="text-primary font-bold">Plan Negocio ($70.000/mes)</span>.
+                      Este modo está incluido en <span className="text-primary font-bold">todos los planes</span>.
                    </p>
                  </div>
                </div>

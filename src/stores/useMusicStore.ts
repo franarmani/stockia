@@ -19,8 +19,9 @@ interface MusicStore {
 
   // Actions
   initAudio: () => void
-  setPlaylist: (playlist: MusicPlaylist, tracks: MusicTrack[]) => void
+  setPlaylist: (playlist: MusicPlaylist, tracks: MusicTrack[], shouldPlay?: boolean) => void
   playTrack: (track: MusicTrack) => void
+  stopPlayback: () => void
   togglePlay: () => void
   nextTrack: () => void
   prevTrack: () => void
@@ -90,6 +91,24 @@ export const useMusicStore = create<MusicStore>((set, get) => ({
       // Ensure local audio is paused
       if (audio) audio.pause()
     }
+  },
+
+  stopPlayback: () => {
+    const { audio } = get()
+    if (audio) {
+      audio.pause()
+      audio.removeAttribute('src')
+      audio.load()
+    }
+    set({
+      currentPlaylist: null,
+      currentTrack: null,
+      queue: [],
+      isPlaying: false,
+      currentTime: 0,
+      duration: 0,
+      isExpanded: false,
+    })
   },
 
   togglePlay: () => {

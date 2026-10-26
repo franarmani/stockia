@@ -209,7 +209,7 @@ export async function runImport(
       created,
       updated,
       skipped,
-      errors_json: allErrors.slice(0, 100), // cap stored errors
+      errors_json: JSON.parse(JSON.stringify(allErrors.slice(0, 100))), // cap stored errors
     })
   } catch {}
 
@@ -294,7 +294,7 @@ async function fallbackBatchUpsert(
           skipped++
         }
       } else {
-        if (mode === 'upsert' || mode === 'create') {
+        if (mode === 'upsert') {
           const { error } = await supabase.from('products').insert(payload)
           if (error) errors.push({ rowIndex: row.rowIndex, field: 'general', message: error.message, value: null })
           else created++

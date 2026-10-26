@@ -1,13 +1,6 @@
-import { useBusinessStore } from '@/stores/businessStore'
+import { usePlan } from './usePlan'
 
 export function usePremiumAccess() {
-  const { business } = useBusinessStore()
-  
-  // A tenant has full access if they have any paid plan (vip)
-  const isPremium = business?.plan === 'vip' || business?.plan === 'premium'
-  
-  return {
-    isPremium,
-    plan: business?.plan || 'basic'
-  }
+  const { isPremium, plan } = usePlan()
+  return { isPremium, plan }
 }

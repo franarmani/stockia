@@ -4,7 +4,8 @@ import { useBusinessStore } from '@/stores/businessStore'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useOnlineStatus } from '@/hooks/useOnlineStatus'
 import SubscriptionBadge from '@/features/subscription/components/SubscriptionBadge'
-import logo from '@/logosolo.png'
+import { CajaGoIcon } from '@/components/brand/CajaGoBrand'
+import OfflineIndicator from '@/components/OfflineIndicator'
 import { cn } from '@/lib/utils'
 
 const PAGE_NAMES: Record<string, string> = {
@@ -42,27 +43,25 @@ export default function TopBar({ onMenuClick }: TopBarProps) {
         {/* Hamburger — mobile only */}
         <button
           onClick={onMenuClick}
-          className="lg:hidden w-9 h-9 rounded-xl flex items-center justify-center hover:bg-slate-100 text-slate-400 transition-colors active:scale-95 shrink-0"
+          className="lg:hidden w-9 h-9 rounded-[10px] flex items-center justify-center hover:bg-white/[0.06] text-slate-400 hover:text-white transition-colors active:translate-y-px shrink-0"
           aria-label="Abrir menú"
         >
           <Menu className="w-5 h-5" />
         </button>
 
         {/* Logo - mobile only */}
-        <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-white/95 shadow-[0_0_8px_rgba(255,255,255,0.2)] shrink-0 sm:hidden">
-          <img src="/og-image.png" alt="Icono" className="w-5 h-5 object-contain" />
+        <div className="shrink-0 sm:hidden">
+          <CajaGoIcon size="sm" />
         </div>
 
         {/* Logo and Business Info (Desktop) */}
         <div className="hidden sm:flex items-center gap-3 min-w-0">
-          <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-white/95 shadow-[0_0_12px_rgba(255,255,255,0.2)] shrink-0">
-            <img src="/og-image.png" alt="Icono" className="h-5 w-auto object-contain" />
-          </div>
+          <CajaGoIcon size="sm" />
           <div className="flex flex-col min-w-0">
             <span className="font-bold text-[14px] text-foreground whitespace-nowrap">
-              {business?.name || 'STOCKIA HUB'}
+              {business?.name || 'CajaGo'}
             </span>
-            <span className="text-[11px] text-muted-foreground font-medium">Dashboard comercial</span>
+            <span className="text-[11px] text-[#9CA6BA] font-medium">Dashboard comercial</span>
           </div>
         </div>
 
@@ -72,26 +71,12 @@ export default function TopBar({ onMenuClick }: TopBarProps) {
 
       {/* Right */}
       <div className="flex items-center gap-2 shrink-0">
-        {/* Online status dot */}
-        <div
-          className={cn(
-            'hidden sm:flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1 rounded-full',
-            isOnline
-              ? 'bg-primary/15 text-primary'
-              : 'bg-muted text-muted-foreground'
-          )}
-        >
-          {isOnline ? (
-            <Wifi className="w-3 h-3" />
-          ) : (
-            <WifiOff className="w-3 h-3" />
-          )}
-          <span className="hidden md:inline">{isOnline ? 'En línea' : 'Sin conexión'}</span>
-        </div>
+        {/* Online / Offline status badge */}
+        <OfflineIndicator />
 
         {/* Caja abierta (simulated state) */}
         <div className="hidden md:flex items-center px-2.5 py-1 rounded-full bg-primary/10 border border-primary/20">
-          <div className="w-1.5 h-1.5 rounded-full bg-primary mr-1.5 shadow-[0_0_8px_rgba(25,195,125,0.8)] animate-pulse-soft"></div>
+          <div className="w-1.5 h-1.5 rounded-full bg-success mr-1.5 animate-pulse-soft"></div>
           <span className="text-[11px] font-semibold text-primary">Caja abierta</span>
         </div>
 
@@ -111,8 +96,8 @@ export default function TopBar({ onMenuClick }: TopBarProps) {
 
         {/* User avatar */}
         {profile && (
-          <div className="w-8 h-8 rounded-xl bg-slate-100 flex items-center justify-center shrink-0" title={profile.name ?? ''}>
-            <span className="text-[12px] font-bold text-slate-400">
+          <div className="w-8 h-8 rounded-[10px] bg-white/[0.06] border border-white/10 flex items-center justify-center shrink-0" title={profile.name ?? ''}>
+            <span className="text-[12px] font-bold text-white/70">
               {profile.name?.charAt(0)?.toUpperCase() ?? 'U'}
             </span>
           </div>

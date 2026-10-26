@@ -2,43 +2,39 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAuthStore } from '@/stores/authStore'
 import { useEffect, lazy, Suspense, useState } from 'react'
 import { supabase } from '@/lib/supabase'
-import LoadingSpinner from '@/components/ui/LoadingSpinner'
+import SplashScreen from '@/components/SplashScreen'
 import { useBusinessStore } from '@/stores/businessStore'
 
 // Layouts
 import AppShellLauncher from '@/components/layout/AppShellLauncher'
 import PaymentNotificationModal from '@/components/modals/PaymentNotificationModal'
 import ScrollToTop from '@/components/layout/ScrollToTop'
-import { calculateRawRemainingDays, isSubscriptionExpired } from '@/features/subscription/utils/subscriptionDates'
+import { calculateRawRemainingDays, isSubscriptionExpired, resetTrustedClock } from '@/features/subscription/utils/subscriptionDates'
 import SubscriptionGuard from '@/features/subscription/components/SubscriptionGuard'
+import PermissionGuard from '@/components/PermissionGuard'
+import PlanGate from '@/features/subscription/components/PlanGate'
 import UpdateNotificationModal from '@/components/modals/UpdateNotificationModal'
+import UpdateModal from '@/components/desktop/UpdateModal'
+import { checkIsTauriDesktop } from '@/sync/storage'
+import { syncEngine } from '@/sync/syncEngine'
+import { checkConnectivity, isOnline } from '@/sync/connectivity'
+import { saveOfflineSnapshot } from '@/desktop/offlineAuth'
+import {
+  cacheProfile, cacheBusiness, getCachedProfile, getCachedBusiness,
+  cacheOfflineUser, getCachedOfflineUser, clearCache,
+  markBusinessVerified,
+} from '@/lib/sessionCache'
+import { toast } from 'sonner'
+import packageJson from '../package.json'
 
 // ── VERSIONING ──
-const APP_VERSION = '1.12.18' // Local version — bump together with public/version.json on every deploy
-
-// ── localStorage cache helpers ──
-const PROFILE_CACHE_KEY = 'stockia_profile'
-const BUSINESS_CACHE_KEY = 'stockia_business'
-
-function cacheProfile(profile: any) {
-  try { localStorage.setItem(PROFILE_CACHE_KEY, JSON.stringify(profile)) } catch {}
-}
-function cacheBusiness(business: any) {
-  try { localStorage.setItem(BUSINESS_CACHE_KEY, JSON.stringify(business)) } catch {}
-}
-function getCachedProfile() {
-  try { const s = localStorage.getItem(PROFILE_CACHE_KEY); return s ? JSON.parse(s) : null } catch { return null }
-}
-function getCachedBusiness() {
-  try { const s = localStorage.getItem(BUSINESS_CACHE_KEY); return s ? JSON.parse(s) : null } catch { return null }
-}
-function clearCache() {
-  try { localStorage.removeItem(PROFILE_CACHE_KEY); localStorage.removeItem(BUSINESS_CACHE_KEY) } catch {}
-}
+const APP_VERSION = packageJson.version
+const DESKTOP_SPLASH_MIN_MS = 1600
 
 // Lazy-loaded pages
 const LoginPage = lazy(() => import('@/pages/auth/LoginPage'))
 const RegisterPage = lazy(() => import('@/pages/auth/RegisterPage'))
+const DesktopAuthPage = lazy(() => import('@/pages/auth/DesktopAuthPage'))
 const MenuLauncher = lazy(() => import('@/pages/menu/MenuLauncher'))
 const DashboardPage = lazy(() => import('@/pages/dashboard/DashboardPage'))
 const POSPage = lazy(() => import('@/pages/pos/POSPage'))
@@ -50,10 +46,19 @@ const ReportsPage = lazy(() => import('@/pages/reports/ReportsPage'))
 const ProfitabilityPage = lazy(() => import('@/pages/reports/ProfitabilityPage'))
 const SettingsPage = lazy(() => import('@/pages/settings/SettingsPage'))
 const PurchasesPage = lazy(() => import('@/pages/purchases/PurchasesPage'))
+const AccountingPage = lazy(() => import('@/pages/accounting/AccountingPage'))
 const ComprobantesPage = lazy(() => import('@/pages/comprobantes/ComprobantesPage'))
 const QuotesPage = lazy(() => import('@/pages/quotes/QuotesPage'))
+const PromotionsPage = lazy(() => import('@/pages/promotions/PromotionsPage'))
+const LoyaltyPage = lazy(() => import('@/pages/loyalty/LoyaltyPage'))
+const OnlineStorePage = lazy(() => import('@/pages/store/OnlineStorePage'))
+const WhatsAppPage = lazy(() => import('@/pages/whatsapp/WhatsAppPage'))
+const StorefrontPage = lazy(() => import('@/pages/store/StorefrontPage'))
+const ResetPasswordPage = lazy(() => import('@/pages/auth/ResetPasswordPage'))
+const LegalPage = lazy(() => import('@/pages/legal/LegalPage'))
 const LandingPage = lazy(() => import('@/pages/landing/LandingPage'))
 const SubscriptionBlockedPage = lazy(() => import('@/pages/subscription/SubscriptionBlockedPage'))
+const SubscriptionReturnPage = lazy(() => import('@/pages/subscription/SubscriptionReturnPage'))
 const ProductDetailPage = lazy(() => import('@/pages/products/ProductDetailPage'))
 
 // New feature pages
@@ -151,7 +156,9 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   // Recordatorio para negocios en trial o ya activos (mensualidad por vencer),
   // con pocos días restantes (excepto superadmin).
   // Incluye el día del vencimiento (daysLeft 0); una vez vencido lo maneja el modal de bloqueo.
+  // Con débito automático de Mercado Pago no hay nada que pagar a mano.
   const shouldShowPaymentReminder = !isSuperAdmin &&
+    business?.mp_subscription_status !== 'authorized' &&
     (business?.subscription_status === 'trial' || business?.subscription_status === 'active') &&
     !isSubscriptionExpired(business?.trial_ends_at) &&
     daysLeft <= 2 &&
@@ -180,28 +187,65 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>
 }
 
+function RootRoute() {
+  const { user, loading, profile } = useAuthStore()
+  const isDesktop = checkIsTauriDesktop()
+
+  // En la aplicación Desktop (Tauri): ir directo a Login o al Menú principal, NUNCA a la landing comercial
+  if (isDesktop) {
+    if (loading) return <SplashScreen />
+    if (user && profile) return <Navigate to="/menu" replace />
+    return <DesktopAuthPage initialTab="login" />
+  }
+
+  // En la Web comercial pública: mostrar la Landing Page
+  return <LandingPage />
+}
+
 export default function App() {
-  const { setUser, setLoading, setProfile } = useAuthStore()
+  const { setUser, setLoading, setProfile, profile: activeProfile } = useAuthStore()
   const { fetchBusiness, setBusiness } = useBusinessStore()
+  const [showStartupSplash, setShowStartupSplash] = useState(() => checkIsTauriDesktop())
   const [showUpdateModal, setShowUpdateModal] = useState(false)
   const [remoteVersion, setRemoteVersion] = useState('')
+  const [dismissedVersion, setDismissedVersion] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!showStartupSplash) return
+    const timer = window.setTimeout(() => setShowStartupSplash(false), DESKTOP_SPLASH_MIN_MS)
+    return () => window.clearTimeout(timer)
+  }, [showStartupSplash])
+
+  useEffect(() => {
+    if (!activeProfile?.business_id) return
+    syncEngine.init().then(async () => {
+      // Sin conexión los pulls devuelven el snapshot local sin tocarlo.
+      await syncEngine.pullLatestProducts(activeProfile.business_id)
+      await syncEngine.pullLatestCustomers(activeProfile.business_id)
+    }, (error) => {
+      // Solo un fallo al abrir la base es grave; la causa se muestra para poder diagnosticarlo.
+      console.error('[Local DB] initialization failed:', error)
+      toast.error(`No se pudo abrir la base local (${error?.message || error}). No registres ventas hasta reiniciar CajaGo.`, { duration: 15000 })
+    }).catch((error) => {
+      console.warn('[Local DB] initial download failed:', error)
+    })
+  }, [activeProfile?.business_id])
 
   // ── VERSION DETECTION ──
   useEffect(() => {
     async function checkVersion() {
+      // En Desktop (Tauri), las actualizaciones son manejadas por el updater nativo firmado
+      if (checkIsTauriDesktop()) return
+
       try {
         const res = await fetch('/version.json?t=' + Date.now())
         const data = await res.json()
         setRemoteVersion(data.version)
         
-        if (data.version && data.version !== APP_VERSION) {
+        if (data.version && data.version !== APP_VERSION && data.version !== dismissedVersion) {
           console.log(`[Update] New version detected: ${data.version}`)
           
-          // ── FORCE CACHE PURGE ──
-          // 1. Clear our app's localStorage cache
-          clearCache()
-          
-          // 2. Try to clear browser cache API if supported
+          // Purgar la caché de archivos estáticos (NUNCA la sesión ni el perfil)
           if ('caches' in window) {
             caches.keys().then((names) => {
               for (const name of names) caches.delete(name)
@@ -209,9 +253,6 @@ export default function App() {
           }
 
           setShowUpdateModal(true)
-          // Forzamos la recarga a los pocos segundos — no dependemos de que
-          // el usuario note el modal y haga clic.
-          setTimeout(() => window.location.reload(), 4000)
         }
       } catch (err) {
         console.warn('[Update] Failed to fetch version info', err)
@@ -221,10 +262,29 @@ export default function App() {
     // Initial check
     checkVersion()
 
-    // Check every 5 minutes
-    const interval = setInterval(checkVersion, 5 * 60 * 1000)
-    return () => clearInterval(interval)
-  }, [])
+    // Comprobación rápida cada 2 minutos y al retomar foco en la ventana
+    const interval = setInterval(checkVersion, 2 * 60 * 1000)
+    const onFocus = () => checkVersion()
+    window.addEventListener('focus', onFocus)
+    return () => {
+      clearInterval(interval)
+      window.removeEventListener('focus', onFocus)
+    }
+  }, [dismissedVersion])
+
+  const handleReloadApp = () => {
+    if ('caches' in window) {
+      caches.keys().then((names) => {
+        for (const name of names) caches.delete(name)
+      })
+    }
+    window.location.reload()
+  }
+
+  const handleDismissUpdate = () => {
+    setShowUpdateModal(false)
+    setDismissedVersion(remoteVersion)
+  }
 
   useEffect(() => {
     // ── BULLETPROOF AUTH WITH LOCALSTORAGE CACHE ──
@@ -276,6 +336,14 @@ export default function App() {
         if (biz) {
           setBusiness(biz)
           cacheBusiness(biz)
+          markBusinessVerified()
+          resetTrustedClock()
+        }
+
+        // Datos para poder volver a ingresar en este equipo aunque no haya Internet.
+        const cachedUser = getCachedOfflineUser()
+        if (checkIsTauriDesktop() && cachedUser?.id === userId) {
+          saveOfflineSnapshot(userId, { user: cachedUser, profile, business: biz || null }).catch(() => {})
         }
 
         profileLoaded = true
@@ -305,11 +373,22 @@ export default function App() {
     // ── Step 1: check session on mount ──
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (!session?.user) {
+        // Sin sesión y sin servidor (sin Internet o Supabase caído): el último usuario
+        // de este equipo sigue trabajando con los datos locales.
+        if (!(await checkConnectivity())) {
+          const cachedUser = getCachedOfflineUser()
+          if (cachedUser && loadFromCache(cachedUser.id)) {
+            setUser(cachedUser)
+            setLoading(false)
+            return
+          }
+        }
         setLoading(false)
         return
       }
 
       setUser(session.user)
+      cacheOfflineUser(session.user)
 
       // Try cache first (instant)
       if (loadFromCache(session.user.id)) {
@@ -327,21 +406,41 @@ export default function App() {
         if (i < 3) await new Promise(r => setTimeout(r, i * 2000))
       }
 
-      // Sin perfil, ProtectedRoute se queda en el spinner indefinidamente
-      // porque su condicion es (user && !profile). Cerramos la sesion para
-      // volver al login con un motivo, en vez de dejar la pantalla colgada.
+      // Si la red no respondió a tiempo, recurrimos al caché local para evitar cerrar la sesión
       if (!loaded) {
-        console.warn('[Auth] no se pudo cargar el perfil, cerrando sesión')
-        try { sessionStorage.setItem('stockia_login_error', lastProfileError || '') } catch {}
-        await supabase.auth.signOut()
-        setUser(null)
+        console.warn('[Auth] no se pudo cargar el perfil desde la red en este intento')
+        const cached = getCachedProfile()
+        if (cached && cached.id === session.user.id) {
+          setProfile(cached)
+          const cachedBiz = getCachedBusiness()
+          if (cachedBiz) setBusiness(cachedBiz)
+        } else if (lastProfileError?.includes('sin fila para este usuario')) {
+          // Solo cerramos sesión si expresamente el usuario no existe en la base de datos
+          try { sessionStorage.setItem('stockia_login_error', lastProfileError || '') } catch {}
+          await supabase.auth.signOut()
+          setUser(null)
+        }
       }
+      setLoading(false)
+    }).catch(() => {
+      const cachedUser = getCachedOfflineUser()
+      if (cachedUser && loadFromCache(cachedUser.id)) setUser(cachedUser)
       setLoading(false)
     })
 
     // ── Step 2: auth state changes ──
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_OUT') {
+        // Un cierre de sesión pedido por el usuario borra antes el usuario offline,
+        // así que esto solo restaura cuando la sesión se cayó por falta de conexión.
+        if (!isOnline()) {
+          const cachedUser = getCachedOfflineUser()
+          if (cachedUser && loadFromCache(cachedUser.id)) {
+            setUser(cachedUser)
+            setLoading(false)
+            return
+          }
+        }
         profileLoaded = false
         setUser(null)
         setProfile(null)
@@ -354,6 +453,7 @@ export default function App() {
       if (!session?.user) return
 
       setUser(session.user)
+      cacheOfflineUser(session.user)
 
       // Already loaded → just sync token, done
       if (profileLoaded) {
@@ -378,9 +478,16 @@ export default function App() {
         }
         if (!loaded) {
           console.warn('[Auth] no se pudo cargar el perfil tras iniciar sesión')
-          try { sessionStorage.setItem('stockia_login_error', lastProfileError || '') } catch {}
-          await supabase.auth.signOut()
-          setUser(null)
+          const cached = getCachedProfile()
+          if (cached && cached.id === session.user.id) {
+            setProfile(cached)
+            const cachedBiz = getCachedBusiness()
+            if (cachedBiz) setBusiness(cachedBiz)
+          } else if (lastProfileError?.includes('sin fila para este usuario')) {
+            try { sessionStorage.setItem('stockia_login_error', lastProfileError || '') } catch {}
+            await supabase.auth.signOut()
+            setUser(null)
+          }
         }
         setLoading(false)
       }
@@ -389,16 +496,54 @@ export default function App() {
     return () => { subscription.unsubscribe() }
   }, [])
 
+  if (showStartupSplash) return <SplashScreen />
+
   return (
-    <Suspense fallback={<LoadingSpinner />}>
+    <Suspense fallback={<SplashScreen />}>
       <ScrollToTop />
       <Routes>
         {/* Public */}
-        <Route path="/" element={<LandingPage />} />
+        <Route path="/" element={<RootRoute />} />
+        <Route path="/index.html" element={<RootRoute />} />
+        <Route
+          path="/landing"
+          element={
+            checkIsTauriDesktop() ? (
+              <Navigate to="/login" replace />
+            ) : (
+              <LandingPage />
+            )
+          }
+        />
         <Route path="/admin" element={<AdminPage />} />
-        <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
-        <Route path="/register" element={<RegisterPage />} />
+        <Route
+          path="/login"
+          element={
+            checkIsTauriDesktop() ? (
+              <DesktopAuthPage initialTab="login" />
+            ) : (
+              <PublicRoute>
+                <LoginPage />
+              </PublicRoute>
+            )
+          }
+        />
+        <Route
+          path="/register"
+          element={
+            checkIsTauriDesktop() ? (
+              <DesktopAuthPage initialTab="register" />
+            ) : (
+              <RegisterPage />
+            )
+          }
+        />
         <Route path="/subscription-blocked" element={<SubscriptionBlockedPage />} />
+        <Route path="/suscripcion/listo" element={<SubscriptionReturnPage />} />
+        <Route path="/tienda/:slug" element={<StorefrontPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
+        <Route path="/terminos" element={<LegalPage kind="terms" />} />
+        <Route path="/privacidad" element={<LegalPage kind="privacy" />} />
 
         {/* Protected — app shell launcher (no sidebar) */}
         <Route path="/" element={<ProtectedRoute><AppShellLauncher /></ProtectedRoute>}>
@@ -407,16 +552,21 @@ export default function App() {
           <Route path="pos" element={<SubscriptionGuard mode="block"><POSPage /></SubscriptionGuard>} />
           <Route path="products" element={<SubscriptionGuard mode="block"><ProductsPage /></SubscriptionGuard>} />
           <Route path="products/:id" element={<SubscriptionGuard mode="block"><ProductDetailPage /></SubscriptionGuard>} />
-          <Route path="purchases" element={<SubscriptionGuard mode="block"><PurchasesPage /></SubscriptionGuard>} />
+          <Route path="purchases" element={<SubscriptionGuard mode="block"><PlanGate feature="purchases"><PermissionGuard permission="purchases.read"><PurchasesPage /></PermissionGuard></PlanGate></SubscriptionGuard>} />
+          <Route path="accounting" element={<SubscriptionGuard mode="block"><PlanGate feature="accounting"><PermissionGuard permission="accounting.read"><AccountingPage /></PermissionGuard></PlanGate></SubscriptionGuard>} />
           <Route path="comprobantes" element={<SubscriptionGuard mode="block"><ComprobantesPage /></SubscriptionGuard>} />
-          <Route path="presupuestos" element={<SubscriptionGuard mode="block"><QuotesPage /></SubscriptionGuard>} />
+          <Route path="presupuestos" element={<SubscriptionGuard mode="block"><PlanGate feature="quotes"><QuotesPage /></PlanGate></SubscriptionGuard>} />
+          <Route path="promociones" element={<SubscriptionGuard mode="block"><PlanGate feature="promotions"><PromotionsPage /></PlanGate></SubscriptionGuard>} />
+          <Route path="club" element={<SubscriptionGuard mode="block"><PlanGate feature="loyalty"><LoyaltyPage /></PlanGate></SubscriptionGuard>} />
+          <Route path="tienda" element={<SubscriptionGuard mode="block"><PlanGate feature="online_store"><OnlineStorePage /></PlanGate></SubscriptionGuard>} />
+          <Route path="whatsapp" element={<SubscriptionGuard mode="block"><PlanGate feature="whatsapp_ai"><WhatsAppPage /></PlanGate></SubscriptionGuard>} />
           <Route path="customers" element={<SubscriptionGuard mode="block"><CustomersPage /></SubscriptionGuard>} />
           <Route path="cash-register" element={<SubscriptionGuard mode="block"><CashRegisterPage /></SubscriptionGuard>} />
           <Route path="sales" element={<SubscriptionGuard mode="block"><SalesHistoryPage /></SubscriptionGuard>} />
           <Route path="reports" element={<SubscriptionGuard mode="block"><ReportsPage /></SubscriptionGuard>} />
-          <Route path="rentabilidad" element={<SubscriptionGuard mode="block"><ProfitabilityPage /></SubscriptionGuard>} />
-          <Route path="reports/rentabilidad" element={<SubscriptionGuard mode="block"><ProfitabilityPage /></SubscriptionGuard>} />
-          <Route path="daily-summary" element={<SubscriptionGuard mode="block"><DailySummaryPage /></SubscriptionGuard>} />
+          <Route path="rentabilidad" element={<SubscriptionGuard mode="block"><PlanGate feature="profitability"><ProfitabilityPage /></PlanGate></SubscriptionGuard>} />
+          <Route path="reports/rentabilidad" element={<SubscriptionGuard mode="block"><PlanGate feature="profitability"><ProfitabilityPage /></PlanGate></SubscriptionGuard>} />
+          <Route path="daily-summary" element={<SubscriptionGuard mode="block"><PlanGate feature="daily_summary"><DailySummaryPage /></PlanGate></SubscriptionGuard>} />
           <Route path="settings" element={<SettingsPage />} />
           {/* New feature routes */}
           <Route path="notifications" element={<NotificationsPage />} />
@@ -424,9 +574,18 @@ export default function App() {
           <Route path="music" element={<MusicPage />} />
         </Route>
 
-        <Route path="*" element={<NotFoundPage />} />
+        <Route
+          path="*"
+          element={
+            checkIsTauriDesktop() ? (
+              <RootRoute />
+            ) : (
+              <NotFoundPage />
+            )
+          }
+        />
       </Routes>
-      <div className="fixed bottom-4 left-4 z-50 text-[10px] font-bold text-white/5 uppercase tracking-[0.3em] pointer-events-none">
+      <div className="fixed bottom-2 right-3 z-50 text-[10px] font-bold text-white/10 uppercase tracking-[0.3em] pointer-events-none">
         v{APP_VERSION}
       </div>
 
@@ -434,7 +593,10 @@ export default function App() {
         isOpen={showUpdateModal} 
         currentVersion={APP_VERSION} 
         newVersion={remoteVersion} 
+        onClose={handleDismissUpdate}
+        onReload={handleReloadApp}
       />
+      <UpdateModal />
     </Suspense>
   )
 }

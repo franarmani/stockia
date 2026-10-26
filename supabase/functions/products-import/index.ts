@@ -3,6 +3,7 @@
 // POST body: { business_id, mode, match_by, rows[] }
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { businessIsActive, INACTIVE_MESSAGE } from '../_shared/access.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -19,6 +20,24 @@ Deno.serve(async (req) => {
     )
 
     const { business_id, mode, match_by, rows } = await req.json()
+
+    // Solo un usuario del propio negocio, con la suscripción al día y plan Premium (o prueba).
+    const authHeader = req.headers.get('Authorization') ?? ''
+    const { data: { user } } = await supabase.auth.getUser(authHeader.replace(/^Bearer\s+/i, ''))
+    const { data: profile } = user
+      ? await supabase.from('users').select('business_id').eq('id', user.id).maybeSingle()
+      : { data: null }
+    if (!profile || profile.business_id !== business_id) {
+      return new Response(JSON.stringify({ error: 'Acceso denegado' }), {
+        status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+    const { data: hasPremium } = await supabase.rpc('business_has_premium', { p_business_id: business_id })
+    if (!(await businessIsActive(supabase, business_id)) || hasPremium !== true) {
+      return new Response(JSON.stringify({ error: hasPremium === true ? INACTIVE_MESSAGE : 'Importar productos es parte del plan Premium' }), {
+        status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
 
     if (!business_id || !rows?.length) {
       return new Response(JSON.stringify({ error: 'Missing business_id or rows' }), {

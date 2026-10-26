@@ -1,5 +1,11 @@
+import { addDays } from 'date-fns'
+import { getPlanById } from '@/config/plans'
 import { useBusinessStore } from '@/stores/businessStore'
-import { getSubscriptionDateState, getDaysSinceExpiration, formatSubscriptionDate } from '../utils/subscriptionDates'
+import { getSubscriptionDateState, getDaysSinceExpiration, formatSubscriptionDate, isSubscriptionExpired, trustedNow } from '../utils/subscriptionDates'
+import { getBusinessVerifiedAt } from '@/lib/sessionCache'
+
+const GRACE_DAYS = 3
+const MAX_OFFLINE_DAYS = 7
 import type { SubscriptionDateState, SubscriptionBannerState } from '../types/subscription.types'
 
 export function useSubscription() {
@@ -13,8 +19,17 @@ export function useSubscription() {
   // 'active' → never expired, regardless of trial_ends_at
   // 'trial' → compute from trial_ends_at
   // 'expired' → always expired
-  const isActive = status === 'active'
-  const isEffectivelyExpired = status === 'expired'
+  // 'active' vale hasta la fecha pagada más unos días de gracia, igual que en el servidor
+  // (business_is_active). Sin fecha no vence: eso solo lo puede poner el superadmin.
+  const paidLapsed = status === 'active' && !!trialEndsAt &&
+    isSubscriptionExpired(addDays(new Date(trialEndsAt), GRACE_DAYS).toISOString())
+
+  // Sin conexión se puede trabajar, pero no indefinidamente sin confirmar el pago con el servidor.
+  const verifiedAt = getBusinessVerifiedAt()
+  const needsOnlineCheck = !!business && verifiedAt !== null && trustedNow() - verifiedAt > MAX_OFFLINE_DAYS * 86400000
+
+  const isActive = status === 'active' && !paidLapsed && !needsOnlineCheck
+  const isEffectivelyExpired = status === 'expired' || paidLapsed || needsOnlineCheck
 
   let dateState: SubscriptionDateState = {
     daysRemaining: 0,
@@ -31,7 +46,7 @@ export function useSubscription() {
     dateState.isExpired = true
   }
 
-  const planName = plan === 'vip' ? 'Plan Negocio' : 'Plan Inicial'
+  const planName = status === 'trial' ? 'Prueba Premium' : `Plan ${getPlanById(plan).name}`
   const daysSinceExpired = !isActive ? getDaysSinceExpiration(trialEndsAt) : 0
 
   function getBannerState(): SubscriptionBannerState | null {
@@ -44,9 +59,11 @@ export function useSubscription() {
         variant: 'expired',
         daysRemaining: 0,
         endDate: dateState.expirationDate,
-        message: trialEndsAt
-          ? `Tu suscripción está vencida desde el ${formatSubscriptionDate(trialEndsAt)}. Para continuar usando Stockia Hub, regularizá el pago del Plan Negocio.`
-          : 'Tu suscripción se encuentra vencida. Para continuar usando Stockia Hub, regularizá el pago del Plan Negocio.',
+        message: needsOnlineCheck
+          ? `Hace más de ${MAX_OFFLINE_DAYS} días que CajaGo no se conecta. Conectate a internet para verificar tu suscripción.`
+          : trialEndsAt
+          ? `Tu suscripción está vencida desde el ${formatSubscriptionDate(trialEndsAt)}. Para continuar usando CajaGo, regularizá el pago de tu plan.`
+          : 'Tu suscripción se encuentra vencida. Para continuar usando CajaGo, regularizá el pago de tu plan.',
         actionLabel: 'Informar pago',
         actionPath: '/settings',
       }
@@ -57,7 +74,7 @@ export function useSubscription() {
         variant: 'expires_today',
         daysRemaining: 0,
         endDate: dateState.expirationDate,
-        message: 'Tu suscripción vence hoy. Realizá el pago para mantener activo tu Plan Negocio.',
+        message: 'Tu suscripción vence hoy. Realizá el pago para mantener activo tu plan.',
         actionLabel: 'Renovar plan',
         actionPath: '/settings',
       }
@@ -79,7 +96,7 @@ export function useSubscription() {
         variant: 'soon',
         daysRemaining: dateState.daysRemaining,
         endDate: dateState.expirationDate,
-        message: `Tu Plan Negocio vence en ${dateState.daysRemaining} ${dateState.daysRemaining === 1 ? 'día' : 'días'}. Renová tu suscripción para continuar usando todas las funciones.`,
+        message: `Tu plan vence en ${dateState.daysRemaining} ${dateState.daysRemaining === 1 ? 'día' : 'días'}. Renová tu suscripción para continuar usando todas las funciones.`,
         actionLabel: 'Ver datos de renovación',
         actionPath: '/settings',
       }
@@ -94,7 +111,8 @@ export function useSubscription() {
     daysRemaining: dateState.daysRemaining,
     daysElapsed: dateState.daysElapsed,
     totalDays: dateState.totalDays,
-    isExpired: !isActive && dateState.isExpired,
+    isExpired: needsOnlineCheck || (!isActive && dateState.isExpired),
+    needsOnlineCheck,
     expiresToday: !isActive && dateState.expiresToday,
     daysSinceExpired,
     planName,

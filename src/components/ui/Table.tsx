@@ -7,14 +7,14 @@ interface TableProps {
 
 export function Table({ children, className }: TableProps) {
   return (
-    <div className="w-full overflow-auto rounded-2xl bg-surface border border-border shadow-sm">
+    <div className="w-full overflow-auto rounded-[14px] bg-surface border border-border shadow-[0_14px_38px_rgba(2,5,10,0.16)]">
       <table className={cn('w-full text-sm', className)}>{children}</table>
     </div>
   )
 }
 
 export function TableHeader({ children, className }: TableProps) {
-  return <thead className={cn('bg-muted/50', className)}>{children}</thead>
+  return <thead className={cn('bg-white/[0.025]', className)}>{children}</thead>
 }
 
 export function TableBody({ children, className }: TableProps) {
@@ -38,7 +38,7 @@ export function TableRow({ children, className, onClick }: TableProps & { onClic
 
 export function TableHead({ children, className }: TableProps) {
   return (
-    <th className={cn('px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider', className)}>
+    <th className={cn('px-4 py-3.5 text-left text-[11px] font-semibold text-muted-foreground tracking-[0.025em]', className)}>
       {children}
     </th>
   )

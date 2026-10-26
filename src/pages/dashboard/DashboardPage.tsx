@@ -1,5 +1,8 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import { syncEngine } from '@/sync/syncEngine'
+import { getLocalProducts } from '@/sync/storage'
+import { cachedQuery, todayKey } from '@/sync/remote'
 import { useAuthStore } from '@/stores/authStore'
 import { useBusinessStore } from '@/stores/businessStore'
 import { formatCurrency } from '@/lib/utils'
@@ -33,6 +36,7 @@ import Button from '@/components/ui/Button'
 import { getGlobalCopilotInsight, type AnalysisResult } from '@/services/intelligenceService'
 import { Zap, Loader2, CheckCircle2, Info, ChevronRight } from 'lucide-react'
 import { toast } from 'sonner'
+import { usePlan } from '@/hooks/usePlan'
 import PaymentNotificationModal from '@/components/modals/PaymentNotificationModal'
 
 interface DashboardData {
@@ -49,6 +53,7 @@ interface DashboardData {
 
 export default function DashboardPage() {
   const { profile } = useAuthStore()
+  const { isPremium } = usePlan()
   const navigate = useNavigate()
   const [data, setData] = useState<DashboardData | null>(null)
   const [loading, setLoading] = useState(true)
@@ -63,7 +68,9 @@ export default function DashboardPage() {
   }, [business?.subscription_status])
 
   useEffect(() => {
-    if (profile?.business_id) fetchDashboard()
+    if (!profile?.business_id) return
+    fetchDashboard()
+    return syncEngine.onSynced(() => { fetchDashboard() })
   }, [profile?.business_id])
 
   async function fetchDashboard() {
@@ -75,32 +82,41 @@ export default function DashboardPage() {
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6)
     const startOfWeek = new Date(sevenDaysAgo.getFullYear(), sevenDaysAgo.getMonth(), sevenDaysAgo.getDate()).toISOString()
 
-    const [salesTodayRes, salesWeekRes, lowStockRes, cashRes, salesDetailRes] = await Promise.all([
-      supabase.from('sales').select('total').eq('business_id', businessId).gte('created_at', startOfDay),
-      supabase.from('sales').select('total, created_at').eq('business_id', businessId).gte('created_at', startOfWeek),
-      supabase.from('products').select('*').eq('business_id', businessId).eq('active', true).lte('stock', 5).order('stock', { ascending: true }).limit(8),
-      supabase.from('cash_sessions').select('*, cash_movements(*)').eq('business_id', businessId).eq('status', 'open').limit(1),
-      supabase.from('sales').select('*, sale_items(quantity, price, product:products(purchase_price))').eq('business_id', businessId).gte('created_at', startOfDay),
+    // Servidor (o lo último guardado sin conexión) + ventas de este equipo todavía sin sincronizar.
+    const day = todayKey()
+    const [salesTodayRes, salesWeekRes, localProducts, sessions, salesDetailRes, pendingSales] = await Promise.all([
+      cachedQuery(`dash_sales_today:${businessId}:${day}`, supabase.from('sales').select('total').eq('business_id', businessId).gte('created_at', startOfDay)),
+      cachedQuery(`dash_sales_week:${businessId}:${day}`, supabase.from('sales').select('total, created_at').eq('business_id', businessId).gte('created_at', startOfWeek)),
+      getLocalProducts(businessId),
+      syncEngine.pullRows<any>('cash_sessions', businessId, () => supabase.from('cash_sessions').select('*').eq('business_id', businessId)),
+      cachedQuery(`dash_sales_detail:${businessId}:${day}`, supabase.from('sales').select('*, sale_items(quantity, price, product:products(purchase_price))').eq('business_id', businessId).gte('created_at', startOfDay)),
+      syncEngine.getPendingSales(businessId),
     ])
 
-    const todayData = salesTodayRes.data || []
-    const weekData = salesWeekRes.data || []
+    const pendingToday = pendingSales.filter(p => p.sale.created_at >= startOfDay)
+    const todayData = [...((salesTodayRes.data as any[]) || []), ...pendingToday.map(p => ({ total: p.sale.total }))]
+    const weekData = [
+      ...((salesWeekRes.data as any[]) || []),
+      ...pendingSales.filter(p => p.sale.created_at >= startOfWeek).map(p => ({ total: p.sale.total, created_at: p.sale.created_at })),
+    ]
     const todaySales = todayData.reduce((s: number, v: any) => s + v.total, 0)
 
     // Calculate real cost from sale_items
-    const salesWithItems = salesDetailRes.data || []
+    const salesWithItems = (salesDetailRes.data as any[]) || []
     const todayCost = salesWithItems.reduce((total: number, sale: any) => {
       return total + (sale.sale_items || []).reduce((c: number, item: any) => {
         return c + (item.product?.purchase_price || 0) * item.quantity
       }, 0)
-    }, 0)
+    }, 0) + pendingToday.reduce((total, p) => total + p.items.reduce((c, item) => c + item.cost_at_sale * item.quantity, 0), 0)
     const todayMargin = todaySales > 0 ? ((todaySales - todayCost) / todaySales) * 100 : 0
 
     // Cash register status
-    const openSession = (cashRes.data && cashRes.data.length > 0) ? cashRes.data[0] : null
+    const openSession = sessions.find((session: any) => session.status === 'open') || null
     let cajaExpected = 0
     if (openSession) {
-      const movs: any[] = openSession.cash_movements || []
+      const movements = await syncEngine.pullRows<any>('cash_movements', businessId, () =>
+        supabase.from('cash_movements').select('*').eq('session_id', openSession.id))
+      const movs = movements.filter((m: any) => m.session_id === openSession.id)
       const salesTotal = movs.filter((m: any) => m.type === 'sale').reduce((s: number, m: any) => s + m.amount, 0)
       const incomeTotal = movs.filter((m: any) => m.type === 'income').reduce((s: number, m: any) => s + m.amount, 0)
       const withdrawals = movs.filter((m: any) => m.type === 'withdrawal').reduce((s: number, m: any) => s + m.amount, 0)
@@ -120,7 +136,10 @@ export default function DashboardPage() {
       chartEntries.push({ name: dayNames[d.getDay()], ventas: dayTotal })
     }
 
-    const lowStockProducts = (lowStockRes.data || []).filter((p: any) => p.stock <= p.stock_min)
+    const lowStockProducts = localProducts
+      .filter(p => p.active !== false && p.stock <= 5 && p.stock <= p.stock_min)
+      .sort((a, b) => a.stock - b.stock)
+      .slice(0, 8) as unknown as Product[]
 
     setData({
       todaySales,
@@ -138,6 +157,10 @@ export default function DashboardPage() {
 
   async function runGlobalAnalysis() {
     if (!data) return
+    if (!isPremium) {
+      toast.info('El análisis inteligente con IA está en el plan Premium. Podés cambiar de plan en Configuración → Suscripción.')
+      return
+    }
     setAnalyzing(true)
     try {
       const result = await getGlobalCopilotInsight({
@@ -164,21 +187,21 @@ export default function DashboardPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-xl font-bold text-foreground">
+          <h1 className="cg-title text-[clamp(1.6rem,4vw,2.25rem)]">
             Hola, {profile?.name?.split(' ')[0]}
           </h1>
-          <p className="text-muted-foreground text-[13px]">
+          <p className="text-muted-foreground text-[13px] mt-1 capitalize">
             {new Date().toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' })}
           </p>
         </div>
-        <Button onClick={() => navigate('/pos')}>
-          <Plus className="w-3.5 h-3.5" />
+        <button onClick={() => navigate('/pos')} className="cg-btn-primary h-11 px-5 text-sm self-start sm:self-auto">
+          <Plus className="w-4 h-4" />
           Nueva venta
-        </Button>
+        </button>
       </div>
 
       {/* Revenue card */}
-      <div className="gradient-primary rounded-2xl overflow-hidden relative p-6">
+      <div className="cg-card overflow-hidden relative p-6">
         <div className="flex items-center justify-between relative z-10">
           <div>
             <p className="text-white/60 text-xs font-medium mb-1">Facturación hoy</p>
@@ -195,7 +218,7 @@ export default function DashboardPage() {
             <DollarSign className="w-7 h-7 text-white/80" />
           </div>
         </div>
-        <div className="absolute -top-8 -right-8 w-32 h-32 bg-white/[0.04] rounded-full" />
+        <div className="pointer-events-none absolute -top-16 -right-10 w-56 h-56 rounded-full bg-[radial-gradient(closest-side,rgba(154,169,255,0.18),transparent)]" />
       </div>
 
       {/* Stats grid */}
@@ -204,7 +227,7 @@ export default function DashboardPage() {
         <StatCard title="Ticket prom." value={formatCurrency(data.avgTicket)} icon={TrendingUp} tone="secondary" />
         <StatCard title="Margen" value={`${data.todayMargin.toFixed(1)}%`} icon={Percent} tone="secondary" />
         <div
-          className="bg-surface rounded-2xl p-4 border border-border shadow-sm cursor-pointer"
+          className="cg-card p-4 cursor-pointer"
           onClick={() => navigate('/cash-register')}
         >
           <div className="flex items-center justify-between mb-2">
@@ -223,7 +246,7 @@ export default function DashboardPage() {
 
       {/* Low stock */}
       {data.lowStockProducts.length > 0 && (
-        <div className="bg-surface rounded-2xl p-5 border border-border shadow-sm">
+        <div className="cg-card p-5">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-destructive/10 flex items-center justify-center">
@@ -252,7 +275,7 @@ export default function DashboardPage() {
       )}
 
       {/* Chart */}
-      <div className="bg-surface rounded-2xl p-5 border border-border shadow-sm">
+      <div className="cg-card p-5">
         <p className="text-sm font-semibold text-foreground mb-4">Últimos 7 días</p>
         {data.chartData.some(d => d.ventas > 0) ? (
           <ResponsiveContainer width="100%" height={180} minWidth={0}>
@@ -297,7 +320,7 @@ export default function DashboardPage() {
               size="lg" 
               onClick={runGlobalAnalysis} 
               disabled={analyzing}
-              className="gradient-primary shadow-xl shadow-green-900/40 h-14 px-8 min-w-[200px]"
+              className="gradient-primary shadow-xl shadow-green-900/40 h-14 px-5 sm:px-8 w-full md:w-auto md:min-w-[200px]"
             >
               {analyzing ? (
                 <>

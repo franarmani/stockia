@@ -27,7 +27,7 @@ export default function SubscriptionGuard({ children, mode = 'warning' }: Subscr
         </div>
         <h2 className="text-xl font-bold text-white mb-2">Suscripción vencida</h2>
         <p className="text-sm text-white/50 mb-6">
-          Tu Plan Negocio se encuentra vencido. Regularizá el pago para seguir operando.
+          Tu plan se encuentra vencido. Regularizá el pago para seguir operando.
         </p>
         <button
           onClick={() => navigate('/settings')}

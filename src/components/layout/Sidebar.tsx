@@ -1,3 +1,4 @@
+import { getPlanById } from '@/config/plans'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useEffect } from 'react'
 import { cn } from '@/lib/utils'
@@ -21,8 +22,10 @@ import {
   Shield,
   Music,
   TrendingUp,
+  Landmark,
 } from 'lucide-react'
 import { getSubscriptionDateState, formatShortDate } from '@/features/subscription/utils/subscriptionDates'
+import CajaGoBrand, { CajaGoIcon } from '@/components/brand/CajaGoBrand'
 
 const NAV_ITEMS = [
   { name: 'Inicio',         href: '/dashboard',    icon: LayoutDashboard },
@@ -30,6 +33,7 @@ const NAV_ITEMS = [
   { name: 'Productos',      href: '/products',      icon: Package },
   { name: 'Rentabilidad',   href: '/rentabilidad',  icon: TrendingUp },
   { name: 'Compras',        href: '/purchases',     icon: Truck },
+  { name: 'Contabilidad',   href: '/accounting',    icon: Landmark },
   { name: 'Clientes',       href: '/customers',     icon: Users },
   { name: 'Comprobantes',   href: '/comprobantes',  icon: FileText },
   { name: 'Presupuestos',   href: '/presupuestos',  icon: ClipboardList },
@@ -72,22 +76,23 @@ function SidebarContent({
   }
 
   return (
-    <div className="flex flex-col h-full bg-surface/80 backdrop-blur-3xl border-r border-white/10 text-white shadow-[4px_0_24px_rgba(0,0,0,0.5)]">
+    <div className="flex flex-col h-full bg-sidebar border-r border-sidebar-border text-sidebar-foreground">
       {/* Logo */}
       <div
         className={cn(
-          'flex items-center h-[72px] px-4 border-b border-white/10 shrink-0',
+          'flex items-center h-[72px] px-4 border-b border-white/[0.08] shrink-0',
           collapsed ? 'justify-center' : 'gap-3'
         )}
       >
-        <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-white/95 shadow-[0_0_12px_rgba(255,255,255,0.2)] shrink-0">
-          <img src="/og-image.png" alt="Icono" className="h-5 w-auto object-contain" />
-        </div>
-        {!collapsed && (
-          <div className="overflow-hidden text-left flex flex-col items-start gap-1">
-            <img src="/2.png" alt="STOCKIA" className="h-3.5 w-auto brightness-0 invert" />
+        {collapsed ? (
+          <CajaGoIcon size="sm" />
+        ) : (
+          <div className="overflow-hidden text-left flex flex-col items-start leading-tight">
+            <CajaGoBrand size="md" />
             {business?.name && (
-              <p className="text-[10px] text-white/50 truncate max-w-[160px] uppercase tracking-wider font-semibold">{business.name}</p>
+              <p className="text-[10px] text-[#9CA6BA] truncate max-w-[160px] uppercase tracking-wider font-semibold mt-1">
+                {business.name}
+              </p>
             )}
           </div>
         )}
@@ -103,10 +108,10 @@ function SidebarContent({
             title={collapsed ? item.name : undefined}
             className={({ isActive }) =>
               cn(
-                'sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-medium group transition-all duration-300',
+                'sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-[10px] text-[13px] font-medium group transition-all duration-150',
                 collapsed ? 'justify-center' : '',
                 isActive
-                  ? 'bg-primary/10 text-primary shadow-[inset_0_0_12px_rgba(0,240,255,0.1)] border border-primary/20'
+                  ? 'bg-white/[0.065] text-white border border-white/[0.10]'
                   : 'text-white/40 hover:text-white hover:bg-white/5'
               )
             }
@@ -128,7 +133,7 @@ function SidebarContent({
                       </span>
                     )}
                     {isActive && (
-                      <span className="w-1.5 h-1.5 rounded-full bg-primary shrink-0 shadow-[0_0_8px_rgba(0,240,255,0.8)]" />
+                      <span className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
                     )}
                   </>
                 )}
@@ -156,7 +161,7 @@ function SidebarContent({
                 <div className="flex items-center gap-2 mb-2">
                   <span className={`w-2 h-2 rounded-full animate-pulse ${isExpired ? 'bg-red-500' : 'bg-green-500'}`} />
                   <p className="text-[10px] font-bold text-white tracking-widest uppercase">
-                    Plan Negocio
+                    {business.subscription_status === 'trial' ? 'Prueba Premium' : `Plan ${getPlanById(business.plan).name}`}
                   </p>
                 </div>
                 <p className={cn(

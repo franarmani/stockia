@@ -1,10 +1,14 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
+import { cachedQuery } from '@/sync/remote'
+import { isOnline } from '@/sync/connectivity'
 import { useAuthStore } from '@/stores/authStore'
 import { useBusinessStore } from '@/stores/businessStore'
 import { formatCurrency, formatDateTime } from '@/lib/utils'
 import { requestCAE, getCbteTipo } from '@/lib/afipService'
 import { openInvoicePDF, type InvoicePDFData } from '@/lib/invoicePdf'
+import { downloadInvoicePDF } from '@/lib/pdfDownloader'
+import InvoicePreviewModal from '@/components/pdf/InvoicePreviewModal'
 import type { PrintMode } from '@/lib/documentLayout'
 import Button from '@/components/ui/Button'
 import Badge from '@/components/ui/Badge'
@@ -63,6 +67,9 @@ export default function ComprobantesPage() {
   const [ncProcessing, setNCProcessing] = useState(false)
   const [ncReason, setNCReason] = useState('')
   const [detailItems, setDetailItems] = useState<InvoiceItem[]>([])
+  const [showPreviewModal, setShowPreviewModal] = useState(false)
+  const [previewPdfData, setPreviewPdfData] = useState<InvoicePDFData | null>(null)
+  const [downloadingId, setDownloadingId] = useState<string | null>(null)
 
   useEffect(() => {
     if (profile?.business_id) fetchInvoices()
@@ -70,13 +77,13 @@ export default function ComprobantesPage() {
 
   async function fetchInvoices() {
     setLoading(true)
-    const { data } = await supabase
+    const { data } = await cachedQuery(`invoices:${profile!.business_id}`, supabase
       .from('invoices')
       .select('*')
       .eq('business_id', profile!.business_id)
       .order('created_at', { ascending: false })
-      .limit(500)
-    setInvoices(data || [])
+      .limit(500))
+    setInvoices((data as Invoice[]) || [])
     setLoading(false)
   }
 
@@ -84,15 +91,16 @@ export default function ComprobantesPage() {
     setSelectedInvoice(inv)
     setDetailItems([])
     setShowDetailModal(true)
-    const { data } = await supabase
+    const { data } = await cachedQuery(`invoice_items:${inv.id}`, supabase
       .from('invoice_items')
       .select('*')
       .eq('invoice_id', inv.id)
-      .order('created_at', { ascending: true })
-    setDetailItems(data || [])
+      .order('created_at', { ascending: true }))
+    setDetailItems((data as any[]) || [])
   }
 
   async function handleVoid(inv: Invoice) {
+    if (!isOnline()) { toast.error('Anular un comprobante requiere conexión con ARCA/servidor.'); return }
     if (inv.voided) return
     if (!confirm(`¿Anular comprobante ${CBTE_LABELS[inv.cbte_tipo]} ${padNumber(inv.punto_venta, 5)}-${padNumber(inv.invoice_number, 8)}?\n\nPara anularlo fiscalmente ante AFIP, emití una Nota de Crédito.`)) return
     await supabase.from('invoices').update({ voided: true }).eq('id', inv.id)
@@ -115,6 +123,7 @@ export default function ComprobantesPage() {
   }
 
   async function handleEmitNC() {
+    if (!isOnline()) { toast.error('Las notas de crédito se autorizan en ARCA: necesitás conexión.'); return }
     if (!ncSourceInvoice || !business || !profile) return
     setNCProcessing(true)
 
@@ -198,8 +207,8 @@ export default function ComprobantesPage() {
     setNCProcessing(false)
   }
 
-  async function handleDownloadPDF(inv: Invoice, mode: PrintMode = 'bw') {
-    if (!business) return
+  async function buildPDFDataForInvoice(inv: Invoice): Promise<InvoicePDFData | null> {
+    if (!business) return null
 
     // Fetch invoice line items for the PDF
     const { data: lineItems } = await supabase
@@ -236,7 +245,7 @@ export default function ComprobantesPage() {
       price: li.unit_price,
     }))
 
-    const pdfData: InvoicePDFData = {
+    return {
       businessName: business.name,
       businessCuit: business.cuit,
       businessAddress: business.address,
@@ -271,7 +280,32 @@ export default function ComprobantesPage() {
       logoUrl: business.logo_url,
       primaryColor: (business as any).primary_color || undefined,
     }
-    openInvoicePDF(pdfData, mode)
+  }
+
+  async function handleOpenPreview(inv: Invoice) {
+    const data = await buildPDFDataForInvoice(inv)
+    if (!data) {
+      toast.error('No se pudo preparar la vista previa del comprobante')
+      return
+    }
+    setPreviewPdfData(data)
+    setShowPreviewModal(true)
+  }
+
+  async function handleDownloadPDF(inv: Invoice, mode: PrintMode = 'color') {
+    setDownloadingId(inv.id)
+    const toastId = toast.loading('Generando archivo PDF...')
+    try {
+      const data = await buildPDFDataForInvoice(inv)
+      if (!data) throw new Error('Datos de comprobante incompletos')
+      await downloadInvoicePDF(data, { mode })
+      toast.success('¡PDF descargado con éxito!', { id: toastId })
+    } catch (err) {
+      console.error('PDF download error:', err)
+      toast.error('Error al generar o descargar el PDF', { id: toastId })
+    } finally {
+      setDownloadingId(null)
+    }
   }
 
   const filtered = invoices.filter((inv) => {
@@ -304,7 +338,7 @@ export default function ComprobantesPage() {
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-lg font-bold text-foreground">Comprobantes</h1>
+          <h1 className="cg-title text-[clamp(1.6rem,3.5vw,2.25rem)]">Comprobantes</h1>
           <p className="text-muted-foreground text-[13px] mt-0.5">
             {cantFacturas} comprobantes · Facturado: {formatCurrency(totalFacturado)}
             {totalNC > 0 && <span className="text-red-500"> · NC: -{formatCurrency(totalNC)}</span>}
@@ -329,12 +363,12 @@ export default function ComprobantesPage() {
             <div className="flex items-center gap-2">
               <Calendar className="w-4 h-4 text-muted-foreground shrink-0" />
               <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)}
-                className="w-full h-10 px-2 rounded-xl border border-white/10 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                className="w-full h-10 px-2 rounded-xl border border-white/[0.08] bg-[#0B1120] text-sm text-white focus:outline-none focus:ring-2 focus:ring-primary/30" />
             </div>
             <div className="flex items-center gap-2">
               <span className="text-xs text-muted-foreground">a</span>
               <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)}
-                className="w-full h-10 px-2 rounded-xl border border-white/10 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                className="w-full h-10 px-2 rounded-xl border border-white/[0.08] bg-[#0B1120] text-sm text-white focus:outline-none focus:ring-2 focus:ring-primary/30" />
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -404,12 +438,24 @@ export default function ComprobantesPage() {
                     {formatCurrency(inv.total)}
                   </TableCell>
                   <TableCell>
-                    <div className="flex gap-1">
-                      <button onClick={() => openDetail(inv)} className="w-7 h-7 rounded-xl flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition" title="Ver detalle">
+                    <div className="flex items-center gap-1">
+                      <button onClick={() => openDetail(inv)} className="w-7 h-7 rounded-xl flex items-center justify-center text-muted-foreground hover:text-white hover:bg-white/[0.06] transition" title="Ver detalle">
                         <Eye className="w-3.5 h-3.5" />
                       </button>
-                      <button onClick={() => handleDownloadPDF(inv, 'bw')} className="w-7 h-7 rounded-xl flex items-center justify-center text-muted-foreground hover:text-blue-600 hover:bg-blue-500/10 transition" title="PDF blanco y negro">
-                        <Download className="w-3.5 h-3.5" />
+                      <button onClick={() => handleOpenPreview(inv)} className="w-7 h-7 rounded-xl flex items-center justify-center text-muted-foreground hover:text-blue-400 hover:bg-blue-500/10 transition" title="Vista previa PDF">
+                        <FileText className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() => handleDownloadPDF(inv, 'color')}
+                        disabled={downloadingId === inv.id}
+                        className="w-7 h-7 rounded-xl flex items-center justify-center text-muted-foreground hover:text-emerald-400 hover:bg-emerald-500/10 transition disabled:opacity-40"
+                        title="Descargar archivo PDF"
+                      >
+                        {downloadingId === inv.id ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin text-emerald-400" />
+                        ) : (
+                          <Download className="w-3.5 h-3.5" />
+                        )}
                       </button>
                       {!inv.voided && ![3, 8, 13].includes(inv.cbte_tipo) && (
                         <button onClick={() => openNCModal(inv)} className="w-7 h-7 rounded-xl flex items-center justify-center text-muted-foreground hover:text-amber-400 hover:bg-amber-500/10 transition" title="Emitir Nota de Crédito">
@@ -555,13 +601,29 @@ export default function ComprobantesPage() {
               </div>
             )}
 
-            <div className="flex gap-3 pt-2">
+            <div className="flex flex-wrap gap-2.5 pt-3">
               <Button variant="outline" className="flex-1" onClick={() => setShowDetailModal(false)}>Cerrar</Button>
-              <Button className="flex-1" onClick={() => handleDownloadPDF(selectedInvoice, 'bw')}>
-                <Download className="w-4 h-4" /> PDF B/N
+              <Button
+                variant="outline"
+                className="flex-1 gap-1.5"
+                onClick={() => {
+                  handleOpenPreview(selectedInvoice)
+                }}
+              >
+                <Eye className="w-4 h-4 text-blue-400" />
+                <span>Vista Previa</span>
               </Button>
-              <Button variant="outline" className="flex-1" onClick={() => handleDownloadPDF(selectedInvoice, 'color')}>
-                <Palette className="w-4 h-4" /> PDF color
+              <Button
+                className="flex-1 gap-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-md shadow-blue-900/30"
+                disabled={downloadingId === selectedInvoice.id}
+                onClick={() => handleDownloadPDF(selectedInvoice, 'color')}
+              >
+                {downloadingId === selectedInvoice.id ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Download className="w-4 h-4" />
+                )}
+                <span>Descargar PDF</span>
               </Button>
               {!selectedInvoice.voided && ![3, 8, 13].includes(selectedInvoice.cbte_tipo) && (
                 <Button variant="outline" className="flex-1" onClick={() => { setShowDetailModal(false); openNCModal(selectedInvoice) }}>
@@ -606,7 +668,7 @@ export default function ComprobantesPage() {
                 value={ncReason}
                 onChange={(e) => setNCReason(e.target.value)}
                 placeholder="Ej: Devolución de producto"
-                className="w-full h-10 px-3 rounded-xl border border-white/10 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                className="w-full h-10 px-3 rounded-xl border border-white/[0.08] bg-[#0B1120] text-sm text-white focus:outline-none focus:ring-2 focus:ring-primary/30"
               />
             </div>
 
@@ -624,6 +686,13 @@ export default function ComprobantesPage() {
           </div>
         )}
       </Modal>
+
+      {/* Interactive PDF Preview and Download Modal */}
+      <InvoicePreviewModal
+        open={showPreviewModal}
+        onClose={() => setShowPreviewModal(false)}
+        invoiceData={previewPdfData}
+      />
     </div>
   )
 }

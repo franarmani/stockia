@@ -1,8 +1,14 @@
+import { getPlanById } from '@/config/plans'
+import { AR_PROVINCES, BUSINESS_TYPES } from '@/config/businessTypes'
+import MpQrSettingsCard from '@/features/mpQr/MpQrSettingsCard'
+import MercadoPagoSubscriptionCard from '@/features/subscription/components/MercadoPagoSubscriptionCard'
 import { useState, useEffect, useRef } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/authStore'
 import { useBusinessStore } from '@/stores/businessStore'
+import { usePlan } from '@/hooks/usePlan'
+import { BASIC_LIMITS } from '@/config/plans'
 import { useFiscalStore } from '@/stores/fiscalStore'
 import { toast } from 'sonner'
 import Button from '@/components/ui/Button'
@@ -15,7 +21,7 @@ import {
   Check, MoreVertical, UserPlus, Store, Users, Shield, Plus, Trash2, Crown, 
   Save, FileText, Printer, CheckCircle2, Upload, AlertCircle, Wifi, Download, 
   Copy, Key, Zap, ChevronRight, ChevronLeft, Loader2, Globe, ChevronDown, Percent,
-  CreditCard, Banknote, ArrowRightLeft, Settings, Bell, Lock, Gift,
+  CreditCard, Banknote, ArrowRightLeft, Settings, Bell, Lock, Gift, MapPin,
 } from 'lucide-react'
 import { getSubscriptionDateState, formatSubscriptionDate, getDaysSinceExpiration } from '@/features/subscription/utils/subscriptionDates'
 import { cn } from '@/lib/utils'
@@ -41,6 +47,7 @@ type TabId = typeof TABS[number]['id']
 export default function SettingsPage() {
   const { profile } = useAuthStore()
   const { business, updateBusiness } = useBusinessStore()
+  const { isPremium } = usePlan()
   const { settings: fiscalSettings, env: fiscalEnv, setEnv, fetchSettings, upsertSettings, updateCertStatus } = useFiscalStore()
   const [users, setUsers] = useState<UserProfile[]>([])
   const [loading, setLoading] = useState(true)
@@ -65,7 +72,7 @@ export default function SettingsPage() {
   const logoInputRef = useRef<HTMLInputElement>(null)
 
   const [form, setForm] = useState({
-    name: '', address: '', phone: '',
+    name: '', address: '', city: '', phone: '', business_type: '', province: '',
     cuit: '', iva_condition: 'monotributo', punto_venta: '1',
     iibb: '', razon_social: '', domicilio_comercial: '', inicio_actividades: '',
     receipt_footer: '', auto_print: false,
@@ -88,6 +95,9 @@ export default function SettingsPage() {
       setForm({
         name: business.name,
         address: business.address || '',
+        city: (business as any).city || localStorage.getItem('cajago_weather_city') || '',
+        business_type: (business as any).business_type || '',
+        province: (business as any).province || '',
         phone: business.phone || '',
         cuit: business.cuit || '',
         iva_condition: business.iva_condition || 'monotributo',
@@ -176,6 +186,9 @@ export default function SettingsPage() {
     const payload = {
       name: form.name.trim(),
       address: form.address.trim() || null,
+      city: form.city.trim() || null,
+      business_type: form.business_type || null,
+      province: form.province || null,
       phone: form.phone.trim() || null,
       cuit: form.cuit.trim() || null,
       iva_condition: form.iva_condition || null,
@@ -192,6 +205,9 @@ export default function SettingsPage() {
     }
     const { error } = await supabase.from('businesses').update(payload).eq('id', profile!.business_id)
     if (error) { toast.error('Error al guardar'); setSaving(false); return }
+    if (form.city.trim()) {
+      localStorage.setItem('cajago_weather_city', form.city.trim())
+    }
     updateBusiness(payload as any)
     toast.success('Datos guardados')
     setSaving(false)
@@ -368,7 +384,7 @@ export default function SettingsPage() {
       <div className="flex items-center gap-3 mb-6">
         <Settings className="w-5 h-5 text-white/40" />
         <div>
-          <h1 className="text-xl font-bold text-white">Configuración</h1>
+          <h1 className="cg-title text-[clamp(1.6rem,3.5vw,2.25rem)]">Configuración</h1>
           <p className="text-sm text-white/40">Administrá tu negocio</p>
         </div>
       </div>
@@ -411,13 +427,49 @@ export default function SettingsPage() {
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium text-white/70 mb-1">Dirección</label>
+                  <label className="block text-sm font-medium text-white/70 mb-1">Rubro</label>
+                  <select value={form.business_type.startsWith('otro:') ? 'otro' : form.business_type}
+                    onChange={(e) => setForm({ ...form, business_type: e.target.value })}
+                    className="w-full h-10 px-3 rounded-xl border border-white/10 bg-white/5 text-white text-sm focus:outline-none focus:border-primary/40">
+                    <option value="" className="bg-[#0b1221]">Elegí tu rubro</option>
+                    {BUSINESS_TYPES.map(type => <option key={type.id} value={type.id} className="bg-[#0b1221]">{type.label}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-white/70 mb-1">Provincia</label>
+                  <select value={form.province} onChange={(e) => setForm({ ...form, province: e.target.value })}
+                    className="w-full h-10 px-3 rounded-xl border border-white/10 bg-white/5 text-white text-sm focus:outline-none focus:border-primary/40">
+                    <option value="" className="bg-[#0b1221]">Elegí la provincia</option>
+                    {AR_PROVINCES.map(province => <option key={province} value={province} className="bg-[#0b1221]">{province}</option>)}
+                  </select>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-sm font-medium text-white/70 mb-1">
+                    Ciudad / Localidad (Clima)
+                  </label>
+                  <div className="relative">
+                    <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+                    <input
+                      type="text"
+                      value={form.city}
+                      onChange={(e) => setForm({ ...form, city: e.target.value })}
+                      placeholder="Ej: Bahía Blanca, AR"
+                      className="w-full h-10 pl-9 pr-3 rounded-xl border border-white/10 bg-white/5 text-white text-sm focus:outline-none focus:border-primary/40 focus:ring-2 focus:ring-primary/10 placeholder:text-white/20"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-white/70 mb-1">Dirección del local</label>
                   <input type="text" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })}
+                    placeholder="Ej: San Martín 123"
                     className="w-full h-10 px-3 rounded-xl border border-white/10 bg-white/5 text-white text-sm focus:outline-none focus:border-primary/40 focus:ring-2 focus:ring-primary/10 placeholder:text-white/20" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-white/70 mb-1">Teléfono</label>
                   <input type="text" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                    placeholder="Ej: 291-1234567"
                     className="w-full h-10 px-3 rounded-xl border border-white/10 bg-white/5 text-white text-sm focus:outline-none focus:border-primary/40 focus:ring-2 focus:ring-primary/10 placeholder:text-white/20" />
                 </div>
               </div>
@@ -440,8 +492,12 @@ export default function SettingsPage() {
               <div className="bg-white/5 border border-white/10 rounded-2xl p-5">
                 <div className="flex items-start justify-between mb-4">
                   <div>
-                    <h3 className="text-lg font-bold text-white">Plan Negocio</h3>
-                    <p className="text-sm text-primary font-semibold">$70.000 / mes</p>
+                    <h3 className="text-lg font-bold text-white">
+                      {business?.subscription_status === 'trial' ? 'Prueba gratis (Premium completo)' : `Plan ${getPlanById(business?.plan).name}`}
+                    </h3>
+                    <p className="text-sm text-primary font-semibold">
+                      {business?.subscription_status === 'trial' ? 'Después elegís Básico ($38.000) o Premium ($70.000)' : getPlanById(business?.plan).priceLabel}
+                    </p>
                   </div>
                   <Badge className={cn(
                     isExpired ? 'bg-red-500/15 text-red-400 border-red-500/25' : 'bg-green-500/15 text-green-400 border-green-500/25'
@@ -477,12 +533,14 @@ export default function SettingsPage() {
                   </div>
                 ) : null}
 
+                <MercadoPagoSubscriptionCard />
+
                 <div className="flex flex-wrap gap-2 mt-4">
                   <button
                     onClick={() => window.open('https://wa.me/5492915716099?text=Hola,%20quisiera%20enviar%20el%20comprobante%20para%20activar%20mi%20plan.', '_blank')}
-                    className="px-4 h-9 rounded-xl bg-primary text-white text-xs font-bold hover:brightness-110 transition-all"
+                    className="px-4 h-9 rounded-xl bg-white/5 text-white/70 text-xs font-bold hover:bg-white/10 hover:text-white transition-all"
                   >
-                    Informar pago
+                    Informar pago por transferencia
                   </button>
                   <button
                     onClick={() => window.open(`https://wa.me/5492915716099`, '_blank')}
@@ -527,7 +585,7 @@ export default function SettingsPage() {
                     disabled={!business?.referral_code}
                     onClick={() => {
                       const link = `${window.location.origin}/register?ref=${business!.referral_code}`
-                      const text = encodeURIComponent(`¡Te invito a probar Stockia Hub! Registrate con mi código y obtené 10% off tu primer mes: ${link}`)
+                      const text = encodeURIComponent(`¡Te invito a probar CajaGo! Registrate con mi código y obtené 10% off tu primer mes: ${link}`)
                       window.open(`https://wa.me/?text=${text}`, '_blank')
                     }}
                     className="h-11 px-4 rounded-xl bg-primary text-white text-sm font-bold hover:brightness-110 transition-all disabled:opacity-40"
@@ -811,6 +869,7 @@ export default function SettingsPage() {
           )}
 
           {/* ── PAYMENT METHODS ── */}
+          {activeTab === 'payments' && <MpQrSettingsCard />}
           {activeTab === 'payments' && (
             <div className="bg-[#0d1b2d] border border-white/5 rounded-2xl p-5 space-y-4">
               <div className="flex items-center gap-2 mb-2">
@@ -842,7 +901,10 @@ export default function SettingsPage() {
                   <h2 className="font-semibold text-white">Usuarios</h2>
                   <p className="text-xs text-white/40">{users.length} colaboradores</p>
                 </div>
-                <button onClick={() => setShowUserModal(true)}
+                <button onClick={() => {
+                  if (!isPremium && users.length >= BASIC_LIMITS.users) { toast.error(`El plan Básico permite hasta ${BASIC_LIMITS.users} usuarios. Pasate a Premium para sumar más.`); return }
+                  setShowUserModal(true)
+                }}
                   className="flex items-center gap-2 h-9 px-4 rounded-xl bg-primary text-white text-xs font-bold hover:brightness-110 transition-all">
                   <UserPlus className="w-4 h-4" /> Agregar
                 </button>

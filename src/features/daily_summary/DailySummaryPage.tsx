@@ -57,7 +57,7 @@ export default function DailySummaryPage() {
             <CalendarDays className="w-5 h-5 text-indigo-400" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-white">Resúmenes diarios</h1>
+            <h1 className="cg-title text-[clamp(1.6rem,3.5vw,2.25rem)]">Resúmenes diarios</h1>
             <p className="text-[12px] text-white/50">Historial de cierres de caja</p>
           </div>
         </div>

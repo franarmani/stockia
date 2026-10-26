@@ -138,7 +138,7 @@ export default function HealthPage() {
             <Activity className="w-5 h-5 text-emerald-400" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-white">Salud del negocio</h1>
+            <h1 className="cg-title text-[clamp(1.6rem,3.5vw,2.25rem)]">Salud del negocio</h1>
             <p className="text-[12px] text-white/50">Estado general en tiempo real</p>
           </div>
         </div>

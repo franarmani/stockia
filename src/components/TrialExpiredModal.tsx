@@ -1,5 +1,7 @@
+import MercadoPagoSubscriptionCard from '@/features/subscription/components/MercadoPagoSubscriptionCard'
+import PlanPicker from '@/features/subscription/components/PlanPicker'
+import { PLANS, formatPlanPrice, normalizePlan, type PlanId } from '@/config/plans'
 import { useState, useRef, useEffect } from 'react'
-import { addDays } from 'date-fns'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/authStore'
 import { useBusinessStore } from '@/stores/businessStore'
@@ -11,16 +13,16 @@ import {
 
 const ALIAS = 'farmani2.ppay'
 const WA_NUMBER = '5492915716099'
-const PRECIO_MENSUAL = 70000
 
 export default function TrialExpiredModal() {
   const { user, profile } = useAuthStore()
-  const { business, updateBusiness } = useBusinessStore()
+  const { business } = useBusinessStore()
   const { signOut } = useAuthStore()
   const [file, setFile] = useState<File | null>(null)
   const [preview, setPreview] = useState<string | null>(null)
   const [uploading, setUploading] = useState(false)
   const [submitted, setSubmitted] = useState(false)
+  const [plan, setPlan] = useState<PlanId>(normalizePlan(useBusinessStore.getState().business?.plan))
   const [linked, setLinked] = useState<{ id: string; name: string }[]>([])
   const fileRef = useRef<HTMLInputElement>(null)
 
@@ -28,7 +30,7 @@ export default function TrialExpiredModal() {
     supabase.rpc('get_linked_businesses').then(({ data }) => setLinked((data as unknown as { id: string; name: string }[]) ?? []))
   }, [])
 
-  const PRECIO = '$' + (PRECIO_MENSUAL * (1 + linked.length)).toLocaleString('es-AR')
+  const PRECIO = formatPlanPrice(PLANS[plan].price * (1 + linked.length))
   const linkedNames = linked.map(b => b.name).join(', ')
 
   function copyAlias() {
@@ -37,7 +39,7 @@ export default function TrialExpiredModal() {
   }
 
   function sendWA() {
-    const msg = `Hola Fran! Acabo de hacer la transferencia de ${PRECIO} al alias ${ALIAS} para activar mi cuenta en STOCKIA HUB. Mi email es: ${user?.email ?? ''} — ${business?.name ?? ''}. Quedo a la espera, gracias!`
+    const msg = `Hola Fran! Acabo de hacer la transferencia de ${PRECIO} al alias ${ALIAS} para activar mi cuenta en CajaGo (plan ${PLANS[plan].name}). Mi email es: ${user?.email ?? ''} — ${business?.name ?? ''}. Quedo a la espera, gracias!`
     window.open(`https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(msg)}`, '_blank')
   }
 
@@ -71,22 +73,14 @@ export default function TrialExpiredModal() {
         amount: PRECIO,
         proof_url: urlData.publicUrl,
         status: 'pending',
+        plan,
       })
 
       if (reqErr) throw new Error(reqErr.message)
 
-      // Activación automática: confiamos en el comprobante y extendemos la
-      // mensualidad al instante. Si luego resulta falso o no llegó, el
-      // superadmin da de baja la cuenta manualmente desde /admin.
-      const baseDate = business.trial_ends_at && new Date(business.trial_ends_at) > new Date()
-        ? new Date(business.trial_ends_at)
-        : new Date()
-      const newTrialEndsAt = addDays(baseDate, 30).toISOString()
-      await updateBusiness({ subscription_status: 'active', trial_ends_at: newTrialEndsAt })
-      if (linked.length) await supabase.rpc('extend_linked_subscriptions')
-
+      // La cuenta se activa cuando el superadmin aprueba el comprobante (approve_payment_request).
       setSubmitted(true)
-      toast.success('¡Pago acreditado! Tu cuenta ya está activa por 30 días más.')
+      toast.success('Recibimos tu comprobante. Te activamos la cuenta apenas lo revisemos.')
     } catch (e: any) {
       toast.error(e.message || 'Error al enviar')
     }
@@ -106,7 +100,7 @@ export default function TrialExpiredModal() {
               </div>
               <div>
                 <h2 className="text-[15px] font-bold text-white">Tu mensualidad terminó</h2>
-                <p className="text-[12px] text-slate-500">Activá tu cuenta para seguir usando STOCKIA HUB</p>
+                <p className="text-[12px] text-slate-500">Activá tu cuenta para seguir usando CajaGo</p>
               </div>
             </div>
             <button
@@ -123,7 +117,7 @@ export default function TrialExpiredModal() {
           {/* Price pill */}
           <div className="flex items-center justify-center gap-2 px-4 py-3 bg-blue-500/10 rounded-xl border border-blue-500/20">
             <Zap className="w-4 h-4 text-blue-400 shrink-0" />
-            <p className="text-[13px] font-bold text-blue-400">Plan Negocio: {PRECIO}/mes · Todo incluido</p>
+            <p className="text-[13px] font-bold text-blue-400">Plan {PLANS[plan].name}: {PRECIO}/mes</p>
           </div>
           {linked.length > 0 && (
             <p className="text-[13px] text-blue-300 bg-blue-500/10 border border-blue-500/20 rounded-xl px-3 py-2 leading-relaxed">
@@ -137,9 +131,9 @@ export default function TrialExpiredModal() {
               <div className="w-14 h-14 bg-green-500/10 rounded-2xl flex items-center justify-center mx-auto mb-3">
                 <CheckCircle2 className="w-7 h-7 text-green-400" />
               </div>
-              <h3 className="text-base font-bold text-white mb-1">¡Cuenta activada!</h3>
+              <h3 className="text-base font-bold text-white mb-1">¡Comprobante recibido!</h3>
               <p className="text-[13px] text-slate-400 max-w-xs mx-auto">
-                Ya extendimos tu mensualidad 30 días{linked.length > 0 && <> (también la de {linkedNames})</>}. Guardá el comprobante por las dudas.
+                Lo revisamos y activamos tu cuenta por 30 días{linked.length > 0 && <> (también la de {linkedNames})</>}, normalmente en el día. Si querés acelerarlo, avisanos por WhatsApp.
               </p>
               <button
                 onClick={sendWA}
@@ -151,6 +145,10 @@ export default function TrialExpiredModal() {
             </div>
           ) : (
             <>
+              <PlanPicker value={plan} onChange={setPlan} linkedCount={linked.length} compact />
+              <MercadoPagoSubscriptionCard compact plan={plan} onPlanChange={setPlan} />
+              <p className="text-center text-[11px] font-semibold uppercase tracking-widest text-slate-500">o pagá por transferencia</p>
+
               {/* Steps */}
               <div className="bg-white/5 rounded-2xl border border-white/10 p-4 space-y-3.5">
                 <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Cómo activar tu cuenta</p>

@@ -58,7 +58,7 @@ interface PostSaleModalProps {
 
 const PAYMENT_LABELS: Record<string, string> = {
   cash: 'Efectivo', debit: 'Tarjeta Débito', credit: 'Tarjeta Crédito',
-  transfer: 'Transferencia', account: 'Cuenta Corriente', mixed: 'Pago mixto',
+  transfer: 'Transferencia', account: 'Cuenta Corriente', mixed: 'Pago mixto', qr: 'QR Mercado Pago',
 }
 
 export default function PostSaleModal({ open, onClose, data }: PostSaleModalProps) {

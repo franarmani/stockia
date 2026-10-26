@@ -1,7 +1,18 @@
 import { create } from 'zustand'
 import type { CartItem, Product } from '@/types/database'
+import { priceCart, type PricedLine, type Promotion } from '@/features/promotions/promotionEngine'
+import { applyFreeUnit, type LoyaltyRedemption } from '@/features/loyalty/loyalty'
 
-export type PaymentMethodType = 'cash' | 'debit' | 'credit' | 'transfer' | 'account'
+/** Renglones de venta: promociones y, si hay canje de producto gratis, una unidad bonificada. */
+function computeSaleLines(items: CartItem[], promotions: Promotion[], redemption: LoyaltyRedemption | null): PricedLine[] {
+  const lines = priceCart(items, promotions).lines
+  if (redemption?.kind === 'product' && redemption.productId) {
+    return applyFreeUnit(lines, redemption.productId, redemption.name) ?? lines
+  }
+  return lines
+}
+
+export type PaymentMethodType = 'cash' | 'debit' | 'credit' | 'transfer' | 'account' | 'qr'
 export type ReceiptType = 'ticket' | 'A' | 'B' | 'C'
 
 /** Mixed payment split entry */
@@ -24,6 +35,15 @@ interface POSState {
   paymentSplits: PaymentSplit[]
   /** Presupuesto que originó este carrito; al cobrar se lo marca como vendido. */
   sourceQuoteId: string | null
+  /** Promociones vigentes del negocio (vacío si el plan no las incluye). */
+  promotions: Promotion[]
+  setPromotions: (promotions: Promotion[]) => void
+  /** Renglones a vender con las promociones aplicadas (un ítem puede quedar en pagas + bonificadas). */
+  getSaleLines: () => PricedLine[]
+  getPromoDiscount: () => number
+  /** Premio del club de puntos elegido para esta venta. */
+  loyaltyRedemption: LoyaltyRedemption | null
+  setLoyaltyRedemption: (redemption: LoyaltyRedemption | null) => void
   addItem: (product: Product, qty?: number) => void
   removeItem: (productId: string) => void
   updateQuantity: (productId: string, quantity: number) => void
@@ -86,6 +106,18 @@ export const usePOSStore = create<POSState>((set, get) => ({
   customerId: null,
   paymentSplits: [],
   sourceQuoteId: null,
+  promotions: [],
+
+  setPromotions: (promotions) => set({ promotions }),
+  loyaltyRedemption: null,
+  setLoyaltyRedemption: (loyaltyRedemption) => set({ loyaltyRedemption }),
+  getSaleLines: () => computeSaleLines(get().items, get().promotions, get().loyaltyRedemption),
+  getPromoDiscount: () => {
+    const { items, promotions, loyaltyRedemption } = get()
+    const list = items.reduce((sum, item) => sum + item.price * item.quantity, 0)
+    const charged = computeSaleLines(items, promotions, loyaltyRedemption).reduce((sum, line) => sum + line.price * line.quantity, 0)
+    return Math.round((list - charged) * 100) / 100
+  },
 
   addItem: (product: Product, qty?: number) => {
     const items = get().items
@@ -134,8 +166,10 @@ export const usePOSStore = create<POSState>((set, get) => ({
   setCustomerId: (customerId) => set({ customerId }),
   setPaymentSplits: (paymentSplits) => set({ paymentSplits }),
 
+  // Subtotal ya con promociones: sobre él se aplican descuento manual, recargo y medio de pago.
   getSubtotal: () => {
-    return get().items.reduce((sum, item) => sum + item.price * item.quantity, 0)
+    const lines = computeSaleLines(get().items, get().promotions, get().loyaltyRedemption)
+    return Math.round(lines.reduce((sum, line) => sum + line.price * line.quantity, 0) * 100) / 100
   },
 
   getTotal: () => {
@@ -161,7 +195,8 @@ export const usePOSStore = create<POSState>((set, get) => ({
     pmDiscountPct: 0,
     paymentSplits: [],
     sourceQuoteId: opts?.sourceQuoteId ?? null,
+    loyaltyRedemption: null,
   }),
 
-  clearCart: () => set({ items: [], discount: 0, customerId: null, paymentMethod: 'cash', receiptType: loadReceiptType(), installments: 1, surchargePct: 0, pmDiscountPct: 0, paymentSplits: [], sourceQuoteId: null }),
+  clearCart: () => set({ items: [], discount: 0, customerId: null, paymentMethod: 'cash', receiptType: loadReceiptType(), installments: 1, surchargePct: 0, pmDiscountPct: 0, paymentSplits: [], sourceQuoteId: null, loyaltyRedemption: null }),
 }))

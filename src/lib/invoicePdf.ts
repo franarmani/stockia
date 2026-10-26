@@ -95,7 +95,7 @@ function formatDocNumber(docNro: string | undefined, docTipo: number | undefined
 
 const PAYMENT_LABELS: Record<string, string> = {
   cash: 'Efectivo', debit: 'Tarjeta Débito', credit: 'Tarjeta Crédito',
-  transfer: 'Transferencia', account: 'Cuenta Corriente', mixed: 'Pago mixto',
+  transfer: 'Transferencia', account: 'Cuenta Corriente', mixed: 'Pago mixto', qr: 'QR Mercado Pago',
 }
 
 function getInvoiceLetter(type: string): string {
@@ -132,7 +132,7 @@ function buildAfipQrUrlPdf(data: InvoicePDFData): string | null {
   return `https://www.afip.gob.ar/fe/qr/?p=${base64}`
 }
 
-export function generateInvoicePDF(data: InvoicePDFData, mode: PrintMode = 'color') {
+export function generateInvoicePDF(data: InvoicePDFData, mode: PrintMode = 'color', autoPrint: boolean = false) {
   const letter = getInvoiceLetter(data.invoiceType)
   const color = resolveAccent(data.primaryColor || getInvoiceColor(data.invoiceType), mode)
   // Venta sin factura AFIP: mismo diseño pero como recibo no fiscal.
@@ -296,7 +296,7 @@ ${emitterBlock({
     </div>
 
   </div>
-${printOnReadyScript}
+  ${autoPrint ? printOnReadyScript : ''}
 </body>
 </html>`
 
@@ -306,13 +306,14 @@ ${printOnReadyScript}
 /** Abre la factura en ventana nueva para imprimir o guardar como PDF. */
 export async function openInvoicePDF(data: InvoicePDFData, mode: PrintMode = 'color') {
   const logoUrl = await inlineImage(data.logoUrl)
-  openPrintWindow(generateInvoicePDF({ ...data, logoUrl }, mode))
+  openPrintWindow(generateInvoicePDF({ ...data, logoUrl }, mode, true))
 }
 
 /** Generate a WhatsApp share link with invoice summary */
 export function getWhatsAppLink(data: InvoicePDFData, phone?: string): string {
   const letter = getInvoiceLetter(data.invoiceType)
   const fullNumber = `${pad(data.puntoVenta, 5)}-${pad(data.invoiceNumber, 8)}`
+  const hasDoc = Boolean(data.customerDocNro && data.customerDocTipo && data.customerDocTipo !== 99)
 
   const lines = [
     `📄 *Factura ${letter} Nro. ${fullNumber}*`,

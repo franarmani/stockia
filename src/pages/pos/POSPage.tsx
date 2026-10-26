@@ -2,7 +2,6 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
 import { quotesDb } from '@/lib/quotesDb'
-import { fetchAllProductsInBatches } from '@/lib/productService'
 import { useAuthStore } from '@/stores/authStore'
 import { useBusinessStore } from '@/stores/businessStore'
 import { usePOSStore, isDecimalUnit, type PaymentMethodType, type ReceiptType, type PaymentSplit } from '@/stores/posStore'
@@ -10,17 +9,26 @@ import { useFiscalStore } from '@/stores/fiscalStore'
 import { formatCurrency } from '@/lib/utils'
 import { UNIT_SHORT, DOC_TIPOS, IVA_CONDITIONS, type ProductUnit } from '@/types/database'
 import { requestCAE, calculateIVA, getCbteTipo } from '@/lib/afipService'
-import { queueSale } from '@/lib/offlineQueue'
-import { syncProductsCache, getCachedProducts, updateCachedStock, clearProductsCache } from '@/lib/offlineProductsCache'
+import { syncEngine } from '@/sync/syncEngine'
+import { priceCart, type Promotion } from '@/features/promotions/promotionEngine'
+import { hasPremiumAccess } from '@/hooks/usePlan'
+import { exceedsCreditLimit } from '@/features/customers/creditScore'
+import { combineDiscounts, pointsForPurchase, readLoyaltyConfig, type LoyaltyRedemption, type LoyaltyReward } from '@/features/loyalty/loyalty'
+import LoyaltyRedeemPanel from '@/features/loyalty/LoyaltyRedeemPanel'
+import QrPaymentModal from '@/features/mpQr/QrPaymentModal'
+import { mpQr } from '@/features/mpQr/mpQrService'
+import { getLocalCustomers, getLocalProducts } from '@/sync/storage'
+import { isOnline, onConnectivityChange } from '@/sync/connectivity'
 import { toast } from 'sonner'
 import Button from '@/components/ui/Button'
 import Badge from '@/components/ui/Badge'
 import Modal from '@/components/ui/Modal'
 import PostSaleModal, { type PostSaleData } from '@/components/PostSaleModal'
 import SubscriptionBadge from '@/features/subscription/components/SubscriptionBadge'
+import { CajaGoIcon } from '@/components/brand/CajaGoBrand'
 import type { Product, Customer, CartItem } from '@/types/database'
 import {
-  Search, Plus, Minus, Trash2, ShoppingCart, CreditCard,
+  Search, Tag, QrCode, Plus, Minus, Trash2, ShoppingCart, CreditCard,
   Banknote, ArrowRightLeft, X, CheckCircle2, User, Wallet,
   FileText, Receipt, Percent, CircleDollarSign, Camera, ChevronRight, Check, Package,
   LogOut, Zap, ScanLine, ChevronDown,
@@ -67,6 +75,9 @@ const POS_PAYMENT_OPTIONS: POSPaymentOption[] = [
   { key: 'account', method: 'account', label: 'Cta. Cte.', icon: CircleDollarSign },
 ]
 
+// Solo aparece si el negocio conectó su Mercado Pago (Premium) y hay conexión.
+const QR_PAYMENT_OPTION: POSPaymentOption = { key: 'qr', method: 'qr', label: 'QR Mercado Pago', icon: QrCode }
+
 const RECEIPT_TYPES: { id: ReceiptType; label: string; desc: string }[] = [
   { id: 'ticket', label: 'Recibo', desc: 'Documento no fiscal, en A4' },
   { id: 'A', label: 'Factura A', desc: 'Resp. Inscripto' },
@@ -91,7 +102,7 @@ const CUOTA_OPTIONS = [
 
 const PAYMENT_LABELS: Record<PaymentMethodType, string> = {
   cash: 'Efectivo', debit: 'Tarjeta Débito', credit: 'Tarjeta Crédito',
-  transfer: 'Transferencia', account: 'Cuenta Corriente',
+  transfer: 'Transferencia', account: 'Cuenta Corriente', qr: 'QR Mercado Pago',
 }
 
 export default function POSPage() {
@@ -103,7 +114,23 @@ export default function POSPage() {
     addItem, removeItem, updateQuantity, setDiscount,
     setPaymentMethod, setCustomerId, getSubtotal, getTotal, clearCart,
     setReceiptType, setInstallments, setSurchargePct, setPmDiscountPct, setPaymentSplits,
+    promotions, setPromotions, getSaleLines, getPromoDiscount,
+    loyaltyRedemption, setLoyaltyRedemption,
   } = usePOSStore()
+  // Club de puntos (Premium): configuración del negocio y premios para canjear.
+  const [loyaltyRewards, setLoyaltyRewards] = useState<LoyaltyReward[]>([])
+  // Cobro con QR de Mercado Pago (Premium): se habilita si el negocio tiene la caja configurada.
+  const [qrReady, setQrReady] = useState(false)
+  const [showQrModal, setShowQrModal] = useState(false)
+  const qrPaidOrderRef = useRef<string | null>(null)
+  const qrSaleIdRef = useRef<string | null>(null)
+  const loyaltyConfig = readLoyaltyConfig((useBusinessStore.getState().business as any)?.loyalty_config)
+  // Promociones aplicadas a cada ítem del carrito (para mostrarlas; la venta usa getSaleLines).
+  const pricedCart = useMemo(() => priceCart(items, promotions), [items, promotions])
+  const promoByProduct = useMemo(
+    () => new Map(pricedCart.items.map(entry => [entry.item.product.id, entry])),
+    [pricedCart]
+  )
 
   const { business } = useBusinessStore()
   const fiscalCertStatus = useFiscalStore((s) => s.settings?.cert_status)
@@ -163,28 +190,164 @@ export default function POSPage() {
 
   useEffect(() => {
     if (profile?.business_id) {
+      syncEngine.init().then(() => Promise.all([
+        fetchProducts(),
+        fetchCustomers(),
+        checkCajaOpen(),
+        fetchPromotions(),
+      ]), (error) => {
+        console.error('[POS] local database initialization failed:', error)
+        toast.error(`No se pudo abrir la base local (${error?.message || error}). Reiniciá CajaGo antes de vender.`, { duration: 15000 })
+      }).catch((error) => {
+        console.warn('[POS] initial load failed:', error)
+        toast.error('No se pudieron cargar productos o clientes. Revisá la conexión y volvé a entrar al POS.')
+      })
+    }
+  }, [profile?.business_id])
+
+  useEffect(() => {
+    if (!profile?.business_id) return
+    const refreshAfterReconnect = () => {
       fetchProducts()
       fetchCustomers()
-
       checkCajaOpen()
+      fetchPromotions()
     }
+    const offConnectivity = onConnectivityChange(online => { if (online) refreshAfterReconnect() })
+    const offSynced = syncEngine.onSynced(refreshAfterReconnect)
+    return () => { offConnectivity(); offSynced() }
   }, [profile?.business_id])
 
   useEffect(() => { searchRef.current?.focus() }, [])
 
-  // Keyboard shortcuts
+  // El canje es del cliente elegido: si cambia de cliente, se deshace.
+  useEffect(() => {
+    if (usePOSStore.getState().loyaltyRedemption) removeRedemption()
+  }, [customerId])
+
+  // Pos keyboard shortcuts & state ref to prevent stale closures
+  const posStateRef = useRef({
+    items,
+    showConfirmModal,
+    showCustomerModal,
+    showReceiptModal,
+    qtyInputProduct,
+    showCameraScanner,
+    search,
+    processing,
+    handleConfirmSale,
+    stopCameraScanner,
+  })
+
+  useEffect(() => {
+    posStateRef.current = {
+      items,
+      showConfirmModal,
+      showCustomerModal,
+      showReceiptModal,
+      qtyInputProduct,
+      showCameraScanner,
+      search,
+      processing,
+      handleConfirmSale,
+      stopCameraScanner,
+    }
+  })
+
+  // Keyboard shortcuts in POS (Always operational regardless of focus)
   useEffect(() => {
     function handler(e: KeyboardEvent) {
-      const tag = (e.target as HTMLElement).tagName
-      if (tag === 'TEXTAREA' || tag === 'INPUT') return
-      if (e.key === 'F2') { e.preventDefault(); searchRef.current?.focus() }
-      if (e.key === 'F4') { e.preventDefault(); setShowCustomerModal(true) }
-      if (e.key === 'F8') { e.preventDefault(); if (items.length > 0) setShowConfirmModal(true) }
-      if (e.key === 'Escape') { setShowCustomerModal(false); setShowReceiptModal(false); setShowConfirmModal(false); setQtyInputProduct(null) }
+      const state = posStateRef.current
+
+      // ── F1 & F2: Buscar producto (enfocar y seleccionar buscador) ──
+      if (e.key === 'F1' || e.key === 'F2') {
+        e.preventDefault()
+        searchRef.current?.focus()
+        searchRef.current?.select()
+        return
+      }
+
+      // ── F4: Seleccionar cliente ──
+      if (e.key === 'F4') {
+        e.preventDefault()
+        setShowCustomerModal(prev => !prev)
+        return
+      }
+
+      // ── F8: Cobrar venta ──
+      if (e.key === 'F8') {
+        e.preventDefault()
+        if (state.showConfirmModal) {
+          if (!state.processing) state.handleConfirmSale()
+        } else if (state.items.length > 0) {
+          setShowConfirmModal(true)
+        } else {
+          toast.info('Agregá al menos un producto para cobrar')
+        }
+        return
+      }
+
+      // ── Enter: Confirmar en modal de cobro o cerrar recibo ──
+      if (e.key === 'Enter') {
+        if (state.showConfirmModal && !state.processing) {
+          e.preventDefault()
+          state.handleConfirmSale()
+          return
+        }
+        if (state.showReceiptModal) {
+          e.preventDefault()
+          setShowReceiptModal(false)
+          searchRef.current?.focus()
+          return
+        }
+      }
+
+      // ── Escape: Jerarquía intuitiva de cancelación ──
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        if (state.showConfirmModal) {
+          setShowConfirmModal(false)
+          searchRef.current?.focus()
+          return
+        }
+        if (state.showCustomerModal) {
+          setShowCustomerModal(false)
+          setShowQuickCustomerForm(false)
+          searchRef.current?.focus()
+          return
+        }
+        if (state.showReceiptModal) {
+          setShowReceiptModal(false)
+          searchRef.current?.focus()
+          return
+        }
+        if (state.qtyInputProduct) {
+          setQtyInputProduct(null)
+          searchRef.current?.focus()
+          return
+        }
+        if (state.showCameraScanner) {
+          state.stopCameraScanner()
+          searchRef.current?.focus()
+          return
+        }
+
+        // Si hay texto en el buscador, limpiarlo
+        if (state.search) {
+          setSearch('')
+          searchRef.current?.focus()
+          return
+        }
+
+        // Si no hay nada abierto ni texto en búsqueda, volver al Inicio
+        navigate('/menu')
+        return
+      }
     }
+
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
-  }, [items.length])
+  }, [navigate])
 
   // USB barcode scanner
   useEffect(() => {
@@ -252,28 +415,83 @@ export default function POSPage() {
   }
 
   async function fetchProducts() {
-    if (!navigator.onLine) {
-      const cached = await getCachedProducts(profile!.business_id)
-      if (cached.length > 0) {
-        setProducts(cached as Product[])
-        toast.info(`Modo offline: ${cached.length} productos cargados desde caché`)
-        return
-      }
+    const cached = await getLocalProducts(profile!.business_id)
+    if (cached.length > 0) setProducts(cached as Product[])
+
+    if (!isOnline()) {
+      if (cached.length > 0) toast.info(`Modo offline: ${cached.length} productos disponibles`)
+      return
     }
-    const data = await fetchAllProductsInBatches(profile!.business_id)
-    setProducts(data || [])
-    if (data && data.length > 0) {
-      try { await clearProductsCache() } catch {}
-      syncProductsCache(data as any).catch(() => {})
-    }
+
+    const freshProducts = await syncEngine.pullLatestProducts(profile!.business_id)
+    if (freshProducts.length > 0) setProducts(freshProducts as Product[])
   }
   async function fetchCustomers() {
-    const { data } = await supabase.from('customers').select('*').eq('business_id', profile!.business_id).order('name')
-    setCustomers(data || [])
+    const cached = await getLocalCustomers(profile!.business_id)
+    if (cached.length > 0) setCustomers(cached as Customer[])
+    if (!isOnline()) return
+    const freshCustomers = await syncEngine.pullLatestCustomers(profile!.business_id)
+    if (freshCustomers.length > 0) setCustomers(freshCustomers as Customer[])
   }
+  // Promociones: solo con plan Premium (o en la prueba). Se guardan en la base local.
+  async function fetchPromotions() {
+    const businessId = profile!.business_id
+    if (!hasPremiumAccess(useBusinessStore.getState().business)) { setPromotions([]); return }
+    const rows = await syncEngine.pullRows<Promotion>('promotions', businessId, () =>
+      (supabase as any).from('promotions').select('*').eq('business_id', businessId))
+    setPromotions(rows)
+    const rewards = await syncEngine.pullRows<LoyaltyReward>('loyalty_rewards', businessId, () =>
+      (supabase as any).from('loyalty_rewards').select('*').eq('business_id', businessId))
+    setLoyaltyRewards(rewards)
+    if (isOnline()) mpQr.status().then(status => setQrReady(status.connected && status.pos_ready)).catch(() => setQrReady(false))
+  }
+
+  function onQrPaid(orderId: string) {
+    qrPaidOrderRef.current = orderId
+    setShowQrModal(false)
+    // Con el pago confirmado se registra la venta; los refs se limpian al terminar.
+    handleConfirmSale().finally(() => { qrPaidOrderRef.current = null; qrSaleIdRef.current = null })
+  }
+
+  // Suma los puntos de la compra y descuenta los del premio canjeado (queda en la cola si no hay conexión).
+  async function recordLoyaltyAfterSale(saleCustomerId: string | null, saleId: string, saleTotal: number, redemption: LoyaltyRedemption | null) {
+    if (!saleCustomerId || !loyaltyConfig.enabled || !hasPremiumAccess(useBusinessStore.getState().business)) return
+    try {
+      const businessId = profile!.business_id
+      if (redemption) {
+        await syncEngine.recordLoyaltyMovement(businessId, { customer_id: saleCustomerId, sale_id: saleId, points: -redemption.points, kind: 'redeem', description: `Canje: ${redemption.name}` })
+      }
+      const earned = pointsForPurchase(saleTotal, loyaltyConfig)
+      if (earned > 0) {
+        await syncEngine.recordLoyaltyMovement(businessId, { customer_id: saleCustomerId, sale_id: saleId, points: earned, kind: 'earn', description: 'Compra' })
+        toast.success(`+${earned} punto${earned !== 1 ? 's' : ''} para el cliente`)
+      }
+      fetchCustomers()
+    } catch (error) {
+      console.warn('[POS] no se pudieron registrar los puntos:', error)
+    }
+  }
+
+  function redeemReward(reward: LoyaltyReward) {
+    if (reward.kind === 'percent' && reward.percent) {
+      setLoyaltyRedemption({ rewardId: reward.id, name: reward.name, points: reward.points_cost, kind: 'percent', percent: reward.percent, previousDiscount: discount })
+      setDiscount(combineDiscounts(discount, reward.percent))
+    } else {
+      setLoyaltyRedemption({ rewardId: reward.id, name: reward.name, points: reward.points_cost, kind: 'product', productId: reward.product_id })
+    }
+  }
+
+  function removeRedemption() {
+    if (loyaltyRedemption?.kind === 'percent') setDiscount(loyaltyRedemption.previousDiscount ?? 0)
+    setLoyaltyRedemption(null)
+  }
+
   async function checkCajaOpen() {
-    const { data } = await supabase.from('cash_sessions').select('id').eq('business_id', profile!.business_id).is('closed_at', null).limit(1)
-    setCajaOpen(!!(data && data.length > 0))
+    const businessId = profile!.business_id
+    const sessions = await syncEngine.pullRows<{ id: string; status: string }>('cash_sessions', businessId, () =>
+      supabase.from('cash_sessions').select('*').eq('business_id', businessId).order('opened_at', { ascending: false })
+    )
+    setCajaOpen(sessions.some(session => session.status === 'open'))
   }
 
   const filteredProducts = useMemo(() => {
@@ -428,6 +646,15 @@ export default function POSPage() {
 
   async function handleConfirmSale() {
     if (items.length === 0) return
+    if (!mixedPaymentMode && paymentMethod === 'qr') {
+      if (!isOnline()) { toast.error('El cobro con QR necesita conexión. Elegí otro medio de pago.'); return }
+      // Primero se cobra el QR; cuando Mercado Pago confirma, se registra la venta (ver onQrPaid).
+      if (!qrPaidOrderRef.current) {
+        qrSaleIdRef.current = crypto.randomUUID()
+        setShowQrModal(true)
+        return
+      }
+    }
     if (receiptType !== 'ticket' && !isFiscalConnected) {
       toast.error('AFIP no está configurado. Andá a Configuración → Facturación AFIP para completar el wizard.'); return
     }
@@ -468,56 +695,109 @@ export default function POSPage() {
     if (mixedPaymentMode && Math.abs(mixedRemaining) > 0.01) {
       toast.error('Los montos del pago mixto no coinciden con el total'); return
     }
+
+    // Límite de crédito del cliente para ventas a cuenta (Premium; 0 = sin límite).
+    const accountCharge = mixedPaymentMode
+      ? (mixedSplits.find(s => s.method === 'account')?.amount || 0)
+      : (paymentMethod === 'account' ? getTotal() : 0)
+    const creditCustomer = customers.find(c => c.id === customerId)
+    if (accountCharge > 0 && creditCustomer && hasPremiumAccess(useBusinessStore.getState().business)) {
+      const limit = Number((creditCustomer as any).credit_limit) || 0
+      const balance = Number(creditCustomer.balance) || 0
+      if (exceedsCreditLimit(balance, limit, accountCharge)) {
+        toast.error(`${creditCustomer.name} supera su límite de crédito: debe ${formatCurrency(balance)} y el límite es ${formatCurrency(limit)}. Disponible: ${formatCurrency(Math.max(0, limit - balance))}.`, { duration: 8000 })
+        return
+      }
+    }
     setProcessing(true)
     try {
       const total = getTotal()
       const primaryPayment = mixedPaymentMode ? 'mixed' : paymentMethod
+      // Renglones de la venta con las promociones ya aplicadas (unidades bonificadas a $0).
+      const saleLines = getSaleLines()
 
-      if (!navigator.onLine) {
-        if (receiptType !== 'ticket') {
-          toast.error('Sin conexión: solo se pueden hacer ventas con Ticket')
-          setProcessing(false); return
-        }
-        const offlineId = `offline-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
-        const subtotalRaw = items.reduce((s, i) => s + i.price * i.quantity, 0)
+      if (!isOnline() && receiptType !== 'ticket') {
+        toast.error('Sin conexión: solo se pueden hacer ventas con Ticket')
+        setProcessing(false); return
+      }
+
+      const qrOrderId = paymentMethod === 'qr' ? qrPaidOrderRef.current : null
+      const qrNote = qrOrderId ? `QR Mercado Pago ${qrOrderId}` : null
+      if (receiptType === 'ticket') {
+        const localSaleId = (qrOrderId && qrSaleIdRef.current) || crypto.randomUUID()
+        const createdAt = new Date().toISOString()
+        const subtotalRaw = getSubtotal()
         const afterDiscount = subtotalRaw - (subtotalRaw * discount) / 100
         const surchargeAmt = (afterDiscount * surchargePct) / 100
         const stockUpdates = items.map(item => ({
           productId: item.product.id,
           newStock: Math.round((item.product.stock - item.quantity) * 1000) / 1000,
           qty: item.quantity,
+          movementId: crypto.randomUUID(),
         }))
         const accountAmount = mixedPaymentMode
           ? (mixedSplits.find(s => s.method === 'account')?.amount || 0)
           : (paymentMethod === 'account' ? total : 0)
-        await queueSale({
-          id: offlineId,
-          createdAt: new Date().toISOString(),
-          payload: {
-            sale: {
+        const customerToCreate = saveCustomerCheck && !customerId && resolvedCustomerName !== 'Consumidor Final'
+          ? {
+              id: crypto.randomUUID(),
               business_id: profile!.business_id,
-              customer_id: customerId,
-              total,
-              discount,
-              payment_method: primaryPayment,
-              seller_id: profile!.id,
-              receipt_type: receiptType,
-              installments,
-              surcharge_pct: surchargePct,
-            },
-            items: items.map(item => ({
-              product_id: item.product.id,
-              quantity: item.quantity,
-              price: item.price,
-              cost_at_sale: item.product.avg_cost || item.product.purchase_price || 0,
-            })),
-            payments: mixedPaymentMode
-              ? mixedSplits.filter(s => s.amount > 0).map(s => ({ payment_method: s.method, amount: s.amount }))
-              : [{ payment_method: paymentMethod, amount: total }],
-            stockUpdates,
-            accountUpdate: accountAmount > 0 && customerId ? { customerId, amount: accountAmount } : undefined,
+              name: resolvedCustomerName,
+              phone: null,
+              email: null,
+              address: null,
+              doc_tipo: String(docTipoNum),
+              doc_nro: cleanDoc || null,
+              iva_condition: customerIvaCondition || 'consumidor_final',
+              balance: 0,
+              created_at: createdAt,
+            }
+          : undefined
+        const localCustomerId = customerId || customerToCreate?.id || null
+
+        await syncEngine.queueOfflineSale({
+          customerToCreate,
+          sale: {
+            id: localSaleId,
+            business_id: profile!.business_id,
+            customer_id: localCustomerId,
+            total,
+            discount,
+            payment_method: primaryPayment,
+            seller_id: profile!.id,
+            receipt_type: 'ticket',
+            installments,
+            surcharge_pct: surchargePct,
+            note: [accountNote.trim(), qrNote].filter(Boolean).join(' · ') || null,
+            fiscal_status: 'pending',
+            device_id: '',
+            created_at: createdAt,
           },
+          items: saleLines.map(item => ({
+            id: crypto.randomUUID(),
+            sale_id: localSaleId,
+            product_id: item.product.id,
+            quantity: item.quantity,
+            price: item.price,
+            cost_at_sale: item.product.avg_cost || item.product.purchase_price || 0,
+          })),
+          payments: (mixedPaymentMode
+            ? mixedSplits.filter(split => split.amount > 0).map(split => ({ payment_method: split.method, amount: split.amount }))
+            : [{ payment_method: paymentMethod, amount: total }]
+          ).map(payment => ({ id: crypto.randomUUID(), sale_id: localSaleId, ...payment })),
+          stockUpdates,
+          accountUpdate: accountAmount > 0 && localCustomerId
+            ? { customerId: localCustomerId, amount: accountAmount }
+            : undefined,
         })
+
+        setLastSaleId(localSaleId)
+        recordLoyaltyAfterSale(localCustomerId, localSaleId, total, loyaltyRedemption)
+        if (customerToCreate) setCustomers(previous => [...previous, customerToCreate as Customer])
+        setProducts(previous => previous.map(product => {
+          const update = stockUpdates.find(item => item.productId === product.id)
+          return update ? { ...product, stock: Math.max(0, update.newStock) } : product
+        }))
 
         const business = useBusinessStore.getState().business
         setPostSaleData({
@@ -527,7 +807,7 @@ export default function POSPage() {
           businessEmail: business?.email,
           businessCuit: business?.cuit,
           receiptType: 'ticket',
-          items: [...items],
+          items: [...saleLines],
           subtotal: subtotalRaw,
           discount,
           surcharge: surchargeAmt,
@@ -545,14 +825,11 @@ export default function POSPage() {
           autoPrint: business?.auto_print || false,
         })
 
-        for (const item of items) {
-          const newStock = Math.round((item.product.stock - item.quantity) * 1000) / 1000
-          updateCachedStock(item.product.id, Math.max(0, newStock)).catch(() => {})
-        }
-
         clearCart(); setShowConfirmModal(false); setShowSuccess(true); setShowTicketModal(true)
         setMixedPaymentMode(false); setMixedSplits([{ method: 'cash', amount: 0 }, { method: 'debit', amount: 0 }])
-        toast.success('Venta guardada offline — se sincronizará al reconectar')
+        toast.success(isOnline()
+          ? 'Venta guardada localmente · Sincronizando'
+          : 'Venta guardada offline · Se sincronizará al reconectar')
         playBeep()
         setTimeout(() => setShowSuccess(false), 2500)
         setProcessing(false)
@@ -591,12 +868,13 @@ export default function POSPage() {
           installments,
           surcharge_pct: surchargePct,
           ...(accountNote.trim() && paymentMethod === 'account' && !mixedPaymentMode ? { note: accountNote.trim() } : {}),
+          ...(qrNote ? { note: qrNote } : {}),
         })
         .select().single()
 
       if (saleError || !sale) { toast.error('Error al crear la venta'); setProcessing(false); return }
 
-      const saleItems = items.map((item) => ({
+      const saleItems = saleLines.map((item) => ({
         sale_id: sale.id,
         product_id: item.product.id,
         quantity: item.quantity,
@@ -629,18 +907,31 @@ export default function POSPage() {
       }
 
       if (!mixedPaymentMode && paymentMethod === 'account' && customerId) {
-        const customer = customers.find((c) => c.id === customerId)
-        if (customer) await supabase.from('customers').update({ balance: customer.balance + total }).eq('id', customerId)
+        const { error: accountError } = await (supabase as any).rpc('charge_customer_account', {
+          p_business_id: profile!.business_id,
+          p_customer_id: customerId,
+          p_amount: total,
+          p_sale_id: sale.id,
+          p_user_id: profile!.id,
+        })
+        if (accountError) throw accountError
       }
       if (mixedPaymentMode) {
         const accountSplit = mixedSplits.find(s => s.method === 'account' && s.amount > 0)
         if (accountSplit && customerId) {
-          const customer = customers.find((c) => c.id === customerId)
-          if (customer) await supabase.from('customers').update({ balance: customer.balance + accountSplit.amount }).eq('id', customerId)
+          const { error: accountError } = await (supabase as any).rpc('charge_customer_account', {
+            p_business_id: profile!.business_id,
+            p_customer_id: customerId,
+            p_amount: accountSplit.amount,
+            p_sale_id: sale.id,
+            p_user_id: profile!.id,
+          })
+          if (accountError) throw accountError
         }
       }
 
       setLastSaleId(sale.id)
+      recordLoyaltyAfterSale(finalCustomerId, sale.id, total, loyaltyRedemption)
 
       // Si la venta vino de un presupuesto, dejarlo enlazado y cerrado.
       if (sourceQuoteId) {
@@ -658,7 +949,7 @@ export default function POSPage() {
       let ivaAmount: number | undefined
 
       const business = useBusinessStore.getState().business
-      if (receiptType !== 'ticket' && business) {
+      if (business) {
         const pv = business.punto_venta || 1
 
         try {
@@ -668,7 +959,7 @@ export default function POSPage() {
             docTipo: docTipoNum,
             docNro: docNro,
             total,
-            items: [...items],
+            items: [...saleLines],
             discount,
             surcharge: surchargePct,
             businessIvaCondition: business.iva_condition || 'monotributo',
@@ -710,7 +1001,7 @@ export default function POSPage() {
         setLastSaleHadCae(false)
       }
 
-      const subtotalRaw = items.reduce((s, i) => s + i.price * i.quantity, 0)
+      const subtotalRaw = getSubtotal()
       const afterDiscount = subtotalRaw - (subtotalRaw * discount) / 100
       const surchargeAmt = (afterDiscount * surchargePct) / 100
       setPostSaleData({
@@ -725,7 +1016,7 @@ export default function POSPage() {
         domicilioComercial: business?.domicilio_comercial,
         inicioActividades: business?.inicio_actividades,
         receiptType,
-        items: [...items],
+        items: [...saleLines],
         subtotal: subtotalRaw,
         discount,
         surcharge: surchargeAmt,
@@ -769,7 +1060,9 @@ export default function POSPage() {
     } catch { toast.error('Error inesperado') } finally { setProcessing(false) }
   }
 
-  const subtotalRaw = items.reduce((s, i) => s + i.price * i.quantity, 0)
+  // Subtotal ya con promociones; el descuento manual se aplica sobre él.
+  const subtotalRaw = getSubtotal()
+  const promoAndRewardDiscount = getPromoDiscount()
   const discountAmt = subtotalRaw * discount / 100
   const afterDiscount = subtotalRaw - discountAmt
   const surchargeAmt = (afterDiscount * surchargePct) / 100
@@ -811,8 +1104,8 @@ export default function POSPage() {
             className="flex items-center gap-2 group"
             title="Volver al menú"
           >
-            <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-white/95 shadow-[0_0_15px_rgba(255,255,255,0.2)] group-hover:scale-105 transition-all">
-              <img src="/og-image.png" alt="Icono" className="h-6 w-auto object-contain" />
+            <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-white/[0.04] border border-white/[0.08] group-hover:border-[#947FF8]/40 group-hover:bg-[#947FF8]/10 transition-all">
+              <CajaGoIcon size="sm" />
             </div>
           </button>
           <div className="w-px h-8 bg-white/10 hidden sm:block" />
@@ -852,7 +1145,7 @@ export default function POSPage() {
       {/* ═══════════ MAIN WORKSPACE ═══════════ */}
       <div className="flex-1 flex min-h-0" style={{ height: 'calc(100dvh - 3.5rem)' }}>
         {/* ──────── LEFT PANEL ──────── */}
-        <div className="flex-1 flex flex-col min-h-0 min-w-0 max-w-[calc(100vw-420px)]">
+        <div className="flex-1 flex flex-col min-h-0 min-w-0 min-[1280px]:max-w-[calc(100vw-380px)]">
           {/* Toolbar */}
           <div className="shrink-0 px-3 py-2.5 border-b border-white/8 bg-white/5">
             <div className="flex items-center gap-2">
@@ -1058,7 +1351,7 @@ export default function POSPage() {
         </div>
 
         {/* ──────── RIGHT PANEL — CHECKOUT ──────── */}
-        <div className="hidden lg:flex w-[420px] shrink-0 border-l border-white/8 flex-col bg-[#0d1b2d]">
+        <div className="hidden min-[1280px]:flex w-[380px] shrink-0 border-l border-white/8 flex-col bg-[#0d1b2d]">
           {/* Checkout header */}
           <div className="shrink-0 px-4 pt-4 pb-2">
             <div className="flex items-center justify-between mb-3">
@@ -1148,7 +1441,8 @@ export default function POSPage() {
               items.map((item) => {
                 const decimal = isDecimalUnit(item.product.unit)
                 const unit = UNIT_SHORT[item.product.unit as ProductUnit] || item.product.unit
-                const itemSubtotal = item.price * item.quantity
+                const priced = promoByProduct.get(item.product.id)
+                const itemSubtotal = priced?.total ?? item.price * item.quantity
                 return (
                   <div key={item.product.id} className="group bg-[#122238] border border-white/8 rounded-xl p-3.5 transition-all hover:border-white/10">
                     <div className="flex items-start gap-3">
@@ -1166,6 +1460,11 @@ export default function POSPage() {
                         <p className="text-[11px] text-slate-500 font-medium mt-0.5">
                           {formatCurrency(item.price)} <span className="text-slate-600">×</span> {item.quantity}{unit}
                         </p>
+                        {priced?.promotion && (
+                          <p className="mt-1 inline-flex items-center gap-1 rounded-md bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-bold text-emerald-400">
+                            <Tag className="w-3 h-3" /> {priced.promotion.name} · -{formatCurrency(priced.promotion.amount)}
+                          </p>
+                        )}
                       </div>
                     </div>
                     <div className="flex items-center justify-between mt-3 pt-2.5 border-t border-white/8">
@@ -1182,7 +1481,10 @@ export default function POSPage() {
                           <Plus className="w-3 h-3" />
                         </button>
                       </div>
-                      <span className="text-sm font-bold text-white tabular-nums">
+                      <span className="text-sm font-bold text-white tabular-nums text-right">
+                        {priced?.promotion && (
+                          <span className="block text-[10px] font-medium text-slate-500 line-through">{formatCurrency(item.price * item.quantity)}</span>
+                        )}
                         {formatCurrency(itemSubtotal)}
                       </span>
                     </div>
@@ -1200,7 +1502,7 @@ export default function POSPage() {
                 <div>
                   <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">Método de pago</p>
                   <div className="grid grid-cols-3 gap-1.5">
-                    {POS_PAYMENT_OPTIONS.map((opt) => {
+                    {(qrReady && isOnline() ? [...POS_PAYMENT_OPTIONS, QR_PAYMENT_OPTION] : POS_PAYMENT_OPTIONS).map((opt) => {
                       const isSelected = opt.isCashDiscount
                         ? paymentMethod === 'cash' && pmDiscountPct > 0
                         : opt.isCashPlain
@@ -1299,8 +1601,14 @@ export default function POSPage() {
               <div className="space-y-1.5 bg-[#122238] rounded-xl p-4 border border-white/8">
                 <div className="flex justify-between items-center text-xs">
                   <span className="text-slate-500">Subtotal</span>
-                  <span className="font-semibold text-white">{formatCurrency(subtotalRaw)}</span>
+                  <span className="font-semibold text-white">{formatCurrency(pricedCart.listSubtotal)}</span>
                 </div>
+                {promoAndRewardDiscount > 0 && (
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-slate-500">{loyaltyRedemption?.kind === 'product' ? 'Promociones y canje' : 'Promociones'}</span>
+                    <span className="font-semibold text-emerald-400">-{formatCurrency(promoAndRewardDiscount)}</span>
+                  </div>
+                )}
                 {discount > 0 && (
                   <div className="flex justify-between items-center text-xs">
                     <span className="text-slate-500">Descuento ({discount}%)</span>
@@ -1334,7 +1642,8 @@ export default function POSPage() {
                 className="w-full h-14 rounded-xl bg-primary hover:bg-primary/90 text-white font-bold text-base shadow-lg shadow-primary/20 disabled:bg-white/8 disabled:text-slate-600 disabled:shadow-none transition-all active:scale-[0.98] flex items-center justify-center gap-3"
               >
                 <ShoppingCart className="w-5 h-5" />
-                Cobrar {formatCurrency(totalDisplay)}
+                <span>Cobrar {formatCurrency(totalDisplay)}</span>
+                <span className="text-[11px] px-2 py-0.5 rounded bg-black/30 font-mono text-white/90 ml-1 font-bold">F8</span>
               </button>
             </div>
           )}
@@ -1343,7 +1652,7 @@ export default function POSPage() {
 
       {/* ═══════════ MOBILE ═══════════ */}
       {/* Bottom bar */}
-      <div className="lg:hidden shrink-0 border-t border-white/8 bg-[#0d1b2d] px-3 py-2.5 safe-bottom">
+      <div className="min-[1280px]:hidden shrink-0 border-t border-white/8 bg-[#0d1b2d] px-3 py-2.5 safe-bottom">
         <button
           onClick={() => setShowCart(true)}
           className="w-full flex items-center gap-3 bg-[#122238] border border-white/8 rounded-xl px-4 py-3 hover:bg-[#1a2d3d] active:scale-[0.98] transition-all"
@@ -1371,9 +1680,9 @@ export default function POSPage() {
       {/* Mobile cart drawer */}
       {showCart && (
         <>
-          <div className="lg:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-40" onClick={() => setShowCart(false)} />
+          <div className="min-[1280px]:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-40" onClick={() => setShowCart(false)} />
           <div
-            className="lg:hidden fixed bottom-0 inset-x-0 z-50 bg-[#0d1b2d] border-t border-white/8 backdrop-blur-2xl rounded-t-2xl shadow-2xl animate-slide-in-up"
+            className="min-[1280px]:hidden fixed bottom-0 inset-x-0 z-50 bg-[#0d1b2d] border-t border-white/8 backdrop-blur-2xl rounded-t-2xl shadow-2xl animate-slide-in-up"
             style={{ maxHeight: '85dvh', display: 'flex', flexDirection: 'column' }}
           >
             <div className="flex justify-center pt-3 pb-1 shrink-0">
@@ -1422,6 +1731,9 @@ export default function POSPage() {
                       <div key={item.product.id} className="bg-[#122238] border border-white/8 rounded-xl p-3">
                         <p className="text-sm font-semibold text-white truncate">{item.product.name}</p>
                         <p className="text-[11px] text-slate-500 mt-0.5">{formatCurrency(item.price)} × {item.quantity}{unit}</p>
+                        {promoByProduct.get(item.product.id)?.promotion && (
+                          <p className="text-[10px] font-bold text-emerald-400 mt-0.5">{promoByProduct.get(item.product.id)!.promotion!.name}</p>
+                        )}
                         <div className="flex items-center justify-between mt-2 pt-2 border-t border-white/8">
                           <div className="flex items-center gap-1 bg-white/5 rounded-lg p-0.5">
                             <button onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
@@ -1436,7 +1748,9 @@ export default function POSPage() {
                               <Plus className="w-3 h-3" />
                             </button>
                           </div>
-                          <span className="text-sm font-bold text-white">{formatCurrency(item.price * item.quantity)}</span>
+                          <span className="text-sm font-bold text-white">
+                            {formatCurrency(promoByProduct.get(item.product.id)?.total ?? item.price * item.quantity)}
+                          </span>
                         </div>
                       </div>
                     )
@@ -1670,6 +1984,14 @@ export default function POSPage() {
       </Modal>
 
       {/* Confirm modal */}
+      <QrPaymentModal
+        open={showQrModal}
+        amount={getTotal()}
+        reference={qrSaleIdRef.current ?? ''}
+        description={`Compra en ${business?.name ?? 'CajaGo'}`}
+        onPaid={onQrPaid}
+        onClose={() => { setShowQrModal(false); qrSaleIdRef.current = null }}
+      />
       <Modal open={showConfirmModal} onClose={() => setShowConfirmModal(false)} title="Confirmar venta" size="sm">
         <div className="space-y-4">
           <div className="bg-[#122238] border border-white/8 rounded-xl p-4">
@@ -1723,7 +2045,7 @@ export default function POSPage() {
                 </div>
               )}
               {receiptType === 'A' && (() => {
-                const iva = calculateIVA('A', items, discount, surchargePct)
+                const iva = calculateIVA('A', getSaleLines(), discount, surchargePct)
                 return (
                   <>
                     <div className="flex justify-between text-xs text-blue-400/60">
@@ -1743,6 +2065,20 @@ export default function POSPage() {
               <span className="text-2xl font-bold text-primary">{formatCurrency(getTotal())}</span>
             </div>
           </div>
+
+          {selectedCustomer && loyaltyConfig.enabled && hasPremiumAccess(business) && (
+            <LoyaltyRedeemPanel
+              customerName={selectedCustomer.name}
+              customerPoints={Number((selectedCustomer as any).loyalty_points) || 0}
+              config={loyaltyConfig}
+              rewards={loyaltyRewards}
+              cartProductIds={items.map(item => item.product.id)}
+              total={getTotal()}
+              redemption={loyaltyRedemption}
+              onRedeem={redeemReward}
+              onRemove={removeRedemption}
+            />
+          )}
 
           {receiptType !== 'ticket' && (
             <div className="space-y-3 p-3.5 rounded-xl bg-white/[0.03] border border-white/10">
@@ -1841,7 +2177,7 @@ export default function POSPage() {
           <div className="flex gap-3 pt-1">
             <button onClick={() => setShowConfirmModal(false)}
               className="flex-1 h-12 rounded-xl border border-white/8 bg-white/5 text-slate-400 hover:text-white hover:bg-white/8 font-bold text-sm transition-all active:scale-[0.98]">
-              Cancelar
+              Cancelar (Esc)
             </button>
             <button onClick={handleConfirmSale} disabled={processing}
               className={`flex-1 h-12 rounded-xl font-bold text-sm transition-all active:scale-[0.98] flex items-center justify-center gap-2 ${
@@ -1852,7 +2188,7 @@ export default function POSPage() {
               {processing ? (
                 <><svg className="animate-spin w-4 h-4" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" opacity="0.25"/><path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" opacity="0.75"/></svg> Procesando...</>
               ) : (
-                <><CheckCircle2 className="w-4 h-4" /> Confirmar</>
+                <><CheckCircle2 className="w-4 h-4" /> Confirmar (Enter / F8)</>
               )}
             </button>
           </div>

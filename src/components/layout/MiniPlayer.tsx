@@ -1,9 +1,9 @@
 import { useMusicStore } from '@/stores/useMusicStore'
-import { Play, Pause, SkipForward, SkipBack, Volume2, Maximize2, Minimize2, Music } from 'lucide-react'
-import { cn } from '@/lib/utils'
-import { Slider } from '@/components/ui/Slider' // Assuming existence or I will create an inline one
+import { Play, Pause, SkipForward, SkipBack, Volume2, Music, X } from 'lucide-react'
+import { useLocation } from 'react-router-dom'
 
 export default function MiniPlayer() {
+  const { pathname } = useLocation()
   const { 
     currentTrack, 
     isPlaying, 
@@ -14,10 +14,13 @@ export default function MiniPlayer() {
     duration, 
     seekTo,
     volume,
-    setVolume
+    setVolume,
+    stopPlayback,
   } = useMusicStore()
 
   if (!currentTrack) return null
+  const showCloseButton = !pathname.startsWith('/music')
+  const progress = duration > 0 ? Math.min(100, Math.max(0, (currentTime / duration) * 100)) : 0
 
   const formatTime = (time: number) => {
     const min = Math.floor(time / 60)
@@ -26,63 +29,61 @@ export default function MiniPlayer() {
   }
 
   return (
-    <div className="fixed bottom-4 left-1/2 -translate-x-1/2 w-[98%] max-w-[800px] z-[100] transition-all duration-700 ease-out animate-slide-in-bottom">
-      <div className="glass-panel border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.4)] overflow-hidden rounded-2xl md:rounded-full bg-slate-950/40 backdrop-blur-xl">
-        {/* Progress Bar - Ultra-slim attached to top */}
+    <div className="fixed bottom-3 left-1/2 z-[100] w-[calc(100%-1rem)] max-w-[760px] -translate-x-1/2 animate-slide-in-bottom transition-all duration-500 sm:bottom-4 sm:w-[calc(100%-2rem)]">
+      <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-[#0a101d]/95 shadow-[0_22px_65px_rgba(0,0,0,0.5)] backdrop-blur-2xl">
         <div 
-          className="absolute top-0 left-0 right-0 h-[2px] bg-white/5 cursor-pointer"
+          className="absolute inset-x-0 top-0 h-1 cursor-pointer bg-white/[0.06]"
           onClick={(e) => {
+            if (duration <= 0) return
             const rect = e.currentTarget.getBoundingClientRect()
             const x = e.clientX - rect.left
-            const perc = x / rect.width
-            seekTo(perc * duration)
+            seekTo((x / rect.width) * duration)
           }}
         >
           <div 
-            className="h-full bg-primary transition-all duration-300" 
-            style={{ width: `${(currentTime / duration) * 100}%` }}
+            className="h-full bg-primary transition-[width] duration-300" 
+            style={{ width: `${progress}%` }}
           />
         </div>
 
-        <div className="px-4 py-2 flex items-center justify-between gap-4 h-14 md:h-12">
-          {/* Track Info */}
-          <div className="flex items-center gap-3 min-w-0 flex-1">
-            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 border border-primary/10">
-              <Music className={cn("w-4 h-4 text-primary", isPlaying && "animate-pulse")} />
+        <div className="grid min-h-[66px] grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-3 py-2.5 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] sm:px-4">
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-primary/15 text-primary">
+              <Music className={`h-4 w-4 ${isPlaying ? 'animate-pulse' : ''}`} />
+              <span className="absolute inset-x-0 bottom-0 h-0.5 bg-primary/60" />
             </div>
             <div className="min-w-0 leading-tight">
-              <h4 className="text-[11px] font-black text-white truncate uppercase tracking-tight">{currentTrack.title}</h4>
-              <p className="text-[9px] font-bold text-white/30 truncate uppercase tracking-widest">{currentTrack.artist}</p>
+              <p className="mb-1 text-[9px] font-bold uppercase tracking-[0.17em] text-primary">Reproduciendo</p>
+              <h4 className="truncate text-xs font-bold text-white">{currentTrack.title}</h4>
+              <p className="mt-0.5 truncate text-[10px] text-white/35">{currentTrack.artist || 'Artista desconocido'}</p>
             </div>
           </div>
 
-          {/* Controls */}
-          <div className="flex items-center gap-1">
-            <button onClick={prevTrack} className="p-2 text-white/20 hover:text-white transition-colors active:scale-90">
-              <SkipBack className="w-3.5 h-3.5 fill-current" />
+          <div className="flex items-center gap-0.5 sm:gap-1">
+            <button onClick={prevTrack} className="rounded-lg p-2 text-white/35 transition hover:bg-white/[0.05] hover:text-white active:scale-90" aria-label="Canción anterior">
+              <SkipBack className="h-3.5 w-3.5 fill-current" />
             </button>
             <button 
               onClick={togglePlay}
-              className="w-9 h-9 rounded-full bg-primary text-white flex items-center justify-center transition-all hover:scale-105 active:scale-90"
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-[#0b1120] transition hover:scale-105 active:scale-90"
+              aria-label={isPlaying ? 'Pausar' : 'Reproducir'}
             >
-              {isPlaying ? <Pause className="w-4 h-4 fill-current" /> : <Play className="w-4 h-4 fill-current ml-0.5" />}
+              {isPlaying ? <Pause className="h-4 w-4 fill-current" /> : <Play className="ml-0.5 h-4 w-4 fill-current" />}
             </button>
-            <button onClick={nextTrack} className="p-2 text-white/20 hover:text-white transition-colors active:scale-90">
-              <SkipForward className="w-3.5 h-3.5 fill-current" />
+            <button onClick={nextTrack} className="rounded-lg p-2 text-white/35 transition hover:bg-white/[0.05] hover:text-white active:scale-90" aria-label="Siguiente canción">
+              <SkipForward className="h-3.5 w-3.5 fill-current" />
             </button>
           </div>
 
-          {/* Volume & Time */}
-          <div className="flex items-center gap-4 flex-1 justify-end">
-            <div className="flex items-center gap-1.5 text-[9px] font-black text-white/20 uppercase tracking-widest">
-              <span className="text-primary/60">{formatTime(currentTime)}</span>
+          <div className="hidden min-w-0 items-center justify-end gap-3 sm:flex">
+            <div className="flex items-center gap-1.5 whitespace-nowrap text-[9px] font-semibold tabular-nums text-white/25">
+              <span className="text-white/50">{formatTime(currentTime)}</span>
               <span>/</span>
               <span>{formatTime(duration)}</span>
             </div>
-            
-            <div className="flex items-center gap-2 group/vol relative">
-              <Volume2 className="w-3.5 h-3.5 text-white/20 group-hover/vol:text-primary transition-colors" />
-              <div className="relative flex items-center h-4">
+            <div className="group/vol flex items-center gap-2">
+              <Volume2 className="h-3.5 w-3.5 text-white/30 transition-colors group-hover/vol:text-primary" />
+              <div className="relative flex h-4 items-center">
                 <input 
                   type="range"
                   min="0"
@@ -90,15 +91,35 @@ export default function MiniPlayer() {
                   step="0.01"
                   value={volume}
                   onChange={(e) => setVolume(parseFloat(e.target.value))}
-                  className="w-20 h-1 bg-white/10 rounded-full appearance-none cursor-pointer accent-primary
+                  aria-label="Volumen"
+                  className="h-1 w-16 cursor-pointer appearance-none rounded-full bg-white/10 accent-primary
                     [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 
                     [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white 
-                    [&::-webkit-slider-thumb]:shadow-[0_0_10px_rgba(0,0,0,0.5)]
-                    hover:[&::-webkit-slider-thumb]:scale-125 transition-all"
+                    [&::-webkit-slider-thumb]:shadow-[0_0_10px_rgba(0,0,0,0.5)]"
                 />
               </div>
             </div>
+            {showCloseButton && (
+              <button
+                onClick={stopPlayback}
+                className="ml-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/[0.07] text-white/35 transition hover:border-white/15 hover:bg-white/[0.06] hover:text-white active:scale-95"
+                aria-label="Cerrar reproductor y detener música"
+                title="Cerrar reproductor"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
           </div>
+
+          {showCloseButton && (
+            <button
+              onClick={stopPlayback}
+              className="absolute right-1.5 top-1.5 flex h-7 w-7 items-center justify-center rounded-lg text-white/30 transition hover:bg-white/[0.06] hover:text-white sm:hidden"
+              aria-label="Cerrar reproductor y detener música"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          )}
         </div>
       </div>
     </div>

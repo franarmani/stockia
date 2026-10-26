@@ -7,14 +7,14 @@ import { useOnlineStatus } from '@/hooks/useOnlineStatus'
 import { WifiOff, RefreshCw, Loader2 } from 'lucide-react'
 import SubscriptionBanner from '@/features/subscription/components/SubscriptionBanner'
 
-const SIDEBAR_KEY = 'stockia_sidebar_collapsed'
+const SIDEBAR_KEY = 'cajago_sidebar_collapsed'
 
 export default function AppLayout() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
     try { return localStorage.getItem(SIDEBAR_KEY) === 'true' } catch { return false }
   })
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false)
-  const { isOnline, pendingCount, syncing, syncPendingSales } = useOnlineStatus()
+  const { isOnline, pendingCount, syncing, syncNow } = useOnlineStatus()
 
   const handleToggleCollapse = () => {
     setSidebarCollapsed((prev) => {
@@ -33,7 +33,7 @@ export default function AppLayout() {
   }, [])
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background">
+    <div className="app-shell dark-shell flex h-screen overflow-hidden bg-background">
       {/* Sidebar */}
       <Sidebar
         collapsed={sidebarCollapsed}
@@ -59,7 +59,7 @@ export default function AppLayout() {
               {!isOnline ? (
                 <>
                   <WifiOff className="w-3.5 h-3.5" />
-                  <span>Sin conexión — Las ventas se guardan localmente</span>
+                  <span>Sin conexión — Todo se guarda localmente y se sincroniza al volver</span>
                 </>
               ) : (
                 <>
@@ -71,14 +71,14 @@ export default function AppLayout() {
                   <span>
                     {syncing
                       ? 'Sincronizando...'
-                      : `${pendingCount} venta${pendingCount > 1 ? 's' : ''} pendiente${pendingCount > 1 ? 's' : ''}`}
+                      : `${pendingCount} operación${pendingCount > 1 ? "es" : ""} pendiente${pendingCount > 1 ? "s" : ""}`}
                   </span>
                 </>
               )}
             </div>
             {isOnline && pendingCount > 0 && !syncing && (
               <button
-                onClick={syncPendingSales}
+                onClick={syncNow}
                 className="px-2.5 py-0.5 bg-warning hover:bg-warning/80 text-background rounded-lg text-[11px] font-semibold transition-colors shadow-[0_0_8px_rgba(245,158,11,0.3)]"
               >
                 Sincronizar
@@ -103,6 +103,7 @@ export default function AppLayout() {
 
       {/* Bottom navigation — mobile only */}
       <BottomNav />
+
     </div>
   )
 }

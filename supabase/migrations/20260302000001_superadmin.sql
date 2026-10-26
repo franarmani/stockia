@@ -35,6 +35,11 @@ DROP POLICY IF EXISTS "superadmin_read_users" ON users;
 CREATE POLICY "superadmin_read_users" ON users
   FOR SELECT USING (is_superadmin());
 
+-- 6. Superadmin can manage payment requests after the helper exists.
+DROP POLICY IF EXISTS "superadmin_payment_requests" ON payment_requests;
+CREATE POLICY "superadmin_payment_requests" ON payment_requests
+  FOR ALL USING (is_superadmin());
+
 -- ============================================================
 -- PASO FINAL: reemplazá el email con el tuyo y ejecutá
 -- ============================================================

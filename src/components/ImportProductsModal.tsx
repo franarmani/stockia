@@ -149,7 +149,8 @@ export default function ImportProductsModal({ open, onClose, onDone }: Props) {
 
   function downloadTemplate() {
     const buf = generateTemplate()
-    const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+    const arrayBuffer = Uint8Array.from(buf).buffer
+    const blob = new Blob([arrayBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a'); a.href = url; a.download = 'plantilla_productos.xlsx'
     document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url)

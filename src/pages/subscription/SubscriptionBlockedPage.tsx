@@ -24,7 +24,7 @@ export default function SubscriptionBlockedPage() {
   }
 
   function sendWA() {
-    const msg = `Hola Fran! Acabo de hacer la transferencia de ${PRECIO} al alias ${ALIAS} para activar mi cuenta en STOCKIA HUB. Mi email es: ${user?.email ?? ''} — ${business?.name ?? ''}. Quedo a la espera, gracias!`
+    const msg = `Hola Fran! Acabo de hacer la transferencia de ${PRECIO} al alias ${ALIAS} para activar mi cuenta en CajaGo. Mi email es: ${user?.email ?? ''} — ${business?.name ?? ''}. Quedo a la espera, gracias!`
     window.open(`https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(msg)}`, '_blank')
   }
 
@@ -42,8 +42,8 @@ export default function SubscriptionBlockedPage() {
         </h1>
         <p className="text-[13px] text-muted-foreground mb-6">
           {isTrialExpired
-            ? 'Tu cuenta está pendiente de pago. Abonala para seguir usando STOCKIA HUB y no perder tu historial de ventas y datos.'
-            : 'Tu suscripción ha vencido. Para seguir usando STOCKIA HUB y registrar nuevas ventas, necesitás renovar tu plan.'
+            ? 'Tu cuenta está pendiente de pago. Abonala para seguir usando CajaGo y no perder tu historial de ventas y datos.'
+            : 'Tu suscripción ha vencido. Para seguir usando CajaGo y registrar nuevas ventas, necesitás renovar tu plan.'
           }
         </p>
 
@@ -87,7 +87,7 @@ export default function SubscriptionBlockedPage() {
         {isTrialExpired && (
           <div className="flex items-center justify-center gap-2 mb-4 px-3 py-2.5 bg-green-500/10 rounded-xl border border-green-500/20">
             <Zap className="w-4 h-4 text-green-400 shrink-0" />
-            <p className="text-[13px] font-semibold text-green-400">Plan Negocio: {PRECIO}/mes · Todo incluido</p>
+            <p className="text-[13px] font-semibold text-green-400">Básico $38.000 · Premium {PRECIO} por mes</p>
           </div>
         )}
 

@@ -1,6 +1,8 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
+import { syncEngine } from '@/sync/syncEngine'
+import { cachedQuery } from '@/sync/remote'
 import { quotesDb } from '@/lib/quotesDb'
 import { useAuthStore } from '@/stores/authStore'
 import { useBusinessStore } from '@/stores/businessStore'
@@ -72,41 +74,32 @@ export default function QuotesPage() {
 
   async function fetchQuotes() {
     setLoading(true)
-    const { data } = await quotesDb
+    const { data } = await cachedQuery(`quotes:${profile!.business_id}`, quotesDb
       .from('quotes')
       .select('*')
       .eq('business_id', profile!.business_id)
       .order('created_at', { ascending: false })
-      .limit(500)
+      .limit(500))
     setQuotes((data || []) as unknown as Quote[])
     setLoading(false)
   }
 
   async function fetchCustomers() {
-    const { data } = await supabase
-      .from('customers')
-      .select('*')
-      .eq('business_id', profile!.business_id)
-      .order('name')
-    setCustomers((data || []) as unknown as Customer[])
+    const data = await syncEngine.pullLatestCustomers(profile!.business_id)
+    setCustomers(([...data].sort((a, b) => a.name.localeCompare(b.name, 'es'))) as unknown as Customer[])
   }
 
   async function fetchProducts() {
-    const { data } = await supabase
-      .from('products')
-      .select('*')
-      .eq('business_id', profile!.business_id)
-      .eq('active', true)
-      .order('name')
-    setProducts((data || []) as unknown as Product[])
+    const data = (await syncEngine.pullLatestProducts(profile!.business_id)).filter(p => p.active !== false)
+    setProducts((data.sort((a, b) => a.name.localeCompare(b.name, 'es'))) as unknown as Product[])
   }
 
   async function loadItems(quoteId: string): Promise<QuoteItem[]> {
-    const { data } = await quotesDb
+    const { data } = await cachedQuery(`quote_items:${quoteId}`, quotesDb
       .from('quote_items')
       .select('*')
       .eq('quote_id', quoteId)
-      .order('created_at', { ascending: true })
+      .order('created_at', { ascending: true }))
     return (data || []) as unknown as QuoteItem[]
   }
 
@@ -258,7 +251,7 @@ export default function QuotesPage() {
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl font-bold text-foreground">Presupuestos</h1>
+          <h1 className="cg-title text-[clamp(1.6rem,3.5vw,2.25rem)]">Presupuestos</h1>
           <p className="text-sm text-muted-foreground">
             {quotes.length} en total
             {pendingTotal > 0 && <> · {formatCurrency(pendingTotal)} pendiente de respuesta</>}
@@ -271,7 +264,7 @@ export default function QuotesPage() {
 
       {/* Filtros */}
       <div className="flex flex-wrap items-center gap-2">
-        <div className="flex-1 min-w-[200px]">
+        <div className="w-full sm:flex-1 sm:min-w-[200px]">
           <Input
             placeholder="Buscar por número o cliente"
             value={search}

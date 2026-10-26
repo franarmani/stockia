@@ -1,121 +1,67 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
-import { supabase } from '@/lib/supabase'
-import { getPendingSales, removePendingSale, getPendingCount } from '@/lib/offlineQueue'
+import { useState, useEffect, useCallback } from 'react'
+import { syncEngine } from '@/sync/syncEngine'
+import { checkConnectivity, isOnline, onConnectivityChange } from '@/sync/connectivity'
+import type { SyncStats } from '@/sync/types'
 import { toast } from 'sonner'
 
+// Los avisos de conexión se registran una sola vez aunque el hook se use en varios componentes.
+let connectivityToastsInstalled = false
+function installConnectivityToasts() {
+  if (connectivityToastsInstalled) return
+  connectivityToastsInstalled = true
+  onConnectivityChange((online) => {
+    if (online) toast.success('Conexión recuperada · Sincronizando operaciones...')
+    else toast.warning('Sin conexión · CajaGo sigue funcionando y guarda todo localmente')
+  })
+}
+
 export function useOnlineStatus() {
-  const [isOnline, setIsOnline] = useState(navigator.onLine)
-  const [pendingCount, setPendingCount] = useState(0)
-  const [syncing, setSyncing] = useState(false)
-  const syncLock = useRef(false)
+  const [stats, setStats] = useState<SyncStats>({
+    pendingCount: 0,
+    failedCount: 0,
+    conflictCount: 0,
+    needsLogin: false,
+    isSyncing: false,
+    lastSyncAt: null,
+    online: isOnline(),
+    isTauriDesktop: false,
+  })
 
-  // Track online/offline
   useEffect(() => {
-    const goOnline = () => { setIsOnline(true) }
-    const goOffline = () => { setIsOnline(false) }
-    window.addEventListener('online', goOnline)
-    window.addEventListener('offline', goOffline)
-    return () => {
-      window.removeEventListener('online', goOnline)
-      window.removeEventListener('offline', goOffline)
+    syncEngine.init().catch((error) => {
+      console.error('[Sync] initialization failed:', error)
+      toast.error(`La base local no pudo iniciarse (${error?.message || error}). Reiniciá CajaGo.`, { duration: 15000 })
+    })
+    installConnectivityToasts()
+    return syncEngine.subscribe(setStats)
+  }, [])
+
+  const syncNow = useCallback(async () => {
+    if (!(await checkConnectivity())) {
+      toast.error('Sin conexión con el servidor. Se sincronizará automáticamente al volver.')
+      return
+    }
+
+    toast.info('Sincronizando operaciones pendientes...')
+    const result = await syncEngine.processQueue(true)
+    if (result.synced > 0) {
+      toast.success(`${result.synced} operación(es) sincronizada(s) con éxito`)
+    } else if (result.failed > 0) {
+      toast.error(`${result.failed} operación(es) no pudieron sincronizarse. Se reintentará con backoff.`)
+    } else {
+      toast.success('Todo sincronizado ✓')
     }
   }, [])
 
-  // Refresh pending count periodically
-  useEffect(() => {
-    refreshCount()
-    const interval = setInterval(refreshCount, 10000)
-    return () => clearInterval(interval)
-  }, [])
-
-  async function refreshCount() {
-    try {
-      const count = await getPendingCount()
-      setPendingCount(count)
-    } catch { /* ignore */ }
+  return {
+    isOnline: stats.online,
+    pendingCount: stats.pendingCount,
+    failedCount: stats.failedCount,
+    conflictCount: stats.conflictCount,
+    needsLogin: stats.needsLogin,
+    syncing: stats.isSyncing,
+    lastSyncAt: stats.lastSyncAt,
+    isTauriDesktop: stats.isTauriDesktop,
+    syncNow,
   }
-
-  // Auto-sync when coming back online
-  useEffect(() => {
-    if (isOnline && pendingCount > 0) {
-      syncPendingSales()
-    }
-  }, [isOnline])
-
-  const syncPendingSales = useCallback(async () => {
-    if (syncLock.current || !navigator.onLine) return
-    syncLock.current = true
-    setSyncing(true)
-
-    try {
-      const sales = await getPendingSales()
-      let synced = 0
-
-      for (const offlineSale of sales) {
-        try {
-          const p = offlineSale.payload
-
-          // 1. Create sale
-          const { data: sale, error: saleErr } = await supabase
-            .from('sales')
-            .insert(p.sale)
-            .select()
-            .single()
-
-          if (saleErr || !sale) {
-            console.error('Sync sale error:', saleErr)
-            continue
-          }
-
-          // 2. Sale items (update sale_id)
-          const items = p.items.map(item => ({ ...item, sale_id: sale.id }))
-          await supabase.from('sale_items').insert(items)
-
-          // 3. Payment splits
-          const payments = p.payments.map(pay => ({ ...pay, sale_id: sale.id }))
-          await supabase.from('sale_payments').insert(payments)
-
-          // 4. Stock updates
-          for (const su of p.stockUpdates) {
-            await supabase.from('products').update({ stock: Math.max(0, su.newStock) }).eq('id', su.productId)
-            await supabase.from('stock_movements').insert({
-              business_id: p.sale.business_id,
-              product_id: su.productId,
-              type: 'sale',
-              quantity: -su.qty,
-              reference_id: sale.id,
-            })
-          }
-
-          // 5. Customer balance (if account payment)
-          if (p.accountUpdate) {
-            const { data: cust } = await supabase.from('customers').select('balance').eq('id', p.accountUpdate.customerId).single()
-            if (cust) {
-              await supabase.from('customers').update({
-                balance: cust.balance + p.accountUpdate.amount,
-              }).eq('id', p.accountUpdate.customerId)
-            }
-          }
-
-          // Success — remove from queue
-          await removePendingSale(offlineSale.id)
-          synced++
-        } catch (err) {
-          console.error('Sync error for sale:', offlineSale.id, err)
-        }
-      }
-
-      if (synced > 0) {
-        toast.success(`${synced} venta${synced > 1 ? 's' : ''} sincronizada${synced > 1 ? 's' : ''}`)
-      }
-      await refreshCount()
-    } catch (err) {
-      console.error('Sync batch error:', err)
-    } finally {
-      setSyncing(false)
-      syncLock.current = false
-    }
-  }, [])
-
-  return { isOnline, pendingCount, syncing, syncPendingSales, syncNow: syncPendingSales, refreshCount }
 }

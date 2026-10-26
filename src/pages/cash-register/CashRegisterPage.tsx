@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
+import { syncEngine } from '@/sync/syncEngine'
+import { withSyncNote } from '@/sync/connectivity'
 import { useAuthStore } from '@/stores/authStore'
 import { cn, formatCurrency } from '@/lib/utils'
 import { toast } from 'sonner'
@@ -43,33 +45,32 @@ export default function CashRegisterPage() {
     }
   }, [profile?.business_id])
 
+  // Al terminar de sincronizar, recargar con los datos del servidor
+  useEffect(() => {
+    if (!profile?.business_id) return
+    return syncEngine.onSynced(() => { fetchAll() })
+  }, [profile?.business_id])
+
   async function fetchAll() {
     try {
       setLoading(true)
-      const { data: sessions, error: sessionsError } = await supabase
-        .from('cash_sessions')
-        .select('*')
-        .eq('business_id', profile!.business_id)
-        .order('opened_at', { ascending: false })
-      
-      if (sessionsError) throw sessionsError
+      const businessId = profile!.business_id
+      const sessions = (await syncEngine.pullRows<CashSession>('cash_sessions', businessId, () =>
+        supabase.from('cash_sessions').select('*').eq('business_id', businessId).order('opened_at', { ascending: false })
+      )).sort((a, b) => b.opened_at.localeCompare(a.opened_at))
 
-      const open = sessions?.find(s => s.status === 'open') || null
+      const open = sessions.find(s => s.status === 'open') || null
       setCurrentSession(open)
-      setHistory(sessions?.filter(s => s.status === 'closed') || [])
+      setHistory(sessions.filter(s => s.status === 'closed'))
 
-      if (open) {
-        const { data: movs, error: movsError } = await supabase
-          .from('cash_movements')
-          .select('*')
-          .eq('session_id', open.id)
-          .order('created_at', { ascending: false })
-        
-        if (movsError) throw movsError
-        setMovements(movs || [])
-      } else {
-        setMovements([])
-      }
+      const movs = await syncEngine.pullRows<CashMovement>('cash_movements', businessId, () =>
+        open
+          ? supabase.from('cash_movements').select('*').eq('session_id', open.id)
+          : Promise.resolve({ data: [], error: null })
+      )
+      setMovements(open
+        ? movs.filter(m => m.session_id === open.id).sort((a, b) => b.created_at.localeCompare(a.created_at))
+        : [])
     } catch (error) {
       console.error('[CashRegister] Error fetching data:', error)
       toast.error('Error al cargar datos de caja')
@@ -78,48 +79,62 @@ export default function CashRegisterPage() {
     }
   }
 
+  // Cada operación se guarda primero en este equipo y se envía al servidor en segundo plano.
+  async function runLocal(work: () => Promise<void>, successMessage: string) {
+    setSaving(true)
+    try {
+      await work()
+      toast.success(withSyncNote(successMessage))
+    } catch (error) {
+      console.error('[CashRegister] local write failed:', error)
+      toast.error('No se pudo guardar en la base local')
+    } finally {
+      setSaving(false)
+      fetchAll()
+    }
+  }
+
   async function handleOpen() {
     if (!openAmount) { toast.error('Ingresá el monto inicial'); return }
-    setSaving(true)
-    const { error } = await supabase.from('cash_sessions').insert({
-      business_id: profile!.business_id, opened_by: profile!.id,
-      opening_amount: Number(openAmount), status: 'open',
-    })
-    if (error) toast.error('Error al abrir caja'); else toast.success('Caja abierta')
-    setSaving(false); setShowOpenModal(false); setOpenAmount(''); fetchAll()
+    await runLocal(() => syncEngine.createRow('cash_sessions', profile!.business_id, {
+      id: crypto.randomUUID(),
+      opened_by: profile!.id,
+      opening_amount: Number(openAmount),
+      status: 'open',
+      opened_at: new Date().toISOString(),
+    }), 'Caja abierta')
+    setShowOpenModal(false); setOpenAmount('')
   }
 
   async function handleClose() {
     if (!closeAmount || !currentSession) return
-    setSaving(true)
-    const { error } = await supabase.from('cash_sessions').update({
+    await runLocal(() => syncEngine.updateRow('cash_sessions', profile!.business_id, currentSession.id, {
       closing_amount: Number(closeAmount), closed_by: profile!.id,
       closed_at: new Date().toISOString(), status: 'closed',
-    }).eq('id', currentSession.id)
-    if (error) toast.error('Error al cerrar caja'); else toast.success('Caja cerrada')
-    setSaving(false); setShowCloseModal(false); setCloseAmount(''); fetchAll()
+    }), 'Caja cerrada')
+    setShowCloseModal(false); setCloseAmount('')
   }
 
   async function handleWithdraw() {
     if (!withdrawAmount || !currentSession) return
-    setSaving(true)
-    const { error } = await supabase.from('cash_movements').insert({
+    await runLocal(() => syncEngine.createRow('cash_movements', profile!.business_id, {
+      id: crypto.randomUUID(),
       session_id: currentSession.id, type: 'withdrawal',
       amount: Number(withdrawAmount), description: withdrawReason || 'Retiro',
-    })
-    if (error) toast.error('Error'); else toast.success('Retiro registrado')
-    setSaving(false); setShowWithdrawModal(false); setWithdrawAmount(''); setWithdrawReason(''); fetchAll()
+      created_at: new Date().toISOString(),
+    }), 'Retiro registrado')
+    setShowWithdrawModal(false); setWithdrawAmount(''); setWithdrawReason('')
   }
 
   async function handleIncome() {
     if (!incomeAmount || !currentSession) return
-    setSaving(true)
-    const { error } = await supabase.from('cash_movements').insert({
+    await runLocal(() => syncEngine.createRow('cash_movements', profile!.business_id, {
+      id: crypto.randomUUID(),
       session_id: currentSession.id, type: 'income',
       amount: Number(incomeAmount), description: incomeReason || 'Ingreso',
-    })
-    if (error) toast.error('Error'); else toast.success('Ingreso registrado')
-    setSaving(false); setShowIncomeModal(false); setIncomeAmount(''); setIncomeReason(''); fetchAll()
+      created_at: new Date().toISOString(),
+    }), 'Ingreso registrado')
+    setShowIncomeModal(false); setIncomeAmount(''); setIncomeReason('')
   }
 
   function handlePrintReport() {
@@ -150,7 +165,7 @@ export default function CashRegisterPage() {
       <div class="sep"></div>
       ${movements.map(m => `<div class="row"><span>${m.type === 'sale' ? 'VTA' : m.type === 'income' ? 'ING' : 'RET'} ${new Date(m.created_at).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}</span><span>${m.type === 'withdrawal' ? '-' : '+'}$${m.amount.toFixed(2)}</span></div><div style="font-size:10px;color:#666">${m.description || ''}</div>`).join('')}
       <div class="sep"></div>
-      <div style="text-align:center;font-size:10px;color:#666;margin-top:8px">STOCKIA HUB - Reporte automático</div>
+      <div style="text-align:center;font-size:10px;color:#666;margin-top:8px">CajaGo - Reporte automático</div>
       </body></html>`)
     w.document.close()
     w.focus()
@@ -170,7 +185,7 @@ export default function CashRegisterPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 px-1">
         <div>
           <p className="text-[11px] text-white/35 uppercase tracking-widest font-black">Operaciones</p>
-          <h1 className="text-3xl font-black text-white mt-1 tracking-tight">Caja</h1>
+          <h1 className="cg-title text-[clamp(1.6rem,3.5vw,2.25rem)] mt-1">Caja</h1>
           <div className="flex items-center gap-2 mt-1">
              <div className={cn("w-1.5 h-1.5 rounded-full", currentSession ? "bg-emerald-500 animate-pulse" : "bg-red-500")} />
              <p className="text-[11px] text-white/50 font-bold uppercase tracking-wider">

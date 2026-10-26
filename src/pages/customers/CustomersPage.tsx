@@ -1,5 +1,11 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
+import { syncEngine } from '@/sync/syncEngine'
+import { getLocalCustomers } from '@/sync/storage'
+import { isOnline, withSyncNote } from '@/sync/connectivity'
+import { cachedQuery } from '@/sync/remote'
+import { usePlan } from '@/hooks/usePlan'
+import { creditScore, GRADE_STYLES, type ChargeLite } from '@/features/customers/creditScore'
 import { useAuthStore } from '@/stores/authStore'
 import { formatCurrency, formatDateTime } from '@/lib/utils'
 import { toast } from 'sonner'
@@ -39,13 +45,17 @@ const customerSchema = z.object({
   doc_tipo: z.string().optional(),
   doc_nro: z.string().optional(),
   iva_condition: z.string().optional(),
+  credit_limit: z.string().optional(),
 })
 
 type CustomerForm = z.infer<typeof customerSchema>
 
 export default function CustomersPage() {
   const { profile } = useAuthStore()
+  const { isPremium } = usePlan()
   const [customers, setCustomers] = useState<Customer[]>([])
+  // Cargos de cuenta corriente del último año, para calificar a cada cliente (Premium).
+  const [chargesByCustomer, setChargesByCustomer] = useState<Map<string, ChargeLite[]>>(new Map())
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [showModal, setShowModal] = useState(false)
@@ -63,22 +73,54 @@ export default function CustomersPage() {
   })
 
   useEffect(() => {
-    if (profile?.business_id) fetchCustomers()
+    if (!profile?.business_id) return
+    fetchCustomers()
+    return syncEngine.onSynced(() => { fetchCustomers() })
   }, [profile?.business_id])
 
+  // Primero lo que hay en este equipo (instantáneo y sin conexión), después el servidor.
   async function fetchCustomers() {
-    const { data } = await supabase
-      .from('customers')
-      .select('*')
-      .eq('business_id', profile!.business_id)
-      .order('name')
-    setCustomers(data || [])
-    setLoading(false)
+    try {
+      await syncEngine.init()
+      const sortByName = (list: Customer[]) => [...list].sort((a, b) => a.name.localeCompare(b.name, 'es'))
+      const local = await getLocalCustomers(profile!.business_id)
+      if (local.length > 0) {
+        setCustomers(sortByName(local as Customer[]))
+        setLoading(false)
+      }
+      const fresh = await syncEngine.pullLatestCustomers(profile!.business_id)
+      setCustomers(sortByName(fresh as Customer[]))
+      if (isPremium) loadCharges()
+    } catch (error) {
+      console.error('[Customers] Error loading customers:', error)
+      toast.error('Error al cargar clientes')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function loadCharges() {
+    const businessId = profile!.business_id
+    const since = new Date(Date.now() - 365 * 86400000).toISOString()
+    const { data } = await cachedQuery(`account_charges:${businessId}`, (supabase as any)
+      .from('account_movements')
+      .select('customer_id, amount, created_at')
+      .eq('business_id', businessId)
+      .eq('type', 'charge')
+      .gte('created_at', since)
+      .limit(10000))
+    const map = new Map<string, ChargeLite[]>()
+    for (const row of (data as any[]) ?? []) {
+      const list = map.get(row.customer_id) ?? []
+      list.push({ amount: Number(row.amount) || 0, created_at: row.created_at })
+      map.set(row.customer_id, list)
+    }
+    setChargesByCustomer(map)
   }
 
   function openCreate() {
     setEditingCustomer(null)
-    reset({ name: '', phone: '', email: '', address: '', doc_tipo: '99', doc_nro: '', iva_condition: 'consumidor_final' })
+    reset({ name: '', phone: '', email: '', address: '', doc_tipo: '99', doc_nro: '', iva_condition: 'consumidor_final', credit_limit: '' })
     setShowModal(true)
   }
 
@@ -91,17 +133,27 @@ export default function CustomersPage() {
     setValue('doc_tipo', (customer as any).doc_tipo || '99')
     setValue('doc_nro', (customer as any).doc_nro || '')
     setValue('iva_condition', (customer as any).iva_condition || 'consumidor_final')
+    setValue('credit_limit', (customer as any).credit_limit ? String((customer as any).credit_limit) : '')
     setShowModal(true)
   }
 
   async function viewHistory(customer: Customer) {
+    if (!isOnline()) {
+      toast.info('El historial del cliente se consulta en el servidor. Disponible al volver la conexión.')
+      return
+    }
     setSelectedCustomer(customer)
     const [salesRes, paymentsRes] = await Promise.all([
       supabase.from('sales').select('*').eq('business_id', profile!.business_id).eq('customer_id', customer.id).order('created_at', { ascending: false }).limit(20),
       supabase.from('customer_payments').select('*').eq('customer_id', customer.id).order('created_at', { ascending: false }).limit(20),
     ])
     setCustomerSales(salesRes.data || [])
-    setCustomerPayments((paymentsRes.data as { id: string; amount: number; description: string; created_at: string }[]) || [])
+    setCustomerPayments((paymentsRes.data || []).map(payment => ({
+      id: payment.id,
+      amount: payment.amount,
+      description: payment.notes || '',
+      created_at: payment.created_at,
+    })))
     setShowHistoryModal(true)
   }
 
@@ -120,22 +172,21 @@ export default function CustomersPage() {
       return
     }
 
-    // Record in customer_payments table
-    const { error: payErr } = await supabase.from('customer_payments').insert({
-      customer_id: selectedCustomer.id,
-      amount,
-      description: paymentDescription || 'Pago de deuda',
-    })
-    if (payErr) {
+    try {
+      await syncEngine.recordCustomerPayment(
+        profile!.business_id,
+        profile!.id,
+        { id: selectedCustomer.id, balance: Number(selectedCustomer.balance) || 0 },
+        amount,
+        paymentDescription || 'Pago de deuda'
+      )
+    } catch (error) {
+      console.error('[Customers] payment failed:', error)
       toast.error('Error al registrar pago')
       return
     }
 
-    // Update balance
-    const newBalance = Math.max(0, selectedCustomer.balance - amount)
-    await supabase.from('customers').update({ balance: newBalance }).eq('id', selectedCustomer.id)
-
-    toast.success(`Pago de ${formatCurrency(amount)} registrado`)
+    toast.success(withSyncNote(`Pago de ${formatCurrency(amount)} registrado`))
     setShowPaymentModal(false)
     fetchCustomers()
   }
@@ -151,44 +202,29 @@ export default function CustomersPage() {
       doc_tipo: data.doc_tipo || '99',
       doc_nro: data.doc_nro || null,
       iva_condition: data.iva_condition || 'consumidor_final',
+      // Límite de crédito para ventas a cuenta (0 = sin límite). Solo se edita en Premium.
+      ...(isPremium ? { credit_limit: Math.max(0, Number(data.credit_limit) || 0) } : {}),
     }
 
-    if (editingCustomer) {
-      // Try with AFIP fields first; fall back to base fields if columns don't exist (migration not applied)
-      let { error } = await supabase
-        .from('customers')
-        .update({ ...baseFields, ...afipFields })
-        .eq('id', editingCustomer.id)
-      if (error?.code === 'PGRST204' || error?.message?.includes('column')) {
-        // AFIP columns not in DB yet — update base fields only
-        const fallback = await supabase.from('customers').update(baseFields).eq('id', editingCustomer.id)
-        error = fallback.error
+    // Se guarda local y se sincroniza (el motor reintenta sin columnas AFIP en bases viejas).
+    try {
+      if (editingCustomer) {
+        await syncEngine.updateRow('customers', profile!.business_id, editingCustomer.id, { ...baseFields, ...afipFields })
+        toast.success(withSyncNote('Cliente actualizado'))
+      } else {
+        await syncEngine.createRow('customers', profile!.business_id, {
+          id: crypto.randomUUID(),
+          ...baseFields,
+          ...afipFields,
+          balance: 0,
+          created_at: new Date().toISOString(),
+        })
+        toast.success(withSyncNote('Cliente creado'))
       }
-      if (error) {
-        toast.error('Error al actualizar')
-        console.error(error)
-        return
-      }
-      toast.success('Cliente actualizado')
-    } else {
-      const insertPayload = {
-        ...baseFields,
-        ...afipFields,
-        business_id: profile!.business_id,
-        balance: 0,
-      }
-      let { error } = await supabase.from('customers').insert(insertPayload)
-      if (error?.code === 'PGRST204' || error?.message?.includes('column')) {
-        // Fall back without AFIP fields
-        const fallback = await supabase.from('customers').insert({ ...baseFields, business_id: profile!.business_id, balance: 0 })
-        error = fallback.error
-      }
-      if (error) {
-        toast.error('Error al crear cliente')
-        console.error(error)
-        return
-      }
-      toast.success('Cliente creado')
+    } catch (error) {
+      console.error(error)
+      toast.error(editingCustomer ? 'Error al actualizar' : 'Error al crear cliente')
+      return
     }
 
     setShowModal(false)
@@ -197,15 +233,14 @@ export default function CustomersPage() {
 
   async function handleDelete(customer: Customer) {
     if (!confirm(`¿Eliminar "${customer.name}"?`)) return
-    const { error } = await supabase
-      .from('customers')
-      .delete()
-      .eq('id', customer.id)
-    if (error) {
-      toast.error('Error al eliminar (puede tener ventas asociadas)')
+    try {
+      await syncEngine.deleteRow('customers', profile!.business_id, customer.id)
+    } catch {
+      toast.error('Error al eliminar')
       return
     }
-    toast.success('Cliente eliminado')
+    // Si tiene ventas asociadas, el servidor lo rechaza y queda marcado para revisar.
+    toast.success(withSyncNote('Cliente eliminado'))
     fetchCustomers()
   }
 
@@ -220,7 +255,7 @@ export default function CustomersPage() {
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-lg font-bold text-foreground">Clientes</h1>
+          <h1 className="cg-title text-[clamp(1.6rem,3.5vw,2.25rem)]">Clientes</h1>
           <p className="text-muted-foreground text-[13px] mt-0.5">{customers.length} clientes registrados</p>
         </div>
         <Button size="sm" onClick={openCreate}>
@@ -301,6 +336,25 @@ export default function CustomersPage() {
                   ) : (
                     <Badge variant="success">Al día</Badge>
                   )}
+                  {isPremium && (() => {
+                    const limit = Number((customer as any).credit_limit) || 0
+                    const score = creditScore({ balance: Number(customer.balance) || 0, creditLimit: limit, charges: chargesByCustomer.get(customer.id) ?? [] })
+                    return (
+                      <div className="mt-1 flex flex-wrap items-center gap-1">
+                        <span
+                          className={`inline-flex items-center rounded-md border px-1.5 py-0.5 text-[10px] font-bold ${GRADE_STYLES[score.grade]}`}
+                          title={score.oldestUnpaidDays > 0 ? `Deuda más vieja: ${score.oldestUnpaidDays} días` : 'Sin deuda'}
+                        >
+                          {score.grade} · {score.label}
+                        </span>
+                        {limit > 0 && (
+                          <span className={`text-[10px] ${score.overLimit ? 'text-red-400 font-bold' : 'text-muted-foreground'}`}>
+                            Límite {formatCurrency(limit)}
+                          </span>
+                        )}
+                      </div>
+                    )
+                  })()}
                 </TableCell>
                 <TableCell>
                   <div className="flex gap-1">
@@ -354,6 +408,14 @@ export default function CustomersPage() {
           <Input label="Teléfono" {...register('phone')} />
           <Input label="Email" type="email" error={errors.email?.message} {...register('email')} />
           <Input label="Dirección" {...register('address')} />
+          {isPremium && (
+            <Input
+              label="Límite de crédito en cuenta corriente ($, vacío = sin límite)"
+              type="number"
+              min={0}
+              {...register('credit_limit')}
+            />
+          )}
           <div className="flex gap-2.5 pt-2">
             <button
               type="button"

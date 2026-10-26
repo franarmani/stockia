@@ -1,7 +1,11 @@
-import { Link } from 'react-router-dom'
+import { Link, Navigate } from 'react-router-dom'
 import { Home, ArrowLeft, Search } from 'lucide-react'
+import { checkIsTauriDesktop } from '@/sync/storage'
 
 export default function NotFoundPage() {
+  if (checkIsTauriDesktop()) {
+    return <Navigate to="/login" replace />
+  }
   return (
     <div className="min-h-screen flex items-center justify-center px-4 bg-[#07111f]">
       {/* Decorative elements */}
@@ -51,7 +55,7 @@ export default function NotFoundPage() {
 
         {/* Footer brand */}
         <p className="mt-16 text-white/20 text-xs font-medium tracking-wider uppercase">
-          STOCKIA HUB
+          CajaGo
         </p>
       </div>
     </div>

@@ -4,6 +4,7 @@
 
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { businessIsActive, INACTIVE_MESSAGE } from '../_shared/access.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -28,6 +29,7 @@ serve(async (req) => {
 
     const { data: profile } = await supabase.from('users').select('business_id').eq('id', user.id).single()
     if (!profile) throw new Error('No profile found')
+    if (!(await businessIsActive(supabase, profile.business_id))) throw new Error(INACTIVE_MESSAGE)
 
     const { invoice_id } = await req.json()
     if (!invoice_id) throw new Error('invoice_id is required')

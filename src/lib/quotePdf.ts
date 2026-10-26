@@ -70,7 +70,7 @@ function formatQty(q: number): string {
   return Number.isInteger(q) ? String(q) : q.toFixed(2).replace('.', ',')
 }
 
-export function generateQuotePDF(data: QuotePDFData, mode: PrintMode = 'color'): string {
+export function generateQuotePDF(data: QuotePDFData, mode: PrintMode = 'color', autoPrint: boolean = false): string {
   const color = resolveAccent(data.primaryColor || DEFAULT_COLOR, mode)
   const number = pad(data.quoteNumber, 8)
   const discountAmount = data.subtotal * data.discount / 100
@@ -191,7 +191,7 @@ ${emitterBlock({
     </div>
 
   </div>
-${printOnReadyScript}
+  ${autoPrint ? printOnReadyScript : ''}
 </body>
 </html>`
 
@@ -201,7 +201,7 @@ ${printOnReadyScript}
 /** Abre el presupuesto en ventana nueva para imprimir o guardar como PDF. */
 export async function openQuotePDF(data: QuotePDFData, mode: PrintMode = 'color') {
   const logoUrl = await inlineImage(data.logoUrl)
-  openPrintWindow(generateQuotePDF({ ...data, logoUrl }, mode))
+  openPrintWindow(generateQuotePDF({ ...data, logoUrl }, mode, true))
 }
 
 /** Link de WhatsApp con el resumen del presupuesto. */

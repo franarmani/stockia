@@ -3,6 +3,7 @@ import { supabase } from '@/lib/supabase'
 import type { AppNotification } from '@/types/database'
 
 let _pollTimer: ReturnType<typeof setInterval> | null = null
+let _fetchSequence = 0
 const POLL_INTERVAL = 30_000
 
 interface NotificationsState {
@@ -29,6 +30,7 @@ export const useNotificationsStore = create<NotificationsState>((set, get) => ({
     const { lastFetched } = get()
     if (!force && lastFetched && Date.now() - lastFetched < 3 * 60 * 1000) return
 
+    const requestSequence = ++_fetchSequence
     set({ loading: true })
     const { data, error } = await supabase
       .from('notifications')
@@ -36,6 +38,11 @@ export const useNotificationsStore = create<NotificationsState>((set, get) => ({
       .eq('business_id', businessId)
       .order('created_at', { ascending: false })
       .limit(50)
+
+    if (requestSequence !== _fetchSequence) {
+      set({ loading: false })
+      return
+    }
 
     if (!error && data) {
       const items = data as AppNotification[]
@@ -49,7 +56,13 @@ export const useNotificationsStore = create<NotificationsState>((set, get) => ({
   },
 
   markRead: async (id: string) => {
-    await supabase.from('notifications').update({ is_read: true }).eq('id', id)
+    const { error } = await supabase.from('notifications').update({ is_read: true }).eq('id', id)
+    if (error) {
+      console.error('[Notifications] Error marking notification as read:', error)
+      return
+    }
+
+    _fetchSequence += 1
     set(s => ({
       notifications: s.notifications.map(n => n.id === id ? { ...n, is_read: true } : n),
       unreadCount: Math.max(0, s.unreadCount - 1),
@@ -67,10 +80,13 @@ export const useNotificationsStore = create<NotificationsState>((set, get) => ({
       return
     }
 
+    _fetchSequence += 1
     set(s => ({
       notifications: s.notifications.map(n => ({ ...n, is_read: true })),
       unreadCount: 0,
     }))
+
+    await get().fetch(businessId, true)
   },
 
   generate: async (businessId: string) => {
@@ -80,8 +96,8 @@ export const useNotificationsStore = create<NotificationsState>((set, get) => ({
 
   startPolling: (businessId: string) => {
     if (_pollTimer) clearInterval(_pollTimer)
-    get().fetch(businessId, true)
-    _pollTimer = setInterval(() => get().fetch(businessId, true), POLL_INTERVAL)
+    void get().generate(businessId)
+    _pollTimer = setInterval(() => void get().generate(businessId), POLL_INTERVAL)
   },
 
   stopPolling: () => {

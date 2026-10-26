@@ -22,7 +22,7 @@ export default function SubscriptionBadge({ className }: SubscriptionBadgeProps)
 
   let label = '';
   if (status === 'active') {
-    label = 'Plan Negocio · Activo';
+    label = planName + ' · Activo';
   } else if (isExpired) {
     label = daysSinceExpired > 0
       ? 'Vencido hace ' + daysSinceExpired + ' día' + (daysSinceExpired !== 1 ? 's' : '')

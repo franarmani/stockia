@@ -26,15 +26,13 @@ function timeAgo(dateStr: string) {
 
 export default function NotificationsPage() {
   const { business } = useBusinessStore()
-  const { notifications, loading, fetch, markRead, markAllRead, generate, startPolling, stopPolling } = useNotificationsStore()
+  const { notifications, loading, fetch, markRead, markAllRead, generate } = useNotificationsStore()
   const navigate = useNavigate()
   const [filter, setFilter] = useState<NotificationSeverity | 'all'>('all')
 
   useEffect(() => {
     if (business?.id) {
-      fetch(business.id, true)
-      startPolling(business.id)
-      return () => stopPolling()
+      void fetch(business.id, true)
     }
   }, [business?.id])
 
@@ -54,7 +52,7 @@ export default function NotificationsPage() {
             <Bell className="w-5 h-5 text-purple-400" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-white">Notificaciones</h1>
+            <h1 className="cg-title text-[clamp(1.6rem,3.5vw,2.25rem)]">Notificaciones</h1>
             {unread > 0 && <p className="text-[12px] text-white/50">{unread} sin leer</p>}
           </div>
         </div>

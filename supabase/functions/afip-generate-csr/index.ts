@@ -4,6 +4,7 @@
 
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { businessIsActive, INACTIVE_MESSAGE } from '../_shared/access.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -29,6 +30,7 @@ serve(async (req) => {
     // Get user's business_id
     const { data: profile } = await supabase.from('users').select('business_id, role').eq('id', user.id).single()
     if (!profile) throw new Error('No profile found')
+    if (!(await businessIsActive(supabase, profile.business_id))) throw new Error(INACTIVE_MESSAGE)
     if (profile.role !== 'admin') throw new Error('Only admins can generate CSR')
 
     const { env = 'homo' } = await req.json()
