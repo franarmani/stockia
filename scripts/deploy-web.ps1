@@ -1,0 +1,44 @@
+# Publica la web en el proyecto de Vercel "cajago" sin pasar por GitHub.
+#
+# Vercel (plan gratuito) bloquea los deploys cuyo commit tiene coautores que no son de la cuenta,
+# así que se compila acá y se sube el resultado ya armado desde una carpeta sin historial de git.
+# Las reglas son las mismas de vercel.json, escritas en el formato Build Output API v3.
+
+$ErrorActionPreference = 'Stop'
+$root = Split-Path $PSScriptRoot -Parent
+
+Push-Location $root
+try {
+  npm run build
+  if ($LASTEXITCODE -ne 0) { throw 'Falló la compilación de la web.' }
+} finally {
+  Pop-Location
+}
+
+$stage = Join-Path $env:TEMP 'cajago-web-deploy'
+if (Test-Path $stage) { Remove-Item $stage -Recurse -Force -Confirm:$false }
+$output = Join-Path $stage '.vercel\output'
+New-Item -ItemType Directory -Force (Join-Path $output 'static') | Out-Null
+Copy-Item (Join-Path $root 'dist\*') (Join-Path $output 'static') -Recurse
+Copy-Item (Join-Path $root '.vercel\project.json') (Join-Path $stage '.vercel\project.json')
+
+$noCache = @{ 'Cache-Control' = 'no-cache, no-store, must-revalidate, proxy-revalidate, max-age=0'; Pragma = 'no-cache'; Expires = '0' }
+$config = [ordered]@{
+  version = 3
+  routes = @(
+    [ordered]@{ src = '^/assets/(.*)$'; headers = @{ 'Cache-Control' = 'public, max-age=31536000, immutable' }; continue = $true },
+    [ordered]@{ src = '^/(index\.html|sw\.js|manifest\.webmanifest|manifest\.json|version\.json)$'; headers = $noCache; continue = $true },
+    [ordered]@{ src = '^/supabase-api/(.*)$'; dest = 'https://mrpenblsmooeqzegtcqp.supabase.co/$1' },
+    [ordered]@{ handle = 'filesystem' },
+    [ordered]@{ src = '^/(?!assets/|supabase-api/).*$'; dest = '/index.html'; headers = $noCache }
+  )
+}
+[IO.File]::WriteAllText((Join-Path $output 'config.json'), ($config | ConvertTo-Json -Depth 6), [Text.UTF8Encoding]::new($false))
+
+Push-Location $stage
+try {
+  npx vercel deploy --prebuilt --prod --yes
+  if ($LASTEXITCODE -ne 0) { throw 'Falló la publicación en Vercel.' }
+} finally {
+  Pop-Location
+}

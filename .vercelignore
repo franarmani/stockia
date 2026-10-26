@@ -1,0 +1,13 @@
+# Solo hace falta lo necesario para compilar la web
+src-tauri
+*.exe
+*.dll
+*.pdb
+releases-local
+dist
+node_modules
+.claude
+*.png.bak
+reg-step*.png
+backups.local
+billing-service
