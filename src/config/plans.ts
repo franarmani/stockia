@@ -20,6 +20,7 @@ export type PremiumFeature =
   | 'whatsapp_ai'
   | 'quotes'
   | 'bulk_tools'
+  | 'tiendanube'
 
 export const FEATURE_PLAN: Record<PremiumFeature, Exclude<PlanId, 'basic'>> = {
   quotes: 'premium',
@@ -34,6 +35,7 @@ export const FEATURE_PLAN: Record<PremiumFeature, Exclude<PlanId, 'basic'>> = {
   online_store: 'vip',
   intelligence: 'vip',
   whatsapp_ai: 'vip',
+  tiendanube: 'vip',
 }
 
 export interface Plan {
@@ -114,6 +116,7 @@ export const PLANS: Record<PlanId, Plan> = {
       'Usuarios ilimitados',
       'Contabilidad: plan de cuentas, libro diario y mayor',
       'Tienda online con pedidos por WhatsApp',
+      'Conexión con Tiendanube: ventas y stock sincronizados',
       'Análisis inteligente del negocio con IA',
       'Varias sucursales vinculadas',
       'Soporte prioritario',
@@ -137,6 +140,7 @@ export const PREMIUM_FEATURE_LABELS: Record<PremiumFeature, string> = {
   whatsapp_ai: 'WhatsApp con IA',
   quotes: 'Presupuestos',
   bulk_tools: 'Importación, aumentos masivos y etiquetas',
+  tiendanube: 'Conexión con Tiendanube',
 }
 
 /** Valores viejos (pro, free) y vacío cuentan como Premium. */

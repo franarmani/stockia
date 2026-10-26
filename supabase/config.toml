@@ -395,3 +395,13 @@ verify_jwt = false
 
 [functions.whatsapp-webhook]
 verify_jwt = false
+
+# Tiendanube llama sin JWT: la vuelta de OAuth valida el state, el webhook la firma HMAC y el worker un secreto de pg_cron.
+[functions.tiendanube-oauth]
+verify_jwt = false
+
+[functions.tiendanube-webhook]
+verify_jwt = false
+
+[functions.tiendanube-worker]
+verify_jwt = false

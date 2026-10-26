@@ -54,6 +54,7 @@ const PromotionsPage = lazy(() => import('@/pages/promotions/PromotionsPage'))
 const LoyaltyPage = lazy(() => import('@/pages/loyalty/LoyaltyPage'))
 const OnlineStorePage = lazy(() => import('@/pages/store/OnlineStorePage'))
 const WhatsAppPage = lazy(() => import('@/pages/whatsapp/WhatsAppPage'))
+const TiendanubePage = lazy(() => import('@/pages/tiendanube/TiendanubePage'))
 const StorefrontPage = lazy(() => import('@/pages/store/StorefrontPage'))
 const ResetPasswordPage = lazy(() => import('@/pages/auth/ResetPasswordPage'))
 const LegalPage = lazy(() => import('@/pages/legal/LegalPage'))
@@ -561,6 +562,7 @@ export default function App() {
           <Route path="club" element={<SubscriptionGuard mode="block"><PlanGate feature="loyalty"><LoyaltyPage /></PlanGate></SubscriptionGuard>} />
           <Route path="tienda" element={<SubscriptionGuard mode="block"><PlanGate feature="online_store"><OnlineStorePage /></PlanGate></SubscriptionGuard>} />
           <Route path="whatsapp" element={<SubscriptionGuard mode="block"><PlanGate feature="whatsapp_ai"><WhatsAppPage /></PlanGate></SubscriptionGuard>} />
+          <Route path="tiendanube" element={<SubscriptionGuard mode="block"><PlanGate feature="tiendanube"><TiendanubePage /></PlanGate></SubscriptionGuard>} />
           <Route path="customers" element={<SubscriptionGuard mode="block"><CustomersPage /></SubscriptionGuard>} />
           <Route path="cash-register" element={<SubscriptionGuard mode="block"><CashRegisterPage /></SubscriptionGuard>} />
           <Route path="sales" element={<SubscriptionGuard mode="block"><SalesHistoryPage /></SubscriptionGuard>} />

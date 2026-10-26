@@ -9,7 +9,7 @@ import {
   LogOut, LayoutDashboard,
   ShoppingCart, Package, Truck, Scale, Users, FileText, Wallet,
   Receipt, BarChart3, Settings, Menu, X, ChevronLeft, ChevronRight,
-  Music, CalendarDays, ClipboardList, TrendingUp, Sparkles, Store, ChevronDown, User, Tag, Crown, Gift, Globe, MessageCircle
+  Music, CalendarDays, ClipboardList, TrendingUp, Sparkles, Store, ChevronDown, User, Tag, Crown, Gift, Globe, MessageCircle, ShoppingBag
 } from 'lucide-react'
 import CajaGoBrand, { CajaGoIcon } from '@/components/brand/CajaGoBrand'
 import { cn } from '@/lib/utils'
@@ -62,6 +62,7 @@ const NAV_SECTIONS = [
     label: 'Vender más',
     items: [
       { name: 'Tienda online', href: '/tienda', icon: Globe, plan: 'vip' as const },
+      { name: 'Tiendanube', href: '/tiendanube', icon: ShoppingBag, plan: 'vip' as const },
       { name: 'WhatsApp IA', href: '/whatsapp', icon: MessageCircle, plan: 'vip' as const, upcoming: true },
       { name: 'CajaGo Music', href: '/music', icon: Music, plan: 'premium' as const },
     ],
