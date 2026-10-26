@@ -318,12 +318,11 @@ export default function CashRegisterPage() {
         </div>
       ) : (
         <div className="space-y-6">
-          <div className="bg-white/[0.03] border border-white/5 rounded-[3rem] p-12 text-center relative overflow-hidden">
-            <div className="absolute inset-0 bg-emerald-500/[0.02] pointer-events-none" />
-            <div className="w-20 h-20 rounded-[2.5rem] bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mx-auto mb-6">
-               <Wallet className="w-10 h-10 text-emerald-500" />
+          <div className="bg-[#10141b] border border-white/[0.07] rounded-2xl p-10 text-center relative overflow-hidden">
+            <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 flex items-center justify-center mx-auto mb-5">
+               <Wallet className="w-7 h-7 text-emerald-400" />
             </div>
-            <h2 className="text-2xl font-black text-white tracking-tight mb-2">La caja está cerrada</h2>
+            <h2 className="text-xl font-bold text-white tracking-tight mb-2">La caja está cerrada</h2>
             <p className="text-sm text-white/40 mb-8 max-w-xs mx-auto">Para comenzar a operar y registrar ventas, iniciá una nueva sesión de caja.</p>
             <GlassButton onClick={() => setShowOpenModal(true)} size="lg" className="bg-emerald-500 text-white hover:bg-emerald-400 border-none font-black shadow-xl shadow-emerald-500/20 px-10">
               <DoorOpen className="w-5 h-5" /> Abrir Caja

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { normalizePlan } from '@/config/plans'
 import { Navigate } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
+import { openExternal } from '@/desktop/openExternal'
 import { useAuthStore } from '@/stores/authStore'
 import {
   Users, CheckCircle2, Clock, XCircle,
@@ -111,6 +112,14 @@ export default function AdminPage() {
       })))
     }
     setLoadingPayments(false)
+  }
+
+  // Los comprobantes son privados: se abren con un link que vence en 10 minutos.
+  async function openProof(proof: string) {
+    const path = proof.includes('/payment-proofs/') ? proof.split('/payment-proofs/')[1].split('?')[0] : proof
+    const { data, error } = await supabase.storage.from('payment-proofs').createSignedUrl(path, 600)
+    if (error || !data) { toast.error('No se pudo abrir el comprobante'); return }
+    openExternal(data.signedUrl)
   }
 
   async function approvePayment(req: PaymentRequest) {
@@ -434,11 +443,11 @@ export default function AdminPage() {
                         <td className="px-4 py-3 text-sm text-white/70 font-semibold">{req.amount}</td>
                         <td className="px-4 py-3">
                           {req.proof_url ? (
-                            <a href={req.proof_url} target="_blank" rel="noopener noreferrer"
+                            <button onClick={() => openProof(req.proof_url!)}
                               className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-blue-500/15 hover:bg-blue-500/25 text-blue-400 text-xs font-semibold transition-colors">
                               <ImageIcon className="w-3.5 h-3.5" />
                               Ver imagen
-                            </a>
+                            </button>
                           ) : (
                             <span className="text-white/25 text-xs">Sin comprobante</span>
                           )}

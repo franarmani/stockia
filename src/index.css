@@ -375,43 +375,46 @@
 }
 
 .card-surface,
-.glass-card,
-.glass-panel {
-  background: var(--app-surface) !important;
-  border: 1px solid var(--app-border) !important;
-  border-radius: 0.875rem;
-  box-shadow: 0 12px 36px rgba(2, 5, 10, 0.18);
-  transition: border-color 180ms ease, background-color 180ms ease, transform 180ms ease, box-shadow 180ms ease;
-}
+/* En la capa de componentes: las clases de cada pantalla (bg-emerald-500, etc.) tienen que poder ganarles. */
+@layer components {
+  .glass-card,
+  .glass-panel {
+    background: var(--app-surface) !important;
+    border: 1px solid var(--app-border) !important;
+    border-radius: 0.875rem;
+    box-shadow: 0 12px 36px rgba(2, 5, 10, 0.18);
+    transition: border-color 180ms ease, background-color 180ms ease, transform 180ms ease, box-shadow 180ms ease;
+  }
 
-.card-elevated {
-  background: var(--app-surface-elevated);
-  border: 1px solid var(--app-border-strong);
-  border-radius: 0.875rem;
-  box-shadow: var(--shadow-panel);
-}
+  .card-elevated {
+    background: var(--app-surface-elevated);
+    border: 1px solid var(--app-border-strong);
+    border-radius: 0.875rem;
+    box-shadow: var(--shadow-panel);
+  }
 
-.glass-card--glow,
-.glass-card--glow:hover {
-  box-shadow: var(--shadow-panel);
-}
+  .glass-card--glow,
+  .glass-card--glow:hover {
+    box-shadow: var(--shadow-panel);
+  }
 
-.glass-card--glow:hover,
-.glass-card:hover {
-  border-color: rgba(111, 140, 255, 0.28) !important;
-}
+  .glass-card--glow:hover,
+  .glass-card:hover {
+    border-color: rgba(111, 140, 255, 0.28) !important;
+  }
 
-.glass-btn {
-  color: var(--app-text-secondary);
-  background: rgba(255, 255, 255, 0.035);
-  border: 1px solid var(--app-border);
-  transition: color 160ms ease, background-color 160ms ease, border-color 160ms ease, transform 160ms ease;
-}
+  .glass-btn {
+    color: var(--app-text-secondary);
+    background: rgba(255, 255, 255, 0.035);
+    border: 1px solid var(--app-border);
+    transition: color 160ms ease, background-color 160ms ease, border-color 160ms ease, transform 160ms ease;
+  }
 
-.glass-btn:hover {
-  color: var(--app-text);
-  background: rgba(255, 255, 255, 0.065);
-  border-color: var(--app-border-strong);
+  .glass-btn:hover {
+    color: var(--app-text);
+    background: rgba(255, 255, 255, 0.065);
+    border-color: var(--app-border-strong);
+  }
 }
 
 .gradient-cajago {
@@ -805,8 +808,8 @@ tbody tr:hover {
   letter-spacing: 0;
 }
 
-/* Etiquetas sin MAYÚSCULAS espaciadas */
-.app-content .uppercase {
+/* Etiquetas sin MAYÚSCULAS espaciadas (también en el punto de venta) */
+.app-shell .uppercase {
   text-transform: none;
   letter-spacing: normal;
 }
@@ -819,4 +822,17 @@ tbody tr:hover {
 
 .app-content :is(button, a)[class*='bg-gradient-to-']:is([class*='from-violet-'], [class*='from-blue-'], [class*='from-indigo-'], [class*='from-cyan-']):hover:not(:disabled) {
   background: #6f8cff !important;
+}
+
+/* Programa sobrio: sin letra "black", sin resplandores de color y sin esquinas exageradas */
+.app-shell .font-black {
+  font-weight: 700;
+}
+
+.app-shell :is([class*='shadow-emerald-'], [class*='shadow-green-'], [class*='shadow-blue-'], [class*='shadow-indigo-'], [class*='shadow-violet-'], [class*='shadow-purple-'], [class*='shadow-primary'], [class*='shadow-sky-'], [class*='shadow-amber-'], [class*='shadow-rose-']) {
+  box-shadow: none !important;
+}
+
+.app-shell :is([class*='rounded-[2rem]'], [class*='rounded-[2.5rem]'], [class*='rounded-[3rem]'], .rounded-3xl) {
+  border-radius: 1rem !important;
 }

@@ -62,13 +62,11 @@ export default function PaymentNotificationModal({ onClose, daysLeft }: { onClos
 
       if (upErr) throw new Error(upErr.message)
 
-      const { data: urlData } = supabase.storage.from('payment-proofs').getPublicUrl(path)
-
       const { error: reqErr } = await supabase.from('payment_requests').insert({
         business_id: business.id,
         user_id: profile.id,
         amount: PRECIO,
-        proof_url: urlData.publicUrl,
+        proof_url: path,
         status: 'pending',
         plan,
         note: 'Solicitud de activación inicial'
