@@ -4,6 +4,8 @@ import { supabase } from '@/lib/supabase'
 import { syncEngine } from '@/sync/syncEngine'
 import { getLocalProducts } from '@/sync/storage'
 import { usePlan } from '@/hooks/usePlan'
+import ImagePicker from '@/features/onlineStore/ImagePicker'
+import { removeStoreImage } from '@/features/onlineStore/storeImages'
 import { BASIC_LIMITS } from '@/config/plans'
 import { withSyncNote } from '@/sync/connectivity'
 import BulkPriceModal from '@/features/products/BulkPriceModal'
@@ -72,6 +74,7 @@ export default function ProductsPage() {
     brand: '', size_label: '', model: '', presentation: '', supplier_id: '',
     material: '',
     show_online: true,
+    image_url: null as string | null,
   })
   const [catForm, setCatForm] = useState({ name: '' })
   const [supplierForm, setSupplierForm] = useState({ name: '', phone: '', cuit: '' })
@@ -213,7 +216,7 @@ export default function ProductsPage() {
       return
     }
     setEditingProduct(null)
-    setForm({ name: '', barcode: '', sale_price: '', purchase_price: '', stock: '', stock_min: '3', category_id: '', unit: 'u', brand: '', size_label: '', model: '', presentation: '', supplier_id: '', material: '', show_online: true })
+    setForm({ name: '', barcode: '', sale_price: '', purchase_price: '', stock: '', stock_min: '3', category_id: '', unit: 'u', brand: '', size_label: '', model: '', presentation: '', supplier_id: '', material: '', show_online: true, image_url: null })
     setShowProductModal(true)
   }
   function openEdit(p: Product) {
@@ -225,6 +228,7 @@ export default function ProductsPage() {
       model: p.model || '', presentation: p.presentation || '', supplier_id: p.supplier_id || '',
       material: p.material || '',
       show_online: (p as any).show_online !== false,
+      image_url: p.image_url ?? null,
     })
     setShowProductModal(true)
   }
@@ -247,6 +251,7 @@ export default function ProductsPage() {
       avg_cost: Number(form.purchase_price) || 0,
       material: form.material.trim() || null,
       show_online: form.show_online,
+      image_url: form.image_url,
     }
     const businessId = profile!.business_id
     try {
@@ -257,6 +262,7 @@ export default function ProductsPage() {
         await syncEngine.updateRow('products', businessId, editingProduct.id, fields)
         const delta = Math.round((stock - editingProduct.stock) * 1000) / 1000
         if (delta !== 0) await syncEngine.adjustStock(businessId, editingProduct.id, delta, 'adjustment', 'Edición de producto')
+        if (editingProduct.image_url && editingProduct.image_url !== form.image_url) removeStoreImage(editingProduct.image_url).catch(() => {})
         toast.success(withSyncNote('Producto actualizado'))
       } else {
         await syncEngine.createRow('products', businessId, {
@@ -817,10 +823,16 @@ export default function ProductsPage() {
               </div>
             </div>
 
-            <label className="flex items-center gap-2 text-xs text-white/70">
-              <input type="checkbox" checked={form.show_online} onChange={(e) => setForm({ ...form, show_online: e.target.checked })} />
-              Mostrar en la tienda online
-            </label>
+            <div className="flex items-start gap-4">
+              <ImagePicker value={form.image_url} onChange={(url) => setForm({ ...form, image_url: url })} className="w-28 shrink-0" />
+              <div className="space-y-2 pt-1">
+                <label className="flex items-center gap-2 text-xs text-white/70">
+                  <input type="checkbox" checked={form.show_online} onChange={(e) => setForm({ ...form, show_online: e.target.checked })} />
+                  Mostrar en la tienda online
+                </label>
+                <p className="text-[11px] leading-4 text-white/40">La foto se ve en tu tienda online. Se achica sola antes de subirse.</p>
+              </div>
+            </div>
 
             <div className="pt-2 border-t border-white/[0.06]">
               <p className="text-[10px] font-bold text-violet-400 uppercase tracking-wider mb-2.5 ml-0.5">Detalles de Material & Variante</p>

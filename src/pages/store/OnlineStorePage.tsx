@@ -11,6 +11,9 @@ import { cachedQuery } from '@/sync/remote'
 import { isOnline } from '@/sync/connectivity'
 import { openExternal } from '@/desktop/openExternal'
 import { PUBLIC_WEB_URL } from '@/config/publicUrls'
+import ImagePicker from '@/features/onlineStore/ImagePicker'
+import ProductPhotosSection from '@/features/onlineStore/ProductPhotosSection'
+import { removeStoreImage } from '@/features/onlineStore/storeImages'
 import { cn, formatCurrency } from '@/lib/utils'
 import type { Product } from '@/types/database'
 
@@ -46,7 +49,7 @@ export default function OnlineStorePage() {
   const { profile } = useAuthStore()
   const { business, fetchBusiness } = useBusinessStore()
   const b = business as any
-  const [form, setForm] = useState({ enabled: false, slug: '', whatsapp: '', message: '' })
+  const [form, setForm] = useState({ enabled: false, slug: '', whatsapp: '', message: '', cover: null as string | null })
   const [saving, setSaving] = useState(false)
   const [orders, setOrders] = useState<OnlineOrder[]>([])
   const [filter, setFilter] = useState<'open' | 'all'>('open')
@@ -58,6 +61,7 @@ export default function OnlineStorePage() {
       slug: b.store_slug || slugify(business.name),
       whatsapp: b.store_whatsapp || business.phone || '',
       message: b.store_message || '',
+      cover: b.store_cover_url || null,
     })
   }, [business?.id])
 
@@ -87,12 +91,14 @@ export default function OnlineStorePage() {
       store_slug: form.slug,
       store_whatsapp: form.whatsapp.trim() || null,
       store_message: form.message.trim() || null,
+      store_cover_url: form.cover,
     } as any).eq('id', business.id)
     setSaving(false)
     if (error) {
       toast.error(error.code === '23505' ? 'Ese link ya lo usa otro negocio. Probá con otro.' : 'No se pudo guardar la tienda')
       return
     }
+    if (b.store_cover_url && b.store_cover_url !== form.cover) removeStoreImage(b.store_cover_url).catch(() => {})
     await fetchBusiness(business.id)
     toast.success(form.enabled ? 'Tienda online activa' : 'Tienda guardada (desactivada)')
   }
@@ -157,6 +163,11 @@ export default function OnlineStorePage() {
             <label className="block text-xs font-medium text-white/60 mb-1">Mensaje para tus clientes (opcional)</label>
             <input value={form.message} onChange={e => setForm({ ...form, message: e.target.value })} placeholder="Envíos en el día · Retiro en el local de 9 a 20 h" maxLength={160} className={input} />
           </div>
+          <div>
+            <label className="block text-xs font-medium text-white/60 mb-1">Portada de la tienda (opcional)</label>
+            <ImagePicker kind="cover" label="Portada" value={form.cover} onChange={cover => setForm({ ...form, cover })} />
+            <p className="mt-1 text-[11px] text-white/30">Una foto del local o de tus productos. Se ve arriba de todo en la tienda.</p>
+          </div>
           <button onClick={save} disabled={saving} className="h-10 px-5 rounded-xl bg-primary text-white text-sm font-bold hover:brightness-110 disabled:opacity-50">
             {saving ? 'Guardando...' : 'Guardar'}
           </button>
@@ -187,6 +198,8 @@ export default function OnlineStorePage() {
           )}
         </div>
       </section>
+
+      {profile?.business_id && <ProductPhotosSection businessId={profile.business_id} />}
 
       <section className="rounded-2xl border border-white/8 bg-[#0d1b2d] p-5 space-y-3">
         <div className="flex items-center justify-between gap-3">

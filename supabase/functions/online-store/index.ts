@@ -19,7 +19,7 @@ Deno.serve(async request => {
 
     const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
     const { data: business } = await admin.from('businesses')
-      .select('id, name, logo_url, address, city, phone, plan, subscription_status, trial_ends_at, store_enabled, store_whatsapp, store_message')
+      .select('id, name, logo_url, address, city, phone, plan, subscription_status, trial_ends_at, store_enabled, store_whatsapp, store_message, store_cover_url, primary_color')
       .eq('store_slug', body.slug)
       .maybeSingle()
 
@@ -42,6 +42,8 @@ Deno.serve(async request => {
           logo_url: business.logo_url,
           address: [business.address, business.city].filter(Boolean).join(', ') || null,
           message: business.store_message,
+          cover_url: business.store_cover_url,
+          color: business.primary_color,
           has_whatsapp: !!whatsappOrderLink(business.store_whatsapp, 'x'),
         },
         categories: categories ?? [],
