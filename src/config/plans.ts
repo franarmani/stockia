@@ -117,13 +117,12 @@ export const PLANS: Record<PlanId, Plan> = {
       'Contabilidad: plan de cuentas, libro diario y mayor',
       'Tienda online con pedidos por WhatsApp',
       'Conexión con Tiendanube: ventas y stock sincronizados',
+      'WhatsApp con IA: tu propio número atendiendo consultas y pedidos',
       'Análisis inteligente del negocio con IA',
       'Varias sucursales vinculadas',
       'Soporte prioritario',
     ],
-    upcoming: [
-      'WhatsApp con IA: tu propio número atendiendo consultas y pedidos',
-    ],
+    upcoming: [],
   },
 }
 

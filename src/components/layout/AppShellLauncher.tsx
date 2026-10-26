@@ -63,7 +63,7 @@ const NAV_SECTIONS = [
     items: [
       { name: 'Tienda online', href: '/tienda', icon: Globe, plan: 'vip' as const },
       { name: 'Tiendanube', href: '/tiendanube', icon: ShoppingBag, plan: 'vip' as const },
-      { name: 'WhatsApp IA', href: '/whatsapp', icon: MessageCircle, plan: 'vip' as const, upcoming: true },
+      { name: 'WhatsApp IA', href: '/whatsapp', icon: MessageCircle, plan: 'vip' as const },
       { name: 'CajaGo Music', href: '/music', icon: Music, plan: 'premium' as const },
     ],
   },

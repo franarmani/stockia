@@ -7,6 +7,7 @@ import { toast } from 'sonner'
 import { useAuthStore } from '@/stores/authStore'
 import { cn, formatCurrency } from '@/lib/utils'
 import Button from '@/components/ui/Button'
+import MonthlyReportButton from '@/features/reports/MonthlyReportButton'
 import { GlassButton } from '@/components/ui/GlassCard'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts'
 import {
@@ -272,6 +273,7 @@ export default function ReportsPage() {
             <Download className="w-3.5 h-3.5 text-white/60" />
             <span>Exportar CSV</span>
           </button>
+          <MonthlyReportButton />
         </div>
       </div>
 

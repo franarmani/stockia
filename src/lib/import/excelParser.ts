@@ -14,12 +14,16 @@ export interface ParsedFile {
   headers: string[]
   rows: Record<string, unknown>[]
   columnMappings: ColumnMapping[]
+  /** Primeras filas tal cual vienen en la hoja (para que la IA encuentre encabezados y columnas). */
+  preview: string[][]
 }
 
 export interface ParseOptions {
   sheetName?: string
   /** If true, treat first row as data (no headers). NOT recommended */
   noHeaders?: boolean
+  /** Fila (desde 0) donde están los encabezados; por defecto la primera. */
+  headerRow?: number
 }
 
 function isLikelyCsv(file: File): boolean {
@@ -79,9 +83,11 @@ export async function parseFile(file: File, options: ParseOptions = {}): Promise
 
   if (rawData.length === 0) throw new Error('El archivo está vacío.')
 
-  // Detect headers: first row
-  const headerRow = (rawData[0] as unknown[]).map((cell) => String(cell ?? '').trim())
-  const dataRows = rawData.slice(1)
+  // Encabezados: la fila indicada (las listas de precios suelen traer títulos arriba)
+  const headerIndex = Math.min(Math.max(0, options.headerRow ?? 0), rawData.length - 1)
+  const width = Math.max(...rawData.slice(headerIndex, headerIndex + 50).map(row => (row as unknown[]).length))
+  const headerRow = Array.from({ length: width }, (_, i) => String((rawData[headerIndex] as unknown[])[i] ?? '').trim() || `Columna ${i + 1}`)
+  const dataRows = rawData.slice(headerIndex + 1)
 
   // Filter out completely empty rows
   const nonEmptyRows = dataRows.filter((row) =>
@@ -99,7 +105,9 @@ export async function parseFile(file: File, options: ParseOptions = {}): Promise
 
   const columnMappings = detectColumns(headerRow)
 
-  return { sheetNames, selectedSheet, headers: headerRow, rows, columnMappings }
+  const preview = rawData.slice(0, 20).map(row => (row as unknown[]).slice(0, 20).map(cell => String(cell ?? '').trim().slice(0, 60)))
+
+  return { sheetNames, selectedSheet, headers: headerRow, rows, columnMappings, preview }
 }
 
 /** Generate a template .xlsx file with recommended columns */

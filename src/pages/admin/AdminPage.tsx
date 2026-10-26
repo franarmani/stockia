@@ -3,13 +3,14 @@ import { normalizePlan } from '@/config/plans'
 import { Navigate } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
 import { openExternal } from '@/desktop/openExternal'
+import Modal from '@/components/ui/Modal'
 import { useAuthStore } from '@/stores/authStore'
 import {
   Users, CheckCircle2, Clock, XCircle,
   Search, RefreshCw, MessageCircle, LogOut,
   Building2, TrendingUp, AlertTriangle, Copy,
   CreditCard, ImageIcon, ThumbsUp, ThumbsDown,
-  Calendar,
+  Calendar, Smartphone,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { format, addDays } from 'date-fns'
@@ -79,10 +80,62 @@ export default function AdminPage() {
   const canManagePlans = isSuperadmin && isAdminUser
 
 
+  // Instancias de Z-API asignadas a mano (hasta tener cuenta de partner)
+  const [waAssigned, setWaAssigned] = useState<Set<string>>(new Set())
+  const [waBusiness, setWaBusiness] = useState<BusinessRow | null>(null)
+  const [waForm, setWaForm] = useState({ instance_id: '', instance_token: '', client_token: '' })
+  const [waSaving, setWaSaving] = useState(false)
+
+  async function waCall<T>(body: Record<string, unknown>): Promise<T> {
+    const { data, error } = await supabase.functions.invoke('whatsapp-admin', { body })
+    if (error) {
+      const detail = await (error as any).context?.json?.().catch(() => null)
+      throw new Error(detail?.error || error.message)
+    }
+    return data as T
+  }
+
+  async function fetchWaAssigned() {
+    try {
+      const { assigned } = await waCall<{ assigned: Array<{ business_id: string }> }>({ action: 'list' })
+      setWaAssigned(new Set(assigned.map(row => row.business_id)))
+    } catch {}
+  }
+
+  async function saveWaInstance() {
+    if (!waBusiness) return
+    setWaSaving(true)
+    try {
+      const result = await waCall<{ webhook_configured: boolean }>({ action: 'assign', business_id: waBusiness.id, ...waForm })
+      toast.success(result.webhook_configured
+        ? 'WhatsApp asignado. El negocio ya puede escanear el QR desde CajaGo.'
+        : 'Instancia guardada, pero no se pudo configurar el webhook en Z-API: revisá el ID, el token y el Client-Token.')
+      setWaBusiness(null)
+      fetchWaAssigned()
+    } catch (error: any) {
+      toast.error(error.message)
+    } finally {
+      setWaSaving(false)
+    }
+  }
+
+  async function removeWaInstance() {
+    if (!waBusiness || !confirm(`¿Quitar la instancia de WhatsApp de ${waBusiness.name}?`)) return
+    try {
+      await waCall({ action: 'unassign', business_id: waBusiness.id })
+      toast.success('Instancia quitada')
+      setWaBusiness(null)
+      fetchWaAssigned()
+    } catch (error: any) {
+      toast.error(error.message)
+    }
+  }
+
   useEffect(() => {
     if (!isSuperadmin) return
     fetchAll()
     fetchPaymentRequests()
+    fetchWaAssigned()
   }, [isSuperadmin])
 
   // Guard: only superadmin (AFTER hooks to comply with React rules)
@@ -609,6 +662,15 @@ export default function AdminPage() {
                               <MessageCircle className="w-3.5 h-3.5" />
                             </button>
 
+                            {/* Asignar instancia de WhatsApp IA */}
+                            <button
+                              onClick={() => { setWaBusiness(b); setWaForm({ instance_id: '', instance_token: '', client_token: '' }) }}
+                              className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${waAssigned.has(b.id) ? 'bg-emerald-500/25 text-emerald-300' : 'bg-white/5 hover:bg-white/10 text-white/50'}`}
+                              title={waAssigned.has(b.id) ? 'WhatsApp IA asignado' : 'Asignar WhatsApp IA'}
+                            >
+                              <Smartphone className="w-3.5 h-3.5" />
+                            </button>
+
                             {/* Sumar 30 días */}
                             <button
                               disabled={updating === b.id}
@@ -671,7 +733,33 @@ export default function AdminPage() {
           </>
         )}
 
-      </div>
+            <Modal open={!!waBusiness} onClose={() => setWaBusiness(null)} title={`WhatsApp IA · ${waBusiness?.name ?? ''}`} size="sm">
+        <div className="space-y-3">
+          <p className="text-[13px] leading-5 text-white/55">
+            Creá una instancia en tu panel de Z-API (Instâncias → Criar instância) y pegá sus datos. El comercio después entra a
+            WhatsApp IA en CajaGo, toca "Conectar" y escanea el QR con <b>su</b> celular.
+          </p>
+          {(['instance_id', 'instance_token', 'client_token'] as const).map(field => (
+            <div key={field}>
+              <label className="mb-1 block text-xs text-white/60">
+                {field === 'instance_id' ? 'ID de la instancia' : field === 'instance_token' ? 'Token de la instancia' : 'Client-Token (opcional si ya está cargado en el servidor)'}
+              </label>
+              <input value={waForm[field]} onChange={e => setWaForm({ ...waForm, [field]: e.target.value })} autoComplete="off"
+                className="h-10 w-full rounded-lg border border-white/10 bg-white/5 px-3 text-sm text-white focus:outline-none focus:border-primary/40" />
+            </div>
+          ))}
+          <div className="flex items-center justify-between gap-2 pt-1">
+            {waBusiness && waAssigned.has(waBusiness.id)
+              ? <button onClick={removeWaInstance} className="h-9 rounded-lg px-3 text-[13px] font-semibold text-red-300/80 hover:bg-red-500/10">Quitar instancia</button>
+              : <span />}
+            <button onClick={saveWaInstance} disabled={waSaving || !waForm.instance_id.trim() || !waForm.instance_token.trim()}
+              className="h-9 rounded-lg bg-[#6178ee] px-4 text-[13px] font-semibold text-white hover:bg-[#6f8cff] disabled:opacity-50">
+              {waSaving ? 'Guardando…' : 'Asignar'}
+            </button>
+          </div>
+        </div>
+      </Modal>
+</div>
     </div>
   )
 }

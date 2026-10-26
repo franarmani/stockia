@@ -7,7 +7,8 @@ import Modal from '@/components/ui/Modal'
 import Button from '@/components/ui/Button'
 import { parseFile, generateTemplate } from '@/lib/import/excelParser'
 import type { ParsedFile } from '@/lib/import/excelParser'
-import { detectColumns, FIELD_LABELS, getMissingRequired } from '@/lib/import/columnMatcher'
+import { detectColumns, FIELD_LABELS, getMissingRequired, normalizeHeader } from '@/lib/import/columnMatcher'
+import { detectColumnsWithAI } from '@/lib/import/aiDetect'
 import type { ColumnMapping, ProductField } from '@/lib/import/columnMatcher'
 import { mapAndValidateRows, runImport } from '@/lib/import/importApi'
 import type { MappedRow, ImportMode, MatchBy, ImportResult } from '@/lib/import/importApi'
@@ -49,6 +50,7 @@ export default function ImportProductsModal({ open, onClose, onDone }: Props) {
   const [mappings, setMappings] = useState<ColumnMapping[]>([])
   const [selectedSheet, setSelectedSheet] = useState('')
   const [loading, setLoading] = useState(false)
+  const [aiStatus, setAiStatus] = useState<'off' | 'working' | 'done'>('off')
   const [mappedRows, setMappedRows] = useState<MappedRow[]>([])
   const [mode, setMode] = useState<ImportMode>('upsert')
   const [matchBy, setMatchBy] = useState<MatchBy>('barcode')
@@ -60,7 +62,7 @@ export default function ImportProductsModal({ open, onClose, onDone }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   function reset() {
-    setStep(0); setFile(null); setParsed(null); setMappings([]); setSelectedSheet('')
+    setStep(0); setFile(null); setParsed(null); setMappings([]); setSelectedSheet(''); setAiStatus('off')
     setMappedRows([]); setResult(null); setProgress(0); setProgressText(''); setImporting(false)
   }
 
@@ -70,11 +72,35 @@ export default function ImportProductsModal({ open, onClose, onDone }: Props) {
   async function handleFileDrop(f: File) {
     setFile(f); setLoading(true)
     try {
-      const result = await parseFile(f)
+      let result = await parseFile(f)
+      let detected = result.columnMappings
+
+      // La IA encuentra la fila de encabezados (aunque haya títulos arriba) y qué es cada columna.
+      setAiStatus('working')
+      const ai = await detectColumnsWithAI(result.preview)
+      if (ai) {
+        if (ai.header_row > 0) result = await parseFile(f, { headerRow: ai.header_row })
+        const fromAi = result.headers.map((header, index) => ({ original: header, normalized: normalizeHeader(header), field: ai.columns[index] ?? null }))
+        const used = new Set(fromAi.map(m => m.field).filter(Boolean))
+        // Lo que la IA no asignó se completa con la detección por nombre de encabezado.
+        detected = fromAi.map((m, index) => {
+          const guess = result.columnMappings[index]?.field ?? null
+          return m.field || !guess || used.has(guess) ? m : (used.add(guess), { ...m, field: guess })
+        })
+      }
+      setAiStatus(ai ? 'done' : 'off')
+
       setParsed(result)
       setSelectedSheet(result.selectedSheet)
-      setMappings(result.columnMappings)
-      setStep(1)
+      setMappings(detected)
+      if (ai && getMissingRequired(detected).length === 0) {
+        // Todo reconocido: directo a revisar y subir.
+        setMappedRows(mapAndValidateRows(result.rows, detected))
+        setStep(2)
+        toast.success('La IA reconoció las columnas. Revisá y confirmá la importación.')
+      } else {
+        setStep(1)
+      }
     } catch (e: any) {
       toast.error(e.message || 'Error al leer el archivo')
     } finally {
@@ -190,10 +216,13 @@ export default function ImportProductsModal({ open, onClose, onDone }: Props) {
               <input ref={fileInputRef} type="file" accept=".xlsx,.xls,.csv" className="hidden"
                 onChange={e => { const f = e.target.files?.[0]; if (f) handleFileDrop(f) }} />
               {loading
-                ? <Loader2 className="w-10 h-10 mx-auto text-primary animate-spin" />
+                ? <>
+                  <Loader2 className="w-10 h-10 mx-auto text-primary animate-spin" />
+                  <p className="mt-3 text-sm text-muted-foreground">{aiStatus === 'working' ? 'La IA está leyendo tu planilla…' : 'Leyendo el archivo…'}</p>
+                </>
                 : <><FileSpreadsheet className="w-10 h-10 mx-auto text-slate-500 mb-3" />
                   <p className="font-semibold text-foreground">Arrastrá tu archivo acá</p>
-                  <p className="text-sm text-muted-foreground mt-1">O hacé click para seleccionar — .xlsx, .xls, .csv</p></>
+                  <p className="text-sm text-muted-foreground mt-1">Cualquier planilla de productos o lista de precios — .xlsx, .xls, .csv. La IA reconoce las columnas sola.</p></>
               }
             </div>
             <div className="flex items-center justify-between">

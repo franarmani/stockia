@@ -1,9 +1,9 @@
 // Administración de WhatsApp con IA desde CajaGo (usuario autenticado).
-// Acciones: get_config, save_config, send, pause, resume, mark_read.
+// Acciones: connect, qr, disconnect (instancia administrada por CajaGo), get_config, save_config, send, pause, resume, mark_read.
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { businessIsActive, hasVipAccess, INACTIVE_MESSAGE } from '../_shared/access.ts'
 import { STAFF_PAUSE_HOURS } from '../_shared/whatsappBot.ts'
-import { hasCredentials, instanceStatus, sendText, setReceivedWebhook } from '../_shared/zapi.ts'
+import { cancelManagedInstance, createManagedInstance, disconnectInstance, hasCredentials, instanceStatus, qrCodeImage, sendText, setReceivedWebhook, subscribeManagedInstance } from '../_shared/zapi.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -49,12 +49,66 @@ Deno.serve(async request => {
       }
       return json({
         has_credentials: hasCredentials(connection),
+        managed: !!connection?.managed,
         instance_id: connection?.instance_id ?? '',
         bot_enabled: !!connection?.bot_enabled,
         bot_instructions: connection?.bot_instructions ?? '',
         webhook_url: connection ? webhookUrl(connection.webhook_key) : null,
         connected,
       })
+    }
+
+    // ── Conexión administrada: CajaGo crea la instancia y el comercio escanea el QR ──
+    if (action === 'connect') {
+      if (!isAdmin) return json({ error: 'Solo un administrador puede conectar WhatsApp' }, 403)
+      if (!hasCredentials(connection)) {
+        // Sin cuenta de partner, CajaGo asigna la instancia a mano desde el panel admin.
+        if (!Deno.env.get('ZAPI_PARTNER_TOKEN')) {
+          return json({ error: 'Para activar WhatsApp en tu cuenta escribinos por WhatsApp a soporte de CajaGo: te lo habilitamos en el día.' }, 409)
+        }
+        const key = connection?.webhook_key ?? randomKey()
+        const { data: biz } = await admin.from('businesses').select('name').eq('id', businessId).single()
+        const instance = await createManagedInstance(`CajaGo · ${biz?.name ?? businessId}`, webhookUrl(key))
+        const { data: saved, error } = await admin.from('whatsapp_connections').upsert({
+          business_id: businessId, webhook_key: key, instance_id: instance.id, instance_token: instance.token,
+          client_token: null, managed: true, subscribed: false, updated_at: new Date().toISOString(),
+        }).select('*').single()
+        if (error) throw new Error(error.message)
+        connection = saved
+      }
+      return json({ ok: true })
+    }
+
+    if (action === 'qr') {
+      if (!hasCredentials(connection)) return json({ connected: false, qr: null })
+      const status = await instanceStatus(connection).catch(() => null)
+      if (status?.connected) {
+        // Recién con el número conectado la instancia empieza a pagarse.
+        if (connection.managed && !connection.subscribed) {
+          await subscribeManagedInstance(connection.instance_id, connection.instance_token)
+          await admin.from('whatsapp_connections').update({ subscribed: true, updated_at: new Date().toISOString() }).eq('business_id', businessId)
+        }
+        return json({ connected: true, qr: null })
+      }
+      const image = await qrCodeImage(connection).catch(() => null)
+      return json({ connected: false, qr: image?.value ?? null })
+    }
+
+    if (action === 'disconnect') {
+      if (!isAdmin) return json({ error: 'Solo un administrador puede desconectar WhatsApp' }, 403)
+      if (hasCredentials(connection)) {
+        await disconnectInstance(connection).catch(() => null)
+        if (connection.managed) {
+          await cancelManagedInstance(connection.instance_id, connection.instance_token).catch(error => console.warn('[whatsapp] cancelar instancia', error))
+          await admin.from('whatsapp_connections').update({
+            instance_id: null, instance_token: null, client_token: null, managed: false, subscribed: false, bot_enabled: false, updated_at: new Date().toISOString(),
+          }).eq('business_id', businessId)
+        } else {
+          // Instancia asignada por CajaGo: se desvincula el número pero la instancia queda para volver a conectar.
+          await admin.from('whatsapp_connections').update({ bot_enabled: false, updated_at: new Date().toISOString() }).eq('business_id', businessId)
+        }
+      }
+      return json({ ok: true })
     }
 
     if (action === 'save_config') {
