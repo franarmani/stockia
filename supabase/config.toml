@@ -405,3 +405,6 @@ verify_jwt = false
 
 [functions.tiendanube-worker]
 verify_jwt = false
+
+[functions.admin-alerts]
+verify_jwt = false
