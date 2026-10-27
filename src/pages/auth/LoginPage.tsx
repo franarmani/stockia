@@ -13,6 +13,12 @@ const FEATURES = [
   { icon: BarChart3, label: 'Facturación AFIP y reportes' },
 ]
 
+/** A dónde volver después de iniciar sesión (?next=/admin); solo rutas internas. */
+function nextPath() {
+  const next = new URLSearchParams(window.location.search).get('next')
+  return next && next.startsWith('/') && !next.startsWith('//') ? next : '/menu'
+}
+
 export default function LoginPage() {
   const navigate = useNavigate()
   const { user, profile } = useAuthStore()
@@ -24,7 +30,7 @@ export default function LoginPage() {
   const [resetSent, setResetSent] = useState(false)
 
   useEffect(() => {
-    if (user && profile) navigate('/menu')
+    if (user && profile) navigate(nextPath())
   }, [user, profile, navigate])
 
   // Si la sesion se cerro porque no se pudo cargar el perfil, mostramos el
@@ -79,14 +85,14 @@ export default function LoginPage() {
       }
 
       // Navigate immediately — ProtectedRoute will show spinner while profile loads
-      navigate('/menu')
+      navigate(nextPath())
     } catch (err: any) {
       console.warn('[Login] excepción:', err)
 
       if (timedOut) {
         // Puede que la sesión haya quedado abierta igual: si es así, entramos.
         const { data } = await supabase.auth.getSession()
-        if (data.session) { navigate('/menu'); return }
+        if (data.session) { navigate(nextPath()); return }
         toast.error('El servidor tardó demasiado en responder. Probá de nuevo.', { duration: 8000 })
       } else {
         toast.error(`No se pudo conectar: ${err?.message || 'error desconocido'}`, { duration: 8000 })

@@ -140,7 +140,7 @@ export default function AdminPage() {
 
   // Guard: only superadmin (AFTER hooks to comply with React rules)
   // Sin sesión (por ejemplo, en un dominio nuevo): a iniciar sesión; el superadmin vuelve directo acá.
-  if (!profile) return authLoading ? null : <Navigate to="/login" replace />
+  if (!profile) return authLoading ? null : <Navigate to="/login?next=/admin" replace />
   if (!isSuperadmin) return <Navigate to="/menu" replace />
 
   async function fetchPaymentRequests() {
@@ -301,7 +301,7 @@ export default function AdminPage() {
   function openWA(business: BusinessRow, type: 'activar' | 'vencido') {
     const msg = type === 'activar'
       ? `Hola! Tu cuenta en CajaGo ha sido activada ✅. Ya podés ingresar en https://cajago.vercel.app — Cualquier consulta avisame. Saludos, Fran`
-      : `Hola! Tu período de prueba en CajaGo ha vencido 📅. Para seguir usando el sistema transferí $70.000 al alias *${ALIAS}* y avisame por acá. Saludos, Fran`
+      : `Hola! Tu período de prueba en CajaGo ha vencido 📅. Para seguir usando el sistema transferí el valor de tu plan (Básico $38.000, Premium $70.000 o VIP $110.000) al alias *${ALIAS}* y avisame por acá. Saludos, Fran`
 
     const phone = business.phone?.replace(/\D/g, '') || ''
     const url = phone
@@ -394,7 +394,7 @@ export default function AdminPage() {
             <div>
               <p className="text-[10px] text-green-400 font-black uppercase tracking-[0.2em] mb-1">Alias de cobro principal</p>
               <p className="text-2xl font-black text-white tracking-tight">{ALIAS}</p>
-              <p className="text-xs text-white/40 font-medium">Básico $38.000 · Premium $70.000 por mes</p>
+              <p className="text-xs text-white/40 font-medium">Básico $38.000 · Premium $70.000 · VIP $110.000 por mes</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
