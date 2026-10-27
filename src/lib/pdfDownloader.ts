@@ -1,6 +1,4 @@
-import { saveBlob } from './saveFile'
-// @ts-ignore
-import html2pdf from 'html2pdf.js'
+import { saveBlob, savePdfFromHtml } from './saveFile'
 import { generateInvoicePDF, type InvoicePDFData } from './invoicePdf'
 import { inlineImage, type PrintMode } from './documentLayout'
 
@@ -34,49 +32,11 @@ export async function downloadInvoicePDF(
   // Generar HTML
   const html = await buildInvoiceHtml(data, mode)
 
-  // Crear contenedor temporal fuera de pantalla
-  const container = document.createElement('div')
-  container.style.position = 'fixed'
-  container.style.left = '-9999px'
-  container.style.top = '0'
-  container.style.width = '794px' // A4 width at 96 DPI
-  container.style.background = '#ffffff'
-  container.style.color = '#000000'
-  container.innerHTML = html
-
-  document.body.appendChild(container)
-
   try {
-    const sheetEl = container.querySelector('.sheet') || container
-
-    const opt = {
-      margin: [5, 5, 5, 5],
-      filename,
-      image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: {
-        scale: 2,
-        useCORS: true,
-        letterRendering: true,
-        logging: false,
-      },
-      jsPDF: {
-        unit: 'mm',
-        format: 'a4',
-        orientation: 'portrait',
-      },
-    }
-
-    const { filename: _name, ...pdfOptions } = opt
-    // @ts-ignore
-    const blob: Blob = await html2pdf().set(pdfOptions).from(sheetEl).outputPdf('blob')
-    await saveBlob(blob, filename)
+    await savePdfFromHtml(html, filename, { margin: [5, 5, 5, 5] })
   } catch (err) {
     console.warn('html2pdf direct render error, falling back to html download:', err)
     // Respaldo: descargar como archivo HTML imprimible
     await saveBlob(new Blob([html], { type: 'text/html;charset=utf-8' }), filename.replace(/\.pdf$/i, '.html'))
-  } finally {
-    if (container.parentNode) {
-      document.body.removeChild(container)
-    }
   }
 }

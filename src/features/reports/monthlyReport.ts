@@ -1,8 +1,7 @@
 // Reporte mensual del negocio en PDF (A4): ventas, ganancia, comparación con el mes anterior,
 // ventas por día, medios de pago, productos y categorías. Se arma en HTML y se descarga con html2pdf.
 // @ts-ignore
-import { saveBlob } from '@/lib/saveFile'
-import html2pdf from 'html2pdf.js'
+import { savePdfFromHtml } from '@/lib/saveFile'
 import { supabase } from '@/lib/supabase'
 import { inlineImage } from '@/lib/documentLayout'
 import { formatCurrency } from '@/lib/utils'
@@ -232,24 +231,6 @@ export async function buildMonthlyReportHtml(data: MonthlyReportData): Promise<s
 
 export async function downloadMonthlyReport(data: MonthlyReportData) {
   const html = await buildMonthlyReportHtml(data)
-  const container = document.createElement('div')
-  container.style.cssText = 'position:fixed;left:-9999px;top:0;width:794px;background:#fff'
-  container.innerHTML = html
-  document.body.appendChild(container)
-  try {
-    const name = data.businessName.replace(/[^\w\s-]/g, '').trim().replace(/\s+/g, '_') || 'Negocio'
-    const options: any = {
-      margin: 0,
-      filename: `Reporte_${name}_${data.year}-${String(data.month + 1).padStart(2, '0')}.pdf`,
-      image: { type: 'jpeg', quality: 0.96 },
-      html2canvas: { scale: 2, useCORS: true, logging: false },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-      pagebreak: { mode: ['css', 'legacy'], avoid: '.section' },
-    }
-    const { filename, ...pdfOptions } = options
-    const blob: Blob = await html2pdf().set(pdfOptions).from(container.querySelector('.sheet') as HTMLElement).outputPdf('blob')
-    await saveBlob(blob, filename)
-  } finally {
-    container.remove()
-  }
+  const name = data.businessName.replace(/[^\w\s-]/g, '').trim().replace(/\s+/g, '_') || 'Negocio'
+  await savePdfFromHtml(html, `Reporte_${name}_${data.year}-${String(data.month + 1).padStart(2, '0')}.pdf`, { avoid: '.section' })
 }
