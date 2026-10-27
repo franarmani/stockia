@@ -1,6 +1,6 @@
 {
   "name": "cajago",
-  "version": "1.13.17",
+  "version": "1.13.18",
   "description": "CajaGo — Ventas, stock y facturación en un solo lugar",
   "main": "index.js",
   "scripts": {
