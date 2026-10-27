@@ -1,6 +1,7 @@
 // supabase/functions/business-intelligence/index.ts
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { GROQ_CHAT_COMPLETIONS_URL, GROQ_DEFAULT_MODEL } from '../_shared/groq.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -179,11 +180,11 @@ Responde en español con este formato exacto:
 📈 Recomendaciones: ...
 💰 Impacto estimado: ...`
 
-  const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+  const response = await fetch(GROQ_CHAT_COMPLETIONS_URL, {
     method: 'POST',
     headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      model: 'llama-3.3-70b-versatile',
+      model: GROQ_DEFAULT_MODEL,
       messages: [{ role: 'system', content: 'Sos un asesor de negocios experto.' }, { role: 'user', content: prompt }],
       temperature: 0.5,
     })

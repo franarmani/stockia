@@ -2,6 +2,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { businessIsActive, INACTIVE_MESSAGE } from '../_shared/access.ts'
 import { buildColumnsPrompt, parseColumnsAnswer } from '../_shared/aiColumns.ts'
+import { GROQ_CHAT_COMPLETIONS_URL, GROQ_DEFAULT_MODEL } from '../_shared/groq.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -34,11 +35,11 @@ Deno.serve(async request => {
     const key = Deno.env.get('GROQ_API_KEY') ?? Deno.env.get('VITE_GROQ_API_KEY')
     if (!key) return json({ error: 'La detección con IA no está configurada' }, 503)
 
-    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    const response = await fetch(GROQ_CHAT_COMPLETIONS_URL, {
       method: 'POST',
       headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
+        model: GROQ_DEFAULT_MODEL,
         temperature: 0,
         response_format: { type: 'json_object' },
         messages: [

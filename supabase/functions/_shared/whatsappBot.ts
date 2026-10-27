@@ -4,6 +4,7 @@ export const ZAPI_BASE = 'https://api.z-api.io'
 export const BOT_LIMITS = { repliesPerChatPerDay: 30, repliesPerBusinessPerDay: 500, historyMessages: 12, catalogItems: 15 } as const
 export const HUMAN_MARKER = '[HUMANO]'
 export const STAFF_PAUSE_HOURS = 12
+export const BOT_FALLBACK_REPLY = '¡Hola! Recibimos tu consulta. En breve te responde una persona del local. 🙌'
 
 export interface IncomingMessage {
   phone: string
@@ -43,6 +44,10 @@ export function wantsHuman(text: string): boolean {
 
 export function isPaused(pausedUntil: string | null | undefined, now: Date = new Date()): boolean {
   return !!pausedUntil && new Date(pausedUntil).getTime() > now.getTime()
+}
+
+export function isDuplicateMessageError(error: unknown): boolean {
+  return typeof error === 'object' && error !== null && 'code' in error && error.code === '23505'
 }
 
 export interface BotContext {

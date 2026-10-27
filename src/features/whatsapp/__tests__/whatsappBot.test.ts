@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { buildSystemPrompt, isPaused, parseIncoming, searchTerms, splitHumanMarker, wantsHuman, zapiUrl } from '../../../../supabase/functions/_shared/whatsappBot'
+import { GROQ_DEFAULT_MODEL } from '../../../../supabase/functions/_shared/groq'
+import { BOT_FALLBACK_REPLY, buildSystemPrompt, isDuplicateMessageError, isPaused, parseIncoming, searchTerms, splitHumanMarker, wantsHuman, zapiUrl } from '../../../../supabase/functions/_shared/whatsappBot'
 
 const message = (overrides = {}) => ({
   type: 'ReceivedCallback', isGroup: false, isNewsletter: false, isStatusReply: false, broadcast: false,
@@ -55,5 +56,16 @@ describe('WhatsApp AI assistant', () => {
 
   it('builds Z-API endpoint URLs', () => {
     expect(zapiUrl('INST', 'TOK', 'send-text')).toBe('https://api.z-api.io/instances/INST/token/TOK/send-text')
+  })
+
+  it('uses an active Groq model and a safe fallback response', () => {
+    expect(GROQ_DEFAULT_MODEL).toBe('openai/gpt-oss-20b')
+    expect(BOT_FALLBACK_REPLY).toContain('te responde una persona')
+  })
+
+  it('only retries messages rejected by the unique constraint', () => {
+    expect(isDuplicateMessageError({ code: '23505' })).toBe(true)
+    expect(isDuplicateMessageError({ code: '42501' })).toBe(false)
+    expect(isDuplicateMessageError(null)).toBe(false)
   })
 })

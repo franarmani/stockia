@@ -56,8 +56,14 @@ Deno.serve(async request => {
 
       // Los mensajes que reciba el número del comercio llegan a CajaGo.
       const webhookUrl = `${Deno.env.get('SUPABASE_URL')}/functions/v1/whatsapp-webhook?key=${key}`
-      const webhookOk = await setReceivedWebhook(saved, webhookUrl).then(() => true).catch(error => { console.warn('[whatsapp-admin] webhook', error); return false })
-      return json({ ok: true, webhook_configured: webhookOk })
+      try {
+        await setReceivedWebhook(saved, webhookUrl)
+      } catch (webhookError) {
+        console.error('[whatsapp-admin] webhook', webhookError)
+        await admin.from('whatsapp_connections').update({ bot_enabled: false }).eq('business_id', businessId)
+        throw new Error('La instancia se guardó, pero Z-API rechazó el webhook. Revisá el ID, token y Client-Token e intentá nuevamente.')
+      }
+      return json({ ok: true, webhook_configured: true })
     }
 
     if (action === 'unassign') {

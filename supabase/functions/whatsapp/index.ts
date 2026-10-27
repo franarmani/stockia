@@ -124,6 +124,12 @@ Deno.serve(async request => {
       if (typeof body.client_token === 'string' && body.client_token.trim()) values.client_token = body.client_token.trim()
 
       const key = connection?.webhook_key ?? randomKey()
+      const wantsBotEnabled = body.bot_enabled === true
+      const submittedCredentials = typeof body.instance_id === 'string' && body.instance_id.trim() &&
+        typeof body.instance_token === 'string' && body.instance_token.trim()
+      if (wantsBotEnabled && !hasCredentials(connection) && !submittedCredentials) {
+        return json({ error: 'Conectá WhatsApp antes de activar el asistente' }, 409)
+      }
       const { data: saved, error } = await admin.from('whatsapp_connections')
         .upsert({ business_id: businessId, webhook_key: key, ...values })
         .select('*').single()
@@ -133,7 +139,16 @@ Deno.serve(async request => {
       let webhookConfigured = false
       let connected = false
       if (hasCredentials(connection)) {
-        webhookConfigured = await setReceivedWebhook(connection, webhookUrl(key)).then(() => true).catch(() => false)
+        try {
+          await setReceivedWebhook(connection, webhookUrl(key))
+          webhookConfigured = true
+        } catch (webhookError) {
+          console.error('[whatsapp] configurar webhook', webhookError)
+          if (wantsBotEnabled) {
+            await admin.from('whatsapp_connections').update({ bot_enabled: false }).eq('business_id', businessId)
+            return json({ error: 'No se pudo activar el asistente porque Z-API rechazó el webhook. Contactá a soporte de CajaGo.' }, 502)
+          }
+        }
         connected = await instanceStatus(connection).then(s => !!s?.connected).catch(() => false)
       }
       return json({ ok: true, webhook_url: webhookUrl(key), webhook_configured: webhookConfigured, connected })
