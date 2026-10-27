@@ -44,7 +44,8 @@ export default function MercadoPagoSubscriptionCard({
 
   const status = business?.mp_subscription_status ?? null
   const isAdmin = profile?.role === 'admin'
-  const amount = PLANS[plan].price * (1 + linkedCount)
+  // El VIP incluye las sucursales vinculadas; en Básico y Premium cada negocio paga su plan.
+  const amount = PLANS[plan].price
 
   useEffect(() => {
     setEmail(business?.mp_payer_email || user?.email || '')
@@ -100,7 +101,7 @@ export default function MercadoPagoSubscriptionCard({
 
   async function changePlan(next: PlanId) {
     const nextPlan = PLANS[next]
-    if (!confirm(`¿Pasar al plan ${nextPlan.name}? Desde el próximo débito se cobran ${formatPlanPrice(nextPlan.price * (1 + linkedCount))} por mes.`)) return
+    if (!confirm(`¿Pasar al plan ${nextPlan.name}? Desde el próximo débito se cobran ${formatPlanPrice(nextPlan.price)} por mes.`)) return
     setBusy(true)
     try {
       await changeMercadoPagoPlan(next)
@@ -127,7 +128,7 @@ export default function MercadoPagoSubscriptionCard({
     }
   }
 
-  const box = `rounded-2xl border border-[#009ee3]/30 bg-[#009ee3]/[0.07] ${compact ? 'p-4' : 'p-5'}`
+  const box = `rounded-xl border border-white/[0.07] bg-white/[0.02] ${compact ? 'p-4' : 'p-5'}`
 
   if (status === 'authorized') {
     return (
@@ -169,14 +170,21 @@ export default function MercadoPagoSubscriptionCard({
   return (
     <div className={box}>
       <div className="flex items-start gap-3">
-        <div className="w-9 h-9 rounded-xl bg-[#009ee3]/20 flex items-center justify-center shrink-0">
-          <CreditCard className="w-4.5 h-4.5 text-[#4fc3f7]" />
+        <div className="w-9 h-9 rounded-lg bg-white/[0.05] flex items-center justify-center shrink-0">
+          <CreditCard className="w-4 h-4 text-white/60" />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-bold text-white">Pagá con Mercado Pago · débito automático</p>
-          <p className="text-xs text-white/50 mt-1">
-            Plan {PLANS[plan].name}: {formatPlanPrice(amount)} por mes{linkedCount > 0 ? ` (incluye ${linkedCount} cuenta${linkedCount > 1 ? 's' : ''} vinculada${linkedCount > 1 ? 's' : ''})` : ''}. Con tarjeta o dinero en cuenta; se renueva solo y lo cancelás cuando quieras.
+          <p className="text-sm font-semibold text-white">Débito automático con Mercado Pago</p>
+          <p className="text-[13px] text-white/50 mt-1">
+            Plan {PLANS[plan].name}: {formatPlanPrice(amount)} por mes. Con tarjeta o dinero en cuenta; se renueva solo y lo cancelás cuando quieras.
           </p>
+          {linkedCount > 0 && (
+            <p className="text-[12px] mt-1.5 text-white/40">
+              {plan === 'vip'
+                ? `Incluye ${linkedCount === 1 ? 'tu sucursal vinculada' : `tus ${linkedCount} sucursales vinculadas`}.`
+                : 'Las sucursales vinculadas solo están incluidas en el VIP: con este plan cada negocio paga su suscripción.'}
+            </p>
+          )}
 
           {status === 'cancelled' && (
             <p className="text-xs text-amber-300 mt-2">El débito automático está cancelado. Podés volver a activarlo.</p>
@@ -187,12 +195,12 @@ export default function MercadoPagoSubscriptionCard({
           ) : waiting || status === 'pending' ? (
             <div className="mt-3 space-y-2">
               {waiting && (
-                <p className="text-xs text-[#4fc3f7] flex items-center gap-1.5">
+                <p className="text-xs text-[#9aa9ff] flex items-center gap-1.5">
                   <Loader2 className="w-3.5 h-3.5 animate-spin" /> Esperando la confirmación de Mercado Pago...
                 </p>
               )}
               <div className="flex flex-wrap gap-2">
-                <button onClick={() => refresh(false)} disabled={!isOnline} className="px-3 h-9 rounded-lg bg-[#009ee3] text-white text-xs font-bold hover:brightness-110 disabled:opacity-40">
+                <button onClick={() => refresh(false)} disabled={!isOnline} className="px-3 h-9 rounded-lg bg-[#6178ee] text-white text-xs font-semibold hover:bg-[#6f8cff] disabled:opacity-40">
                   Ya pagué, verificar
                 </button>
                 <button onClick={subscribe} disabled={busy || !isOnline} className="px-3 h-9 rounded-lg bg-white/5 text-white/70 text-xs font-semibold hover:bg-white/10 disabled:opacity-40">
@@ -202,19 +210,19 @@ export default function MercadoPagoSubscriptionCard({
             </div>
           ) : (
             <div className="mt-3 space-y-2">
-              {!onPlanChange && <PlanPicker value={plan} onChange={setPlan} linkedCount={linkedCount} compact={compact} />}
+              {!onPlanChange && <PlanPicker value={plan} onChange={setPlan} compact={compact} />}
               <label className="block text-[11px] font-medium text-white/50">Email de tu cuenta de Mercado Pago</label>
               <input
                 type="email"
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
                 placeholder="tu-email@ejemplo.com"
-                className="w-full h-10 px-3 rounded-xl border border-white/10 bg-white/5 text-white text-sm focus:outline-none focus:border-[#009ee3]/50"
+                className="w-full h-10 px-3 rounded-lg border border-white/10 bg-white/5 text-white text-sm focus:outline-none focus:border-[#9aa9ff]/50"
               />
               <button
                 onClick={subscribe}
                 disabled={busy || !isOnline}
-                className="w-full h-10 rounded-xl bg-[#009ee3] text-white text-sm font-bold hover:brightness-110 disabled:opacity-40 flex items-center justify-center gap-2"
+                className="w-full h-10 rounded-lg bg-[#6178ee] text-white text-sm font-semibold hover:bg-[#6f8cff] disabled:opacity-40 flex items-center justify-center gap-2"
               >
                 {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
                 {isOnline ? 'Suscribirme con Mercado Pago' : 'Necesitás conexión para suscribirte'}

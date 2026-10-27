@@ -14,11 +14,10 @@ import {
 } from '../../../../supabase/functions/_shared/mercadopago'
 
 describe('Mercado Pago subscriptions', () => {
-  it('charges the plan price once per linked business', () => {
-    expect(subscriptionAmount('basic', 0)).toBe(38000)
-    expect(subscriptionAmount('premium', 0)).toBe(70000)
-    expect(subscriptionAmount('premium', 1)).toBe(140000)
-    expect(subscriptionAmount('basic', -3)).toBe(38000)
+  it('charges a flat price per plan (VIP includes linked branches)', () => {
+    expect(subscriptionAmount('basic')).toBe(38000)
+    expect(subscriptionAmount('premium')).toBe(70000)
+    expect(subscriptionAmount('vip')).toBe(110000)
   })
 
   it('keeps server prices in sync with the plans shown in the app', () => {

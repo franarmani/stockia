@@ -35,14 +35,6 @@ Deno.serve(async request => {
     const body = await request.json().catch(() => ({}))
     const action = String(body?.action || '')
 
-    async function linkedCount() {
-      if (!business!.billing_group) return 0
-      const { count } = await admin.from('businesses')
-        .select('id', { count: 'exact', head: true })
-        .eq('billing_group', business!.billing_group)
-        .neq('id', business!.id)
-      return count ?? 0
-    }
 
     if (action === 'create') {
       if (profile.role !== 'admin') return json({ error: 'Solo un administrador puede activar la suscripción' }, 403)
@@ -53,7 +45,7 @@ Deno.serve(async request => {
       const payerEmail = String(body?.payer_email || user.email || '').trim().toLowerCase()
       if (!EMAIL_PATTERN.test(payerEmail)) return json({ error: 'Email de Mercado Pago inválido' }, 400)
 
-      const amount = subscriptionAmount(body.plan, await linkedCount())
+      const amount = subscriptionAmount(body.plan)
 
       // Una suscripción pendiente anterior (checkout abandonado) se reemplaza por la nueva.
       if (business.mp_preapproval_id && business.mp_subscription_status === 'pending') {
@@ -91,7 +83,7 @@ Deno.serve(async request => {
       if (business.mp_subscription_status !== 'authorized' || !business.mp_preapproval_id) {
         return json({ error: 'No hay una suscripción activa para cambiar' }, 409)
       }
-      const amount = subscriptionAmount(body.plan, await linkedCount())
+      const amount = subscriptionAmount(body.plan)
       // Mercado Pago cobra el nuevo importe desde el próximo débito; el plan cambia ya.
       await mpFetch(`/preapproval/${encodeURIComponent(business.mp_preapproval_id)}`, {
         method: 'PUT',

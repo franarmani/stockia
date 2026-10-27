@@ -30,7 +30,7 @@ export default function TrialExpiredModal() {
     supabase.rpc('get_linked_businesses').then(({ data }) => setLinked((data as unknown as { id: string; name: string }[]) ?? []))
   }, [])
 
-  const PRECIO = formatPlanPrice(PLANS[plan].price * (1 + linked.length))
+  const PRECIO = formatPlanPrice(PLANS[plan].price)
   const linkedNames = linked.map(b => b.name).join(', ')
 
   function copyAlias() {
@@ -131,7 +131,7 @@ export default function TrialExpiredModal() {
               </div>
               <h3 className="text-base font-bold text-white mb-1">¡Comprobante recibido!</h3>
               <p className="text-[13px] text-slate-400 max-w-xs mx-auto">
-                Lo revisamos y activamos tu cuenta por 30 días{linked.length > 0 && <> (también la de {linkedNames})</>}, normalmente en el día. Si querés acelerarlo, avisanos por WhatsApp.
+                Lo revisamos y activamos tu cuenta por 30 días{plan === 'vip' && linked.length > 0 && <> (también la de {linkedNames})</>}, normalmente en el día. Si querés acelerarlo, avisanos por WhatsApp.
               </p>
               <button
                 onClick={sendWA}
@@ -143,7 +143,7 @@ export default function TrialExpiredModal() {
             </div>
           ) : (
             <>
-              <PlanPicker value={plan} onChange={setPlan} linkedCount={linked.length} compact />
+              <PlanPicker value={plan} onChange={setPlan} compact />
               <MercadoPagoSubscriptionCard compact plan={plan} onPlanChange={setPlan} />
               <p className="text-center text-[11px] font-semibold uppercase tracking-widest text-slate-500">o pagá por transferencia</p>
 

@@ -12,9 +12,9 @@ export function isSubscriptionPlan(value: unknown): value is SubscriptionPlan {
   return value === 'basic' || value === 'premium' || value === 'vip'
 }
 
-/** Cuentas vinculadas (billing_group) se pagan juntas: una mensualidad por negocio. */
-export function subscriptionAmount(plan: SubscriptionPlan, linkedBusinesses: number): number {
-  return PLAN_PRICES_ARS[plan] * (1 + Math.max(0, linkedBusinesses))
+/** Precio fijo por plan. El VIP incluye las sucursales vinculadas (billing_group); en Básico y Premium cada negocio paga lo suyo. */
+export function subscriptionAmount(plan: SubscriptionPlan): number {
+  return PLAN_PRICES_ARS[plan]
 }
 
 export function buildPreapprovalBody(input: {

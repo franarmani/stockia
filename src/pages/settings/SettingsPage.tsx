@@ -1,7 +1,8 @@
-import { getPlanById } from '@/config/plans'
+import { getPlanById, normalizePlan, type PlanId } from '@/config/plans'
 import { AR_PROVINCES, BUSINESS_TYPES } from '@/config/businessTypes'
 import MpQrSettingsCard from '@/features/mpQr/MpQrSettingsCard'
 import MercadoPagoSubscriptionCard from '@/features/subscription/components/MercadoPagoSubscriptionCard'
+import PlanPicker from '@/features/subscription/components/PlanPicker'
 import { useState, useEffect, useRef } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
@@ -47,6 +48,7 @@ export default function SettingsPage() {
   const { profile } = useAuthStore()
   const { business, updateBusiness } = useBusinessStore()
   const { limits } = usePlan()
+  const [subscriptionPlan, setSubscriptionPlan] = useState<PlanId>(normalizePlan(business?.plan))
   const { settings: fiscalSettings, env: fiscalEnv, setEnv, fetchSettings, upsertSettings, updateCertStatus } = useFiscalStore()
   const [users, setUsers] = useState<UserProfile[]>([])
   const [loading, setLoading] = useState(true)
@@ -482,70 +484,70 @@ export default function SettingsPage() {
 
           {/* ── SUBSCRIPTION ── */}
           {activeTab === 'subscription' && (
-            <div className="bg-[#0d1b2d] border border-white/5 rounded-2xl p-5">
-              <div className="flex items-center gap-2 mb-4">
-                <Crown className="w-5 h-5 text-amber-500" />
-                <h2 className="font-semibold text-white">Plan y Suscripción</h2>
-              </div>
-
-              <div className="bg-white/5 border border-white/10 rounded-2xl p-5">
-                <div className="flex items-start justify-between mb-4">
+            <div className="space-y-4">
+              {/* Plan actual */}
+              <div className="rounded-2xl border border-white/[0.07] bg-[#10141b] p-5">
+                <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
-                    <h3 className="text-lg font-bold text-white">
-                      {business?.subscription_status === 'trial' ? 'Prueba gratis (Premium completo)' : `Plan ${getPlanById(business?.plan).name}`}
-                    </h3>
-                    <p className="text-sm text-primary font-semibold">
-                      {business?.subscription_status === 'trial' ? 'Después elegís Básico ($38.000) o Premium ($70.000)' : getPlanById(business?.plan).priceLabel}
+                    <p className="text-[13px] text-white/45">Tu plan</p>
+                    <h2 className="mt-0.5 text-xl font-bold text-white">
+                      {business?.subscription_status === 'trial' ? 'Prueba gratis · todo incluido' : `Plan ${getPlanById(business?.plan).name}`}
+                    </h2>
+                    <p className="mt-0.5 text-sm text-white/60">
+                      {business?.subscription_status === 'trial' ? 'Al terminar elegís el plan que te sirva' : getPlanById(business?.plan).priceLabel}
                     </p>
                   </div>
-                  <Badge className={cn(
-                    isExpired ? 'bg-red-500/15 text-red-400 border-red-500/25' : 'bg-green-500/15 text-green-400 border-green-500/25'
-                  )}>
+                  <span className={cn('rounded-md px-2 py-1 text-[12px] font-semibold', isExpired ? 'bg-red-500/10 text-red-300' : 'bg-emerald-500/10 text-emerald-300')}>
                     {isExpired ? 'Vencido' : 'Activo'}
-                  </Badge>
+                  </span>
                 </div>
 
                 {ts && dateState && (
-                  <>
-                    <div className="text-sm text-white/50 mb-2">
-                      <span className="text-white/30">Vigencia: </span>
-                      {formatSubscriptionDate(ts)} — {formatSubscriptionDate(dateState.expirationDate)}
-                    </div>
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs text-white/30">
+                  <div className="mt-5">
+                    <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2 text-[13px]">
+                      <span className="text-white/70">
+                        {isExpired ? 'Venció el' : 'Vence el'} <b className="font-semibold text-white">{formatSubscriptionDate(ts)}</b>
+                      </span>
+                      <span className="text-white/45">
                         {isExpired
-                          ? `Vencido hace ${daysSinceExpired} día${daysSinceExpired !== 1 ? 's' : ''}`
-                          : `${daysLeft} día${daysLeft !== 1 ? 's' : ''} restantes`
-                        }
+                          ? `hace ${daysSinceExpired} día${daysSinceExpired !== 1 ? 's' : ''}`
+                          : `${daysLeft} día${daysLeft !== 1 ? 's' : ''} restantes`}
                       </span>
                     </div>
-                    <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden mb-4">
+                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/[0.06]">
                       <div className={`h-full ${barColor} transition-all`} style={{ width: `${Math.min(100, progress)}%` }} />
                     </div>
-                  </>
+                  </div>
                 )}
 
                 {business?.pending_discount_pct ? (
-                  <div className="flex items-center gap-2 bg-amber-500/10 border border-amber-500/20 rounded-xl px-3 py-2 mb-4">
-                    <Gift className="w-4 h-4 text-amber-400 shrink-0" />
-                    <p className="text-xs text-amber-300">{business.pending_discount_note || `Tenés ${business.pending_discount_pct}% de descuento pendiente`}</p>
+                  <div className="mt-4 flex items-center gap-2 rounded-lg bg-amber-500/10 px-3 py-2">
+                    <Gift className="h-4 w-4 shrink-0 text-amber-400" />
+                    <p className="text-[13px] text-amber-200">{business.pending_discount_note || `Tenés ${business.pending_discount_pct}% de descuento pendiente`}</p>
                   </div>
                 ) : null}
+              </div>
 
-                <MercadoPagoSubscriptionCard />
-
-                <div className="flex flex-wrap gap-2 mt-4">
+              {/* Plan elegido y forma de pago */}
+              <div className="rounded-2xl border border-white/[0.07] bg-[#10141b] p-5 space-y-4">
+                <div>
+                  <p className="text-sm font-semibold text-white">Elegí tu plan</p>
+                  <p className="text-[13px] text-white/45">Precio por mes. El VIP incluye las sucursales vinculadas.</p>
+                </div>
+                <PlanPicker value={subscriptionPlan} onChange={setSubscriptionPlan} />
+                <MercadoPagoSubscriptionCard plan={subscriptionPlan} onPlanChange={setSubscriptionPlan} />
+                <div className="flex flex-wrap gap-2">
                   <button
                     onClick={() => window.open('https://wa.me/5492915716099?text=Hola,%20quisiera%20enviar%20el%20comprobante%20para%20activar%20mi%20plan.', '_blank')}
-                    className="px-4 h-9 rounded-xl bg-white/5 text-white/70 text-xs font-bold hover:bg-white/10 hover:text-white transition-all"
+                    className="h-9 rounded-lg bg-white/[0.05] px-3.5 text-[13px] font-medium text-white/70 transition-colors hover:bg-white/10 hover:text-white"
                   >
-                    Informar pago por transferencia
+                    Pagar por transferencia
                   </button>
                   <button
-                    onClick={() => window.open(`https://wa.me/5492915716099`, '_blank')}
-                    className="px-4 h-9 rounded-xl bg-white/5 text-white/50 text-xs font-bold hover:bg-white/10 hover:text-white transition-all"
+                    onClick={() => window.open('https://wa.me/5492915716099', '_blank')}
+                    className="h-9 rounded-lg px-3.5 text-[13px] font-medium text-white/50 transition-colors hover:bg-white/[0.05] hover:text-white"
                   >
-                    Contactar soporte
+                    Hablar con soporte
                   </button>
                 </div>
               </div>

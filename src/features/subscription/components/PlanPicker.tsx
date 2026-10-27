@@ -2,16 +2,14 @@ import { Check, Crown } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { PLANS, PLAN_ORDER, formatPlanPrice, type PlanId } from '@/config/plans'
 
-/** Selector de plan con el precio total (incluye las cuentas vinculadas que se pagan juntas). */
+/** Selector de plan. Precio por negocio; el VIP incluye las sucursales vinculadas. */
 export default function PlanPicker({
   value,
   onChange,
-  linkedCount = 0,
   compact = false,
 }: {
   value: PlanId
   onChange: (plan: PlanId) => void
-  linkedCount?: number
   compact?: boolean
 }) {
   return (
@@ -26,7 +24,7 @@ export default function PlanPicker({
             onClick={() => onChange(id)}
             className={cn(
               'text-left rounded-xl border p-3 transition-all',
-              selected ? 'border-primary bg-primary/10' : 'border-white/10 bg-white/[0.03] hover:bg-white/[0.06]'
+              selected ? 'border-[#9aa9ff]/50 bg-[#9aa9ff]/[0.08]' : 'border-white/[0.07] bg-white/[0.02] hover:bg-white/[0.05]'
             )}
           >
             <div className="flex items-center justify-between gap-2">
@@ -34,10 +32,10 @@ export default function PlanPicker({
                 {id !== 'basic' && <Crown className="w-3.5 h-3.5 text-amber-400" />}
                 {plan.name}
               </span>
-              {selected && <Check className="w-4 h-4 text-primary" />}
+              {selected && <Check className="w-4 h-4 text-[#9aa9ff]" />}
             </div>
-            <p className="mt-1 font-mono text-sm font-bold text-white">
-              {formatPlanPrice(plan.price * (1 + linkedCount))}
+            <p className="mt-1 text-[15px] font-semibold text-white tabular-nums">
+              {formatPlanPrice(plan.price)}
               <span className="text-[11px] font-normal text-white/40"> /mes</span>
             </p>
             {!compact && <p className="mt-1 text-[11px] leading-4 text-white/45">{plan.tagline}</p>}
