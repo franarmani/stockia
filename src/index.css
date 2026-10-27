@@ -836,3 +836,53 @@ tbody tr:hover {
 .app-shell :is([class*='rounded-[2rem]'], [class*='rounded-[2.5rem]'], [class*='rounded-[3rem]'], .rounded-3xl) {
   border-radius: 1rem !important;
 }
+
+/* ── Tablas en celular: cada fila es una tarjeta "Etiqueta · valor" (las etiquetas las marca stackTables.ts) ── */
+@media (max-width: 640px) {
+  .app-shell table[data-stack] { display: block; width: 100%; min-width: 0 !important; }
+  .app-shell table[data-stack] thead { display: none; }
+  .app-shell table[data-stack] tbody { display: block; }
+  .app-shell table[data-stack] tbody tr {
+    display: block;
+    margin: 0 0 0.75rem;
+    padding: 0.35rem 0.9rem;
+    border: 1px solid rgb(255 255 255 / 0.08);
+    border-radius: 1rem;
+    background: rgb(255 255 255 / 0.03);
+  }
+  .app-shell table[data-stack] tbody td {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    width: auto !important;
+    padding: 0.5rem 0 !important;
+    border: 0 !important;
+    text-align: right;
+    min-height: 2.25rem;
+  }
+  .app-shell table[data-stack] tbody td + td { border-top: 1px solid rgb(255 255 255 / 0.05) !important; }
+  .app-shell table[data-stack] tbody td[data-label]:not([data-label=""])::before {
+    content: attr(data-label);
+    flex: 0 0 auto;
+    max-width: 42%;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: rgb(148 163 184);
+    text-align: left;
+  }
+  .app-shell table[data-stack] tbody td[data-label=""] { justify-content: flex-end; }
+  .app-shell table[data-stack] tbody td[data-wide] { display: block; text-align: center; border: 0 !important; }
+  .app-shell table[data-stack] tbody td > * { max-width: 100%; }
+}
+@media (max-width: 640px) {
+  /* La primera celda (nombre del cliente, producto…) es el título de la tarjeta. */
+  .app-shell table[data-stack] tbody td:first-child {
+    justify-content: flex-start;
+    text-align: left;
+    font-weight: 700;
+    font-size: 1rem;
+    padding-top: 0.7rem !important;
+  }
+  .app-shell table[data-stack] tbody td:first-child::before { display: none; }
+}

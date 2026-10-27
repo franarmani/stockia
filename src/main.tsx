@@ -10,9 +10,11 @@ import { registerSW } from 'virtual:pwa-register'
 import { checkIsTauriDesktop } from './sync/storage'
 import { installNativeAppGuards } from './desktop/nativeAppGuards'
 import { installExternalLinkHandler } from './desktop/openExternal'
+import { installStackedTables } from './lib/stackTables'
 
 installNativeAppGuards()
 installExternalLinkHandler()
+installStackedTables()
 
 // Aggressive PWA update only in browser/web environment:
 if (!checkIsTauriDesktop()) {
