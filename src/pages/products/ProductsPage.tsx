@@ -883,7 +883,7 @@ export default function ProductsPage() {
             </div>
 
             <div className="flex items-start gap-4">
-              <ImagePicker value={form.image_url} onChange={(url) => setForm({ ...form, image_url: url })} className="w-28 shrink-0" />
+              <ImagePicker value={form.image_url} onChange={(url) => setForm({ ...form, image_url: url })} searchQuery={form.name} className="w-28 shrink-0" />
               <div className="space-y-2 pt-1">
                 <label className="flex items-center gap-2 text-xs text-white/70">
                   <input type="checkbox" checked={form.show_online} onChange={(e) => setForm({ ...form, show_online: e.target.checked })} />

@@ -83,7 +83,7 @@ export default function ProductPhotosSection({ businessId }: { businessId: strin
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
           {visible.slice(0, limit).map(product => (
             <div key={product.id} className="space-y-2">
-              <ImagePicker value={product.image_url} onChange={url => setPhoto(product, url)} />
+              <ImagePicker value={product.image_url} onChange={url => setPhoto(product, url)} searchQuery={product.name} />
               <div className="relative pr-7">
                 <button onClick={() => toggleFeatured(product)} aria-label={product.featured ? 'Quitar de destacados' : 'Destacar'}
                   title={product.featured ? 'Quitar de destacados' : 'Destacar en la tienda'}
