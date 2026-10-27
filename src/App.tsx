@@ -13,7 +13,7 @@ import { calculateRawRemainingDays, isSubscriptionExpired, resetTrustedClock } f
 import SubscriptionGuard from '@/features/subscription/components/SubscriptionGuard'
 import PermissionGuard from '@/components/PermissionGuard'
 import PlanGate from '@/features/subscription/components/PlanGate'
-import UpdateNotificationModal from '@/components/modals/UpdateNotificationModal'
+import SupportWhatsAppButton from '@/components/SupportWhatsAppButton'
 import UpdateModal from '@/components/desktop/UpdateModal'
 import MusicDownloadPrompt from '@/features/music/MusicDownloadPrompt'
 import CashAutoCloser from '@/features/cash/CashAutoCloser'
@@ -224,9 +224,6 @@ export default function App() {
   const { setUser, setLoading, setProfile, profile: activeProfile } = useAuthStore()
   const { fetchBusiness, setBusiness } = useBusinessStore()
   const [showStartupSplash, setShowStartupSplash] = useState(() => checkIsTauriDesktop())
-  const [showUpdateModal, setShowUpdateModal] = useState(false)
-  const [remoteVersion, setRemoteVersion] = useState('')
-  const [dismissedVersion, setDismissedVersion] = useState<string | null>(null)
 
   useEffect(() => {
     if (!showStartupSplash) return
@@ -249,60 +246,25 @@ export default function App() {
     })
   }, [activeProfile?.business_id])
 
-  // ── VERSION DETECTION ──
+  // ── WEB SIEMPRE AL DÍA ──
+  // Las actualizaciones con aviso son solo del programa (updater firmado). En la web, si se publicó
+  // una versión nueva, se limpia la caché y se recarga una sola vez, sin preguntar nada.
   useEffect(() => {
-    async function checkVersion() {
-      // En Desktop (Tauri), las actualizaciones son manejadas por el updater nativo firmado
-      if (checkIsTauriDesktop()) return
-
-      try {
-        const res = await fetch('/version.json?t=' + Date.now())
-        const data = await res.json()
-        setRemoteVersion(data.version)
-        
-        if (data.version && data.version !== APP_VERSION && data.version !== dismissedVersion) {
-          console.log(`[Update] New version detected: ${data.version}`)
-          
-          // Purgar la caché de archivos estáticos (NUNCA la sesión ni el perfil)
-          if ('caches' in window) {
-            caches.keys().then((names) => {
-              for (const name of names) caches.delete(name)
-            })
-          }
-
-          setShowUpdateModal(true)
-        }
-      } catch (err) {
-        console.warn('[Update] Failed to fetch version info', err)
-      }
-    }
-
-    // Initial check
-    checkVersion()
-
-    // Comprobación rápida cada 2 minutos y al retomar foco en la ventana
-    const interval = setInterval(checkVersion, 2 * 60 * 1000)
-    const onFocus = () => checkVersion()
-    window.addEventListener('focus', onFocus)
-    return () => {
-      clearInterval(interval)
-      window.removeEventListener('focus', onFocus)
-    }
-  }, [dismissedVersion])
-
-  const handleReloadApp = () => {
-    if ('caches' in window) {
-      caches.keys().then((names) => {
-        for (const name of names) caches.delete(name)
+    if (checkIsTauriDesktop()) return
+    fetch('/version.json?t=' + Date.now())
+      .then((res) => res.json())
+      .then(async (data) => {
+        if (!data?.version || data.version === APP_VERSION) return
+        const reloadKey = `cajago_web_reloaded_${data.version}`
+        if (sessionStorage.getItem(reloadKey)) return
+        sessionStorage.setItem(reloadKey, '1')
+        if ('caches' in window) await Promise.all((await caches.keys()).map((name) => caches.delete(name)))
+        const registrations = await navigator.serviceWorker?.getRegistrations?.() ?? []
+        await Promise.all(registrations.map((registration) => registration.update().catch(() => {})))
+        window.location.reload()
       })
-    }
-    window.location.reload()
-  }
-
-  const handleDismissUpdate = () => {
-    setShowUpdateModal(false)
-    setDismissedVersion(remoteVersion)
-  }
+      .catch(() => {})
+  }, [])
 
   useEffect(() => {
     // ── BULLETPROOF AUTH WITH LOCALSTORAGE CACHE ──
@@ -612,17 +574,12 @@ export default function App() {
           }
         />
       </Routes>
-      <div className="fixed bottom-2 right-3 z-50 text-[10px] font-bold text-white/10 uppercase tracking-[0.3em] pointer-events-none">
-        v{APP_VERSION}
-      </div>
-
-      <UpdateNotificationModal 
-        isOpen={showUpdateModal} 
-        currentVersion={APP_VERSION} 
-        newVersion={remoteVersion} 
-        onClose={handleDismissUpdate}
-        onReload={handleReloadApp}
-      />
+      {checkIsTauriDesktop() && (
+        <div className="fixed bottom-2 right-3 z-50 text-[10px] font-bold text-white/10 uppercase tracking-[0.3em] pointer-events-none">
+          v{APP_VERSION}
+        </div>
+      )}
+      <SupportWhatsAppButton />
       <UpdateModal />
       <MusicDownloadPrompt />
       <CashAutoCloser />
