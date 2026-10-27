@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import CryptoPanel from './CryptoPanel'
 import { normalizePlan } from '@/config/plans'
 import { Navigate } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
@@ -66,7 +67,7 @@ function statusColor(b: BusinessRow): string {
 /* ─── Main Component ─── */
 export default function AdminPage() {
   const { profile, user, signOut, loading: authLoading } = useAuthStore()
-  const [tab, setTab] = useState<'businesses' | 'payments'>('businesses')
+  const [tab, setTab] = useState<'businesses' | 'payments' | 'usdt'>('businesses')
   const [businesses, setBusinesses] = useState<BusinessRow[]>([])
   const [paymentRequests, setPaymentRequests] = useState<PaymentRequest[]>([])
   const [loadingPayments, setLoadingPayments] = useState(false)
@@ -457,9 +458,18 @@ export default function AdminPage() {
               </span>
             )}
           </button>
+          <button
+            onClick={() => setTab('usdt')}
+            className={`flex items-center gap-2 px-4 h-9 rounded-xl text-sm font-semibold transition-colors ${tab === 'usdt' ? 'gradient-primary text-white' : 'glass-card text-white/50 hover:text-white'}`}
+          >
+            <CreditCard className="w-4 h-4" />
+            USDT
+          </button>
         </div>
 
-        {tab === 'payments' ? (
+        {tab === 'usdt' ? (
+          <CryptoPanel />
+        ) : tab === 'payments' ? (
           /* ─── Payment Requests Tab ─── */
           <div className="glass-card overflow-hidden">
             {loadingPayments ? (

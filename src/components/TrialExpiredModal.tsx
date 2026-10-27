@@ -1,4 +1,5 @@
 import MercadoPagoSubscriptionCard from '@/features/subscription/components/MercadoPagoSubscriptionCard'
+import CryptoPaymentCard from '@/features/subscription/components/CryptoPaymentCard'
 import PlanPicker from '@/features/subscription/components/PlanPicker'
 import { PLANS, formatPlanPrice, normalizePlan, type PlanId } from '@/config/plans'
 import { useState, useRef, useEffect } from 'react'
@@ -145,6 +146,7 @@ export default function TrialExpiredModal() {
             <>
               <PlanPicker value={plan} onChange={setPlan} compact />
               <MercadoPagoSubscriptionCard compact plan={plan} onPlanChange={setPlan} />
+              <CryptoPaymentCard initialPlan={plan} />
               <p className="text-center text-[11px] font-semibold uppercase tracking-widest text-slate-500">o pagá por transferencia</p>
 
               {/* Steps */}

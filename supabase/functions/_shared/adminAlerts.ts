@@ -101,6 +101,13 @@ export function buildAlertMessage(kind: AlertKind, ctx: AlertContext): string {
       lines.push(`🎁 Prueba gratis hasta el ${dateAr(business.trial_ends_at)}`)
       break
     case 'pago_informado':
+      if (extra.currency === 'USDT') {
+        lines.push('💳 <b>Quiere comprar: informó un pago en USDT</b>', ...header(ctx), ...contactLines(ctx),
+          `📦 Plan ${escapeHtml(plan)} · ${Number(extra.amount || 0).toLocaleString('es-AR', { maximumFractionDigits: 2 })} USDT${extra.network ? ` (${escapeHtml(extra.network)})` : ''}`,
+          extra.tx_hash ? `🔗 TXID: <code>${escapeHtml(extra.tx_hash)}</code>` : '🔗 Sin TXID todavía',
+          '👉 Verificá que llegó a tu billetera y aprobalo en el panel admin → USDT.')
+        break
+      }
       lines.push('💳 <b>Quiere comprar: informó un pago</b>', ...header(ctx), ...contactLines(ctx),
         `📦 Plan ${escapeHtml(plan)} · ${money(extra.amount)}`,
         '👉 Revisá el comprobante en el panel admin y aprobalo.')

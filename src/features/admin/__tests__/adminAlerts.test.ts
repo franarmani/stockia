@@ -63,6 +63,13 @@ describe('mensajes', () => {
     expect(paid).toContain('$110.000')
     expect(buildAlertMessage('suscripcion_mp', { business, extra: { plan: 'premium' } })).toContain('Mercado Pago')
   })
+  it('pago en USDT: importe, red y TXID', () => {
+    const text = buildAlertMessage('pago_informado', { business, extra: { plan: 'vip', amount: 95, currency: 'USDT', network: 'TRC20', tx_hash: 'abc123' } })
+    expect(text).toContain('USDT')
+    expect(text).toContain('95 USDT (TRC20)')
+    expect(text).toContain('<code>abc123</code>')
+    expect(buildAlertMessage('pago_informado', { business, extra: { plan: 'vip', amount: 95, currency: 'USDT' } })).toContain('Sin TXID')
+  })
   it('por vencer y vencida dicen cuánto falta', () => {
     expect(buildAlertMessage('por_vencer', { business, daysLeft: 3 })).toContain('vence en 3 días')
     expect(buildAlertMessage('por_vencer', { business, daysLeft: 1 })).toContain('vence mañana')

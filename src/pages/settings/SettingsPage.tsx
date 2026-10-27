@@ -4,6 +4,7 @@ import { AR_PROVINCES, BUSINESS_TYPES } from '@/config/businessTypes'
 import MpQrSettingsCard from '@/features/mpQr/MpQrSettingsCard'
 import MercadoPagoSubscriptionCard from '@/features/subscription/components/MercadoPagoSubscriptionCard'
 import PlanPicker from '@/features/subscription/components/PlanPicker'
+import CryptoPaymentCard from '@/features/subscription/components/CryptoPaymentCard'
 import PaymentNotificationModal from '@/components/modals/PaymentNotificationModal'
 import { useState, useEffect, useRef } from 'react'
 import { useSearchParams } from 'react-router-dom'
@@ -536,6 +537,7 @@ export default function SettingsPage() {
                 </div>
                 <PlanPicker value={subscriptionPlan} onChange={setSubscriptionPlan} />
                 <MercadoPagoSubscriptionCard plan={subscriptionPlan} onPlanChange={setSubscriptionPlan} />
+                <CryptoPaymentCard initialPlan={subscriptionPlan} />
                 <div className="flex flex-wrap gap-2">
                   <button
                     onClick={() => setShowTransferModal(true)}
