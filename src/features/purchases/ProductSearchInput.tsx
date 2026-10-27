@@ -6,6 +6,7 @@ export interface PurchaseProductOption {
   id: string
   name: string
   barcode: string | null
+  code?: string | null
   stock: number
   unit: string | null
   purchase_price?: number | null
@@ -31,7 +32,7 @@ export default function ProductSearchInput({
     if (terms.length === 0) return []
     return products
       .filter((p) => {
-        const haystack = norm(`${p.name} ${p.barcode ?? ''}`)
+        const haystack = norm(`${p.name} ${p.barcode ?? ''} ${p.code ?? ''}`)
         return terms.every((term) => haystack.includes(term))
       })
       .slice(0, 8)
@@ -60,7 +61,7 @@ export default function ProductSearchInput({
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-xs font-medium text-white">{product.name}</span>
                 <span className="block text-[11px] text-[#9CA6BA]">
-                  {product.barcode ? `${product.barcode} · ` : ''}stock {Number(product.stock) || 0}
+                  {product.code ? `Cód. ${product.code} · ` : ''}{product.barcode ? `${product.barcode} · ` : ''}stock {Number(product.stock) || 0}
                 </span>
               </span>
             </button>

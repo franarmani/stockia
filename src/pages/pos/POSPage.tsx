@@ -510,6 +510,7 @@ export default function POSPage() {
     return products.filter((p) =>
       p.name.toLowerCase().includes(q) ||
       (p.barcode && p.barcode.includes(search)) ||
+      ((p as any).code && String((p as any).code).toLowerCase() === q) ||
       (p.brand && p.brand.toLowerCase().includes(q)) ||
       (p.model && p.model.toLowerCase().includes(q))
     )
@@ -525,7 +526,8 @@ export default function POSPage() {
 
   function handleSearchKeyDown(e: React.KeyboardEvent) {
     if (e.key === 'Enter' && search.trim()) {
-      const exactMatch = products.find(p => p.barcode === search.trim())
+      const typed = search.trim().toLowerCase()
+      const exactMatch = products.find(p => String((p as any).code || '').toLowerCase() === typed) ?? products.find(p => p.barcode === search.trim())
       if (exactMatch) { handleProductClick(exactMatch); setSearch(''); return }
       if (filteredProducts.length === 1) { handleProductClick(filteredProducts[0]); setSearch('') }
     }

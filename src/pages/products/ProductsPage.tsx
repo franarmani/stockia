@@ -71,7 +71,7 @@ export default function ProductsPage() {
   const [saving, setSaving] = useState(false)
 
   const [form, setForm] = useState({
-    name: '', barcode: '', sale_price: '', purchase_price: '',
+    name: '', barcode: '', code: '', sale_price: '', purchase_price: '',
     wholesale_price: '', wholesale_min_qty: '',
     stock: '', stock_min: '3', category_id: '', unit: 'u' as string,
     brand: '', size_label: '', model: '', presentation: '', supplier_id: '',
@@ -134,7 +134,7 @@ export default function ProductsPage() {
   const filtered = useMemo(() => {
     return products.filter((p) => {
       const q = search.toLowerCase()
-      const matchSearch = !search || p.name.toLowerCase().includes(q) || (p.barcode && p.barcode.includes(q)) ||
+      const matchSearch = !search || p.name.toLowerCase().includes(q) || (p.barcode && p.barcode.includes(q)) || ((p as any).code && String((p as any).code).toLowerCase().includes(q)) ||
         (p.brand && p.brand.toLowerCase().includes(q)) || (p.model && p.model.toLowerCase().includes(q)) ||
         (p.material && p.material.toLowerCase().includes(q))
       const matchCat = !filterCategory || p.category_id === filterCategory
@@ -224,13 +224,13 @@ export default function ProductsPage() {
       return
     }
     setEditingProduct(null)
-    setForm({ name: '', barcode: '', sale_price: '', purchase_price: '', wholesale_price: '', wholesale_min_qty: '', stock: '', stock_min: '3', category_id: '', unit: 'u', brand: '', size_label: '', model: '', presentation: '', supplier_id: '', material: '', show_online: true, image_url: null })
+    setForm({ name: '', barcode: '', code: '', sale_price: '', purchase_price: '', wholesale_price: '', wholesale_min_qty: '', stock: '', stock_min: '3', category_id: '', unit: 'u', brand: '', size_label: '', model: '', presentation: '', supplier_id: '', material: '', show_online: true, image_url: null })
     setShowProductModal(true)
   }
   function openEdit(p: Product) {
     setEditingProduct(p)
     setForm({
-      name: p.name, barcode: p.barcode || '', sale_price: String(p.sale_price), purchase_price: String(p.purchase_price),
+      name: p.name, barcode: p.barcode || '', code: (p as any).code || '', sale_price: String(p.sale_price), purchase_price: String(p.purchase_price),
       wholesale_price: (p as any).wholesale_price ? String((p as any).wholesale_price) : '',
       wholesale_min_qty: (p as any).wholesale_min_qty ? String((p as any).wholesale_min_qty) : '',
       stock: String(p.stock), stock_min: String(p.stock_min), category_id: p.category_id || '',
@@ -246,10 +246,15 @@ export default function ProductsPage() {
   async function handleSaveProduct() {
     if (isSellerJr()) { toast.error('El Vendedor Jr no puede modificar productos'); return }
     if (!form.name || !form.sale_price) { toast.error('Nombre y precio son obligatorios'); return }
+    const newCode = form.code.trim().toLowerCase()
+    if (newCode && products.some(x => x.id !== editingProduct?.id && String((x as any).code || '').trim().toLowerCase() === newCode)) {
+      toast.error(`El código ${form.code.trim()} ya lo usa otro producto`); return
+    }
     setSaving(true)
     const payload = {
       business_id: profile!.business_id,
       name: form.name, barcode: form.barcode || null,
+      code: form.code.trim() || null,
       sale_price: Number(form.sale_price), purchase_price: Number(form.purchase_price) || 0,
       wholesale_price: Number(form.wholesale_price) > 0 ? Number(form.wholesale_price) : null,
       wholesale_min_qty: Number(form.wholesale_min_qty) > 0 ? Number(form.wholesale_min_qty) : null,
@@ -652,6 +657,9 @@ export default function ProductsPage() {
                               {[p.brand, p.model].filter(Boolean).join(' · ')}
                             </p>
                           )}
+                          {(p as any).code && (
+                            <span className="mt-1 inline-block rounded bg-primary/15 px-1.5 py-0.5 text-[10px] font-bold text-primary">Cód. {(p as any).code}</span>
+                          )}
                           {p.barcode && (
                             <div className="flex items-center gap-1.5 text-[10px] text-white/30 font-mono mt-1">
                               <Barcode className="w-3 h-3 text-white/40" />
@@ -939,6 +947,18 @@ export default function ProductsPage() {
                   />
                 </div>
               </div>
+            </div>
+
+            <div>
+              <label className="block text-[10px] font-bold text-white/50 uppercase tracking-wider mb-1.5 ml-0.5">Código (para buscarlo rápido en la caja)</label>
+              <input
+                type="text"
+                maxLength={30}
+                placeholder="Ej: 45"
+                value={form.code}
+                onChange={(e) => setForm({...form, code: e.target.value})}
+                className="w-full h-11 px-3.5 rounded-xl border border-white/[0.08] bg-[#0E1629] text-xs font-mono text-white focus:outline-none focus:border-violet-500/50 transition-all"
+              />
             </div>
 
             <div className="grid grid-cols-2 gap-3 pt-2 border-t border-white/[0.06]">
