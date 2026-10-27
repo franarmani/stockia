@@ -65,7 +65,7 @@ function statusColor(b: BusinessRow): string {
 
 /* ─── Main Component ─── */
 export default function AdminPage() {
-  const { profile, user, signOut } = useAuthStore()
+  const { profile, user, signOut, loading: authLoading } = useAuthStore()
   const [tab, setTab] = useState<'businesses' | 'payments'>('businesses')
   const [businesses, setBusinesses] = useState<BusinessRow[]>([])
   const [paymentRequests, setPaymentRequests] = useState<PaymentRequest[]>([])
@@ -139,7 +139,8 @@ export default function AdminPage() {
   }, [isSuperadmin])
 
   // Guard: only superadmin (AFTER hooks to comply with React rules)
-  if (!profile) return null
+  // Sin sesión (por ejemplo, en un dominio nuevo): a iniciar sesión; el superadmin vuelve directo acá.
+  if (!profile) return authLoading ? null : <Navigate to="/login" replace />
   if (!isSuperadmin) return <Navigate to="/menu" replace />
 
   async function fetchPaymentRequests() {
