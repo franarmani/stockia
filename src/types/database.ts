@@ -283,6 +283,7 @@ export interface Database {
           stock: number
           stock_min: number
           barcode: string | null
+          code?: string | null
           image_url: string | null
           active: boolean
           unit: string
@@ -306,6 +307,7 @@ export interface Database {
           stock?: number
           stock_min?: number
           barcode?: string | null
+          code?: string | null
           image_url?: string | null
           active?: boolean
           unit?: string
@@ -329,6 +331,7 @@ export interface Database {
           stock?: number
           stock_min?: number
           barcode?: string | null
+          code?: string | null
           image_url?: string | null
           active?: boolean
           unit?: string

@@ -30,6 +30,7 @@ export interface ProductRowInput {
   stock: number
   stock_min: number
   barcode: string | null
+  code: string | null
   category: string | null
   unit: string
   description: string | null
@@ -123,6 +124,10 @@ export function mapAndValidateRows(
     // barcode
     const bcRaw = getRaw(raw, 'barcode')
     mapped.barcode = bcRaw !== undefined ? parseBarcode(bcRaw) : null
+
+    // código propio
+    const codeRaw = getRaw(raw, 'code')
+    mapped.code = codeRaw !== undefined ? parseBarcode(codeRaw) : null
 
     // category
     const catRaw = getRaw(raw, 'category')
@@ -257,6 +262,7 @@ async function fallbackBatchUpsert(
       stock: m.stock ?? 0,
       stock_min: m.stock_min ?? 3,
       barcode: m.barcode || null,
+      code: m.code || null,
       category_id: categoryId,
       unit: m.unit || 'u',
       description: m.description || null,

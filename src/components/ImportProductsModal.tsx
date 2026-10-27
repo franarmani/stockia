@@ -30,6 +30,7 @@ const FIELD_OPTIONS: { value: ProductField | ''; label: string }[] = [
   { value: 'stock', label: 'Stock' },
   { value: 'stock_min', label: 'Stock mínimo' },
   { value: 'barcode', label: 'Código de barras' },
+  { value: 'code', label: 'Código propio (ej. 45)' },
   { value: 'category', label: 'Categoría' },
   { value: 'unit', label: 'Unidad (u/kg/mts/lts)' },
   { value: 'description', label: 'Descripción' },

@@ -20,6 +20,7 @@ export const DEFAULT_EXPORT_COLUMNS: ExportColumn[] = [
   { field: 'purchase_price', label: 'Precio compra',   enabled: true  },
   { field: 'stock',          label: 'Stock',            enabled: true  },
   { field: 'stock_min',      label: 'Stock mínimo',    enabled: true  },
+  { field: 'code',           label: 'Código',           enabled: true  },
   { field: 'barcode',        label: 'Código de barras', enabled: true  },
   { field: 'category_name',  label: 'Categoría',        enabled: true  },
   { field: 'unit',           label: 'Unidad',           enabled: true  },

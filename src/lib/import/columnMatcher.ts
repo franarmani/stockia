@@ -11,6 +11,7 @@ export type ProductField =
   | 'stock'
   | 'stock_min'
   | 'barcode'
+  | 'code'
   | 'category'
   | 'unit'
   | 'description'
@@ -25,6 +26,7 @@ export const FIELD_LABELS: Record<ProductField, string> = {
   stock: 'Stock',
   stock_min: 'Stock mínimo',
   barcode: 'Código de barras',
+  code: 'Código propio',
   category: 'Categoría',
   unit: 'Unidad',
   description: 'Descripción',
@@ -41,7 +43,8 @@ const SYNONYMS: Record<ProductField, string[]> = {
   purchase_price: ['costo', 'precio_compra', 'p_compra', 'compra', 'cost', 'precio_costo', 'p_costo'],
   stock: ['stock', 'cantidad', 'existencia', 'existencias', 'qty', 'cant', 'inventario', 'disponible'],
   stock_min: ['stock_min', 'minimo', 'stock_minimo', 'reorder', 'reponer', 'minstock', 'min', 'alerta_stock'],
-  barcode: ['codigo', 'codigo_barras', 'barcode', 'ean', 'upc', 'cod_barra', 'sku', 'referencia', 'ref'],
+  barcode: ['codigo', 'codigo_barras', 'barcode', 'ean', 'upc', 'cod_barra'],
+  code: ['codigo_interno', 'cod_interno', 'codigo_propio', 'codigo_producto', 'cod_producto', 'codigo_articulo', 'cod_articulo', 'cod', 'sku', 'referencia', 'ref', 'nro', 'numero'],
   category: ['categoria', 'rubro', 'tipo', 'category', 'subfamilia', 'familia', 'grupo'],
   unit: ['unidad', 'unit', 'uom', 'medida', 'u_medida'],
   description: ['detalle', 'obs', 'observacion', 'notas', 'nota', 'info', 'informacion', 'description'],
