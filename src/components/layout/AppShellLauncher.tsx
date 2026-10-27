@@ -161,7 +161,7 @@ export default function AppShellLauncher() {
               {section.label}
             </p>
             <div className="space-y-0.5">
-              {section.items.map((item) => {
+              {section.items.filter(item => !(item.href === '/tienda' && (business as any)?.tiendanube_connected)).map((item) => {
                 const active = isActive(item.href)
                 return (
                   <NavLink key={item.href} to={item.href} onClick={() => onCloseButton?.()} className={navItemClass(active)}>

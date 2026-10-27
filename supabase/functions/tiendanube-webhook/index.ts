@@ -24,6 +24,7 @@ Deno.serve(async request => {
       await admin.from('tiendanube_stock_queue').delete().eq('business_id', businessId)
       await admin.from('tiendanube_product_links').delete().eq('business_id', businessId)
       await admin.from('tiendanube_connections').delete().eq('business_id', businessId)
+      await admin.from('businesses').update({ tiendanube_connected: false }).eq('id', businessId)
       return new Response('ok')
     }
 

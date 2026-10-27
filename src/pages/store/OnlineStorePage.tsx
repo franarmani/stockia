@@ -126,6 +126,19 @@ export default function OnlineStorePage() {
     navigate('/pos')
   }
 
+  // La tienda web es para quien no tiene tienda propia: con Tiendanube, los pedidos llegan por ahí.
+  if (b?.tiendanube_connected) {
+    return (
+      <div className="animate-fade-in mx-auto w-full max-w-3xl pb-10">
+        <div className="rounded-2xl border border-white/8 bg-[#0d1b2d] p-6">
+          <h1 className="cg-title">Tienda online</h1>
+          <p className="mt-2 text-sm text-white/55">Tu negocio vende online con <b className="text-white">Tiendanube</b>, así que la tienda web de CajaGo está apagada. Los pedidos pagados de Tiendanube entran solos a CajaGo.</p>
+          <button onClick={() => navigate('/tiendanube')} className="mt-4 h-9 rounded-lg bg-[#6178ee] px-4 text-[13px] font-semibold text-white hover:bg-[#6f8cff]">Ir a Tiendanube</button>
+        </div>
+      </div>
+    )
+  }
+
   const visibleOrders = orders.filter(o => filter === 'all' || o.status === 'new' || o.status === 'confirmed')
   const input = 'w-full h-10 px-3 rounded-xl border border-white/10 bg-white/5 text-white text-sm focus:outline-none focus:border-primary/40'
 

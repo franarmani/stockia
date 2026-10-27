@@ -9,8 +9,10 @@ import { registerSW } from 'virtual:pwa-register'
 
 import { checkIsTauriDesktop } from './sync/storage'
 import { installNativeAppGuards } from './desktop/nativeAppGuards'
+import { installExternalLinkHandler } from './desktop/openExternal'
 
 installNativeAppGuards()
+installExternalLinkHandler()
 
 // Aggressive PWA update only in browser/web environment:
 if (!checkIsTauriDesktop()) {

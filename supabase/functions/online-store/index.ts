@@ -19,14 +19,14 @@ Deno.serve(async request => {
 
     const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
     const { data: business } = await admin.from('businesses')
-      .select('id, name, logo_url, address, city, phone, plan, subscription_status, trial_ends_at, store_enabled, store_whatsapp, store_message, store_cover_url, primary_color')
+      .select('id, name, logo_url, address, city, phone, plan, subscription_status, trial_ends_at, store_enabled, store_whatsapp, store_message, store_cover_url, primary_color, tiendanube_connected')
       .eq('store_slug', body.slug)
       .maybeSingle()
 
     // La tienda es parte de Premium (o de la prueba) y requiere la suscripción al día.
     const premium = hasVipAccess(business)
     const current = business && await businessIsActive(admin, business.id)
-    if (!business || !business.store_enabled || !premium || !current) return json({ error: 'Tienda no encontrada' }, 404)
+    if (!business || !business.store_enabled || business.tiendanube_connected || !premium || !current) return json({ error: 'Tienda no encontrada' }, 404)
 
     if (body.action === 'catalog') {
       const [{ data: products }, { data: categories }] = await Promise.all([

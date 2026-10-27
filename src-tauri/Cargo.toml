@@ -1,6 +1,6 @@
 [package]
 name = "app"
-version = "1.13.10"
+version = "1.13.11"
 description = "CajaGo desktop"
 authors = ["CajaGo"]
 license = ""

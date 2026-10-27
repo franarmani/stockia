@@ -13,3 +13,20 @@ export async function openExternal(url: string): Promise<void> {
   }
   window.open(url, '_blank', 'noopener')
 }
+
+/**
+ * En el programa, window.open con un link (WhatsApp, Mercado Pago, soporte) no abre nada.
+ * Se redirige al navegador del sistema; las ventanas de impresión (sin URL) siguen igual.
+ */
+export function installExternalLinkHandler() {
+  if (!checkIsTauriDesktop()) return
+  const original = window.open.bind(window)
+  window.open = ((url?: string | URL, target?: string, features?: string) => {
+    const href = url ? String(url) : ''
+    if (/^(https?:|mailto:|tel:)/i.test(href)) {
+      openExternal(href)
+      return null
+    }
+    return original(url, target, features)
+  }) as typeof window.open
+}

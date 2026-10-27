@@ -3,6 +3,7 @@ import { AR_PROVINCES, BUSINESS_TYPES } from '@/config/businessTypes'
 import MpQrSettingsCard from '@/features/mpQr/MpQrSettingsCard'
 import MercadoPagoSubscriptionCard from '@/features/subscription/components/MercadoPagoSubscriptionCard'
 import PlanPicker from '@/features/subscription/components/PlanPicker'
+import PaymentNotificationModal from '@/components/modals/PaymentNotificationModal'
 import { useState, useEffect, useRef } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
@@ -49,6 +50,7 @@ export default function SettingsPage() {
   const { business, updateBusiness } = useBusinessStore()
   const { limits } = usePlan()
   const [subscriptionPlan, setSubscriptionPlan] = useState<PlanId>(normalizePlan(business?.plan))
+  const [showTransferModal, setShowTransferModal] = useState(false)
   const { settings: fiscalSettings, env: fiscalEnv, setEnv, fetchSettings, upsertSettings, updateCertStatus } = useFiscalStore()
   const [users, setUsers] = useState<UserProfile[]>([])
   const [loading, setLoading] = useState(true)
@@ -538,7 +540,7 @@ export default function SettingsPage() {
                 <MercadoPagoSubscriptionCard plan={subscriptionPlan} onPlanChange={setSubscriptionPlan} />
                 <div className="flex flex-wrap gap-2">
                   <button
-                    onClick={() => window.open('https://wa.me/5492915716099?text=Hola,%20quisiera%20enviar%20el%20comprobante%20para%20activar%20mi%20plan.', '_blank')}
+                    onClick={() => setShowTransferModal(true)}
                     className="h-9 rounded-lg bg-white/[0.05] px-3.5 text-[13px] font-medium text-white/70 transition-colors hover:bg-white/10 hover:text-white"
                   >
                     Pagar por transferencia
@@ -551,6 +553,7 @@ export default function SettingsPage() {
                   </button>
                 </div>
               </div>
+              {showTransferModal && <PaymentNotificationModal onClose={() => setShowTransferModal(false)} />}
             </div>
           )}
 

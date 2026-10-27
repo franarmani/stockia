@@ -60,6 +60,8 @@ Deno.serve(async request => {
       last_error: null,
     }, { onConflict: 'business_id' })
     if (error) throw new Error(error.message)
+    // Con Tiendanube, la tienda web de CajaGo se apaga (es para quien no tiene tienda propia).
+    await admin.from('businesses').update({ tiendanube_connected: true, store_enabled: false }).eq('id', pending.business_id)
 
     // Webhooks de esta tienda hacia CajaGo (sin duplicar si ya existían).
     const existing = await tnFetch(storeId, token.access_token, '/webhooks')
