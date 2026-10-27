@@ -98,7 +98,7 @@ export async function listPurchaseCatalogs(businessId: string) {
 export async function listPurchaseProducts(businessId: string) {
   return (await syncEngine.pullLatestProducts(businessId))
     .filter(product => product.active !== false)
-    .map(({ id, name, barcode, stock, unit }) => ({ id, name, barcode, stock, unit }))
+    .map(({ id, name, barcode, stock, unit, purchase_price }) => ({ id, name, barcode, stock, unit, purchase_price }))
     .sort((a, b) => a.name.localeCompare(b.name, 'es'))
 }
 

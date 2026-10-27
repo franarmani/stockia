@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { readInvoiceWithAi } from "@/features/purchases/invoiceAi";
 import { matchInvoiceItem } from "@/features/purchases/invoiceMatch";
+import ProductSearchInput from "@/features/purchases/ProductSearchInput";
 
 import {
   BarChart3,
@@ -1308,11 +1309,18 @@ function PurchaseForm({
                 className="grid grid-cols-2 md:grid-cols-[1.5fr_1fr_90px_120px_90px_36px] gap-2.5 p-3 rounded-xl bg-white/[0.02] border border-white/[0.06] items-center"
               >
                 <div className="col-span-2 md:col-span-1">
-                  <Input
-                    placeholder="Descripción del ítem"
+                  <ProductSearchInput
                     value={item.description}
-                    onChange={(e) =>
-                      updateItem(index, { description: e.target.value })
+                    products={products}
+                    onChange={(text) =>
+                      updateItem(index, { description: text, product_id: undefined })
+                    }
+                    onSelect={(product) =>
+                      updateItem(index, {
+                        product_id: product.id,
+                        description: product.name,
+                        unit_cost: item.unit_cost || (Number(product.purchase_price) > 0 ? String(product.purchase_price) : ""),
+                      })
                     }
                   />
                   {item.product_id && (
