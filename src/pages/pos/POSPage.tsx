@@ -496,6 +496,24 @@ export default function POSPage() {
     setLoyaltyRedemption(null)
   }
 
+  /** Puntos del cliente y premios para canjear: se ve apenas se elige el cliente (y de nuevo al confirmar). */
+  function renderLoyaltyPanel() {
+    if (!selectedCustomer || !loyaltyConfig.enabled || !hasPremiumAccess(business)) return null
+    return (
+      <LoyaltyRedeemPanel
+        customerName={selectedCustomer.name}
+        customerPoints={Number((selectedCustomer as any).loyalty_points) || 0}
+        config={loyaltyConfig}
+        rewards={loyaltyRewards}
+        cartProductIds={items.map(item => item.product.id)}
+        total={getTotal()}
+        redemption={loyaltyRedemption}
+        onRedeem={redeemReward}
+        onRemove={removeRedemption}
+      />
+    )
+  }
+
   async function checkCajaOpen() {
     const businessId = profile!.business_id
     const sessions = await syncEngine.pullRows<{ id: string; status: string }>('cash_sessions', businessId, () =>
@@ -1518,6 +1536,7 @@ export default function POSPage() {
           {/* Checkout footer */}
           {items.length > 0 && (
             <div className="shrink-0 px-4 pt-3 pb-4 border-t border-white/8 space-y-3">
+              {renderLoyaltyPanel()}
               {/* Payment methods */}
               {!mixedPaymentMode && (
                 <div>
@@ -1780,6 +1799,7 @@ export default function POSPage() {
               </div>
               {items.length > 0 && (
                 <div className="shrink-0 px-4 pt-3 pb-4 space-y-3 border-t border-white/8">
+                  {renderLoyaltyPanel()}
                   <div className="flex justify-between items-center">
                     <span className="text-sm font-bold text-white">Total</span>
                     <span className="text-xl font-bold text-white tabular-nums">{formatCurrency(getTotal())}</span>
@@ -2088,19 +2108,7 @@ export default function POSPage() {
             </div>
           </div>
 
-          {selectedCustomer && loyaltyConfig.enabled && hasPremiumAccess(business) && (
-            <LoyaltyRedeemPanel
-              customerName={selectedCustomer.name}
-              customerPoints={Number((selectedCustomer as any).loyalty_points) || 0}
-              config={loyaltyConfig}
-              rewards={loyaltyRewards}
-              cartProductIds={items.map(item => item.product.id)}
-              total={getTotal()}
-              redemption={loyaltyRedemption}
-              onRedeem={redeemReward}
-              onRemove={removeRedemption}
-            />
-          )}
+          {renderLoyaltyPanel()}
 
           {receiptType !== 'ticket' && (
             <div className="space-y-3 p-3.5 rounded-xl bg-white/[0.03] border border-white/10">
