@@ -8,6 +8,7 @@ export interface TiendanubeOrder {
   customer_name: string | null
   total: number
   created_at: string
+  cancelled_at: string | null
   items: Array<{ product_id: string | null; name: string; quantity: number; price: number }>
 }
 

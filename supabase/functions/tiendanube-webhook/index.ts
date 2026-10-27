@@ -1,4 +1,4 @@
-// Avisos de Tiendanube: ventas pagadas, desinstalación y los pedidos de privacidad obligatorios.
+// Avisos de Tiendanube: ventas pagadas, pedidos cancelados, desinstalación y los pedidos de privacidad obligatorios.
 // Tiendanube puede repetir avisos: tiendanube_record_order no registra dos veces el mismo pedido.
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { businessIsActive, hasVipAccess } from '../_shared/access.ts'
@@ -30,6 +30,13 @@ Deno.serve(async request => {
     if (event === 'customers/redact') {
       const orderIds = (payload?.orders_to_redact ?? []).map(Number).filter(Boolean)
       if (orderIds.length) await admin.from('tiendanube_orders').update({ customer_name: null }).eq('business_id', businessId).in('tn_order_id', orderIds)
+      return new Response('ok')
+    }
+
+    if (event === 'order/cancelled') {
+      // Anula la venta y devuelve el stock (solo si el pedido había entrado como pagado).
+      const { error } = await admin.rpc('tiendanube_cancel_order', { p_business_id: businessId, p_tn_order_id: Number(payload.id) })
+      if (error) throw new Error(error.message)
       return new Response('ok')
     }
 

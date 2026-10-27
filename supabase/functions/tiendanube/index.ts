@@ -40,7 +40,7 @@ Deno.serve(async request => {
       const [{ count: linked }, { count: pending }, { data: orders }] = await Promise.all([
         admin.from('tiendanube_product_links').select('product_id', { count: 'exact', head: true }).eq('business_id', businessId),
         admin.from('tiendanube_stock_queue').select('product_id', { count: 'exact', head: true }).eq('business_id', businessId),
-        admin.from('tiendanube_orders').select('tn_order_id, order_number, customer_name, total, created_at, items').eq('business_id', businessId).order('created_at', { ascending: false }).limit(15),
+        admin.from('tiendanube_orders').select('tn_order_id, order_number, customer_name, total, created_at, items, cancelled_at').eq('business_id', businessId).order('created_at', { ascending: false }).limit(15),
       ])
       return json({
         connected: !!connection,

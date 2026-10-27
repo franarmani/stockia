@@ -225,6 +225,7 @@ export default function TiendanubePage() {
                 <div key={order.tn_order_id} className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-white/[0.06] py-2.5 first:border-t-0">
                   <span className="text-sm font-medium text-white">#{order.order_number ?? order.tn_order_id}</span>
                   <span className="text-[13px] text-white/50">{order.customer_name ?? 'Cliente'} · {new Date(order.created_at).toLocaleString('es-AR')}</span>
+                  {order.cancelled_at && <span className="rounded-md bg-red-500/10 px-2 py-0.5 text-[11px] text-red-300">Cancelado · stock devuelto</span>}
                   {unlinked > 0 && <span className="rounded-md bg-amber-500/10 px-2 py-0.5 text-[11px] text-amber-300">{unlinked} sin vincular (no descontó stock)</span>}
                   <span className="ml-auto text-sm font-semibold text-white tabular-nums">{formatCurrency(Number(order.total))}</span>
                 </div>

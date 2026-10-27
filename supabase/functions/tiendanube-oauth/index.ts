@@ -4,7 +4,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { TN_AUTH, tnFetch } from '../_shared/tiendanube.ts'
 
 const WEBHOOK_URL = `${Deno.env.get('SUPABASE_URL')}/functions/v1/tiendanube-webhook`
-const EVENTS = ['order/paid', 'app/uninstalled']
+const EVENTS = ['order/paid', 'order/cancelled', 'app/uninstalled']
 
 Deno.serve(async request => {
   const url = new URL(request.url)
