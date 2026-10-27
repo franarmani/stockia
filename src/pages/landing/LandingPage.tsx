@@ -271,8 +271,8 @@ export default function LandingPage() {
           </nav>
 
           <div className="flex items-center gap-2">
-            <Link to="/login" className="hidden px-3 py-2 text-xs font-semibold text-slate-300 transition-colors hover:text-white sm:block">Ingresar</Link>
-            <Link to="/register" className="inline-flex h-9 items-center justify-center gap-2 rounded-xl bg-[#7185f3] px-4 text-xs font-bold text-white shadow-[0_8px_24px_rgba(82,103,212,0.25)] transition-all hover:-translate-y-0.5 hover:bg-[#8295ff] active:translate-y-0">Probar gratis <ArrowRight className="h-3.5 w-3.5" /></Link>
+            <Link to="/descargar" className="hidden px-3 py-2 text-xs font-semibold text-slate-300 transition-colors hover:text-white sm:block">Descargar</Link>
+            <Link to="/descargar" className="inline-flex h-9 items-center justify-center gap-2 rounded-xl bg-[#7185f3] px-4 text-xs font-bold text-white shadow-[0_8px_24px_rgba(82,103,212,0.25)] transition-all hover:-translate-y-0.5 hover:bg-[#8295ff] active:translate-y-0">Probar gratis <ArrowRight className="h-3.5 w-3.5" /></Link>
             <button type="button" aria-label={mobileMenuOpen ? 'Cerrar menú' : 'Abrir menú'} aria-expanded={mobileMenuOpen} aria-controls="landing-mobile-menu" onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/[0.1] text-white lg:hidden">{mobileMenuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}</button>
           </div>
         </div>
@@ -309,7 +309,7 @@ export default function LandingPage() {
 
             <motion.div initial={reducedMotion ? false : { opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.24 }}
               className="mt-9 flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
-              <Link to="/register" className="group inline-flex h-[3.25rem] items-center justify-center gap-3 rounded-xl bg-white px-7 text-sm font-bold text-[#0a0e15] shadow-[0_12px_40px_rgba(154,169,255,0.25)] transition-all hover:-translate-y-0.5 hover:bg-[#eef1ff] active:translate-y-0">
+              <Link to="/descargar" className="group inline-flex h-[3.25rem] items-center justify-center gap-3 rounded-xl bg-white px-7 text-sm font-bold text-[#0a0e15] shadow-[0_12px_40px_rgba(154,169,255,0.25)] transition-all hover:-translate-y-0.5 hover:bg-[#eef1ff] active:translate-y-0">
                 Probar {TRIAL_DAYS} días gratis <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
               </Link>
               <a href="#producto" className="inline-flex h-[3.25rem] items-center justify-center rounded-xl border border-white/[0.13] bg-white/[0.035] px-7 text-sm font-semibold text-white transition-all hover:border-white/25 hover:bg-white/[0.07]">
@@ -455,7 +455,7 @@ export default function LandingPage() {
                         {plan.features.map((feature) => <li key={feature} className="flex items-start gap-3 text-sm leading-6 text-slate-300"><Check className="mt-1 h-3.5 w-3.5 shrink-0 text-emerald-300" />{feature}</li>)}
                         {plan.upcoming.map((feature) => <li key={feature} className="flex items-start gap-3 text-sm leading-6 text-slate-500"><Clock3 className="mt-1 h-3.5 w-3.5 shrink-0 text-amber-300" /><span>{feature} <span className="ml-1 text-[10px] font-bold uppercase tracking-wider text-amber-300">Próximamente</span></span></li>)}
                       </ul>
-                      <Link to="/register" className={`group inline-flex h-12 items-center justify-center gap-2 rounded-xl text-sm font-bold transition-all hover:-translate-y-0.5 active:translate-y-0 ${highlighted ? 'bg-white text-[#0a0e15] hover:bg-[#eef1ff]' : 'border border-white/[0.12] bg-white/[0.04] text-white hover:bg-white/[0.08]'}`}>Empezar prueba gratis <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" /></Link>
+                      <Link to="/descargar" className={`group inline-flex h-12 items-center justify-center gap-2 rounded-xl text-sm font-bold transition-all hover:-translate-y-0.5 active:translate-y-0 ${highlighted ? 'bg-white text-[#0a0e15] hover:bg-[#eef1ff]' : 'border border-white/[0.12] bg-white/[0.04] text-white hover:bg-white/[0.08]'}`}>Empezar prueba gratis <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" /></Link>
                     </article>
                   </Reveal>
                 )
@@ -474,7 +474,7 @@ export default function LandingPage() {
           <Reveal>
             <div className="relative overflow-hidden rounded-[2rem] bg-[#eef0f8] px-6 py-16 text-[#101521] sm:px-12 sm:py-20 lg:px-16">
               <div className="absolute -right-28 -top-28 h-80 w-80 rounded-full bg-[#8295ff]/30 blur-[80px]" /><div className="absolute bottom-0 right-[28%] h-32 w-32 rounded-full bg-white/70 blur-[60px]" />
-              <div className="relative grid gap-10 lg:grid-cols-[1fr_auto] lg:items-end"><div className="max-w-3xl"><p className="text-sm font-semibold text-[#5367d3]">Tu negocio, con menos improvisación</p><h2 className="mt-5 text-balance text-4xl font-extrabold leading-[1.02] tracking-[-0.055em] sm:text-6xl">Probalo en una jornada real. No en una demo vacía.</h2><p className="mt-6 max-w-xl text-base leading-8 text-slate-600">Cargá tus productos, abrí caja y comprobá cómo se siente trabajar con toda la operación conectada.</p></div><Link to="/register" className="group inline-flex h-[3.25rem] shrink-0 items-center justify-center gap-3 rounded-xl bg-[#101521] px-7 text-sm font-bold text-white transition-all hover:-translate-y-0.5 hover:bg-[#1b2433] active:translate-y-0">Empezar {TRIAL_DAYS} días gratis <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" /></Link></div>
+              <div className="relative grid gap-10 lg:grid-cols-[1fr_auto] lg:items-end"><div className="max-w-3xl"><p className="text-sm font-semibold text-[#5367d3]">Tu negocio, con menos improvisación</p><h2 className="mt-5 text-balance text-4xl font-extrabold leading-[1.02] tracking-[-0.055em] sm:text-6xl">Probalo en una jornada real. No en una demo vacía.</h2><p className="mt-6 max-w-xl text-base leading-8 text-slate-600">Cargá tus productos, abrí caja y comprobá cómo se siente trabajar con toda la operación conectada.</p></div><Link to="/descargar" className="group inline-flex h-[3.25rem] shrink-0 items-center justify-center gap-3 rounded-xl bg-[#101521] px-7 text-sm font-bold text-white transition-all hover:-translate-y-0.5 hover:bg-[#1b2433] active:translate-y-0">Empezar {TRIAL_DAYS} días gratis <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" /></Link></div>
             </div>
           </Reveal>
         </section>
@@ -482,7 +482,7 @@ export default function LandingPage() {
 
       <footer className="relative z-10 border-t border-white/[0.08] bg-[#080c12]">
         <div className="mx-auto max-w-[1240px] px-4 py-12 sm:px-6 lg:px-8">
-          <div className="flex flex-col gap-9 md:flex-row md:items-end md:justify-between"><div><CajaGoBrand size="sm" /><p className="mt-4 max-w-sm text-xs leading-6 text-slate-600">Ventas, stock, caja y gestión para comercios que necesitan trabajar con claridad.</p></div><div className="flex flex-wrap gap-x-6 gap-y-3 text-xs font-medium text-slate-500"><a href="#producto" className="hover:text-white">Producto</a><a href="#sin-internet" className="hover:text-white">Sin internet</a><a href="#planes" className="hover:text-white">Planes</a><Link to="/login" className="hover:text-white">Ingresar</Link></div></div>
+          <div className="flex flex-col gap-9 md:flex-row md:items-end md:justify-between"><div><CajaGoBrand size="sm" /><p className="mt-4 max-w-sm text-xs leading-6 text-slate-600">Ventas, stock, caja y gestión para comercios que necesitan trabajar con claridad.</p></div><div className="flex flex-wrap gap-x-6 gap-y-3 text-xs font-medium text-slate-500"><a href="#producto" className="hover:text-white">Producto</a><a href="#sin-internet" className="hover:text-white">Sin internet</a><a href="#planes" className="hover:text-white">Planes</a><Link to="/descargar" className="hover:text-white">Ingresar</Link></div></div>
           <div className="mt-10 flex flex-col gap-4 border-t border-white/[0.08] pt-6 text-[0.68rem] text-slate-700 sm:flex-row sm:items-center sm:justify-between"><p>© {new Date().getFullYear()} CajaGo. Argentina.</p><div className="flex gap-5"><Link to="/terminos" className="hover:text-white">Términos</Link><Link to="/privacidad" className="hover:text-white">Privacidad</Link><a href={SUPPORT_WHATSAPP_URL} target="_blank" rel="noopener" className="hover:text-white">Soporte</a></div></div>
         </div>
       </footer>

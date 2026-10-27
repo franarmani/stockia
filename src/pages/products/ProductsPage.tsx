@@ -141,7 +141,11 @@ export default function ProductsPage() {
     })
   }, [products, search, filterCategory, filterMaterial, filterLowStockOnly])
 
-  const visibleProducts = useMemo(() => filtered.slice(0, 30), [filtered])
+  // Al buscar o filtrar se muestran todos los resultados; sin filtros, de a 60 con "Ver más".
+  const isFiltering = !!search.trim() || !!filterCategory || !!filterMaterial || filterLowStockOnly
+  const [listLimit, setListLimit] = useState(60)
+  useEffect(() => setListLimit(60), [search, filterCategory, filterMaterial, filterLowStockOnly])
+  const visibleProducts = useMemo(() => (isFiltering ? filtered : filtered.slice(0, listLimit)), [filtered, isFiltering, listLimit])
 
   // Selección múltiple para edición masiva
   const [selected, setSelected] = useState<Set<string>>(new Set())
@@ -741,9 +745,10 @@ export default function ProductsPage() {
             <p className="text-white/40 text-xs font-medium mb-3">
               Mostrando {visibleProducts.length} de {filtered.length} productos
             </p>
-            <p className="text-[11px] text-white/30">
-              Usá los filtros de búsqueda por nombre, categoría o material para encontrar artículos específicos.
-            </p>
+            <button onClick={() => setListLimit(limit => limit + 60)}
+              className="h-9 px-4 rounded-lg bg-white/5 text-white/70 text-xs font-semibold hover:bg-white/10">
+              Ver más productos
+            </button>
           </div>
         )}
       </div>

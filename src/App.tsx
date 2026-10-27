@@ -55,6 +55,7 @@ const LoyaltyPage = lazy(() => import('@/pages/loyalty/LoyaltyPage'))
 const OnlineStorePage = lazy(() => import('@/pages/store/OnlineStorePage'))
 const WhatsAppPage = lazy(() => import('@/pages/whatsapp/WhatsAppPage'))
 const TiendanubePage = lazy(() => import('@/pages/tiendanube/TiendanubePage'))
+const DownloadPage = lazy(() => import('@/pages/download/DownloadPage'))
 const StorefrontPage = lazy(() => import('@/pages/store/StorefrontPage'))
 const ResetPasswordPage = lazy(() => import('@/pages/auth/ResetPasswordPage'))
 const LegalPage = lazy(() => import('@/pages/legal/LegalPage'))
@@ -74,6 +75,16 @@ const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'))
 // Cuánto se "snoozea" el recordatorio de pago al cerrarlo con la X — vuelve a
 // insistir pasado este tiempo en vez de desaparecer para el resto de la sesión.
 const PAYMENT_REMINDER_SNOOZE_MS = 15 * 60 * 1000
+
+/** CajaGo se usa solo como programa: en la web (salvo en desarrollo) el sistema lleva a descargarlo. */
+function webAppBlocked() {
+  return !checkIsTauriDesktop() && !import.meta.env.DEV
+}
+
+/** En la web solo se puede iniciar sesión para entrar al panel admin. */
+function webLoginAllowed() {
+  return new URLSearchParams(window.location.search).get('next') === '/admin'
+}
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading, profile } = useAuthStore()
@@ -523,6 +534,8 @@ export default function App() {
           element={
             checkIsTauriDesktop() ? (
               <DesktopAuthPage initialTab="login" />
+            ) : webAppBlocked() && !webLoginAllowed() ? (
+              <Navigate to="/descargar" replace />
             ) : (
               <PublicRoute>
                 <LoginPage />
@@ -535,6 +548,8 @@ export default function App() {
           element={
             checkIsTauriDesktop() ? (
               <DesktopAuthPage initialTab="register" />
+            ) : webAppBlocked() ? (
+              <Navigate to="/descargar" replace />
             ) : (
               <RegisterPage />
             )
@@ -544,11 +559,12 @@ export default function App() {
         <Route path="/suscripcion/listo" element={<SubscriptionReturnPage />} />
         <Route path="/tienda/:slug" element={<StorefrontPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
+        <Route path="/descargar" element={<DownloadPage />} />
         <Route path="/terminos" element={<LegalPage kind="terms" />} />
         <Route path="/privacidad" element={<LegalPage kind="privacy" />} />
 
         {/* Protected — app shell launcher (no sidebar) */}
-        <Route path="/" element={<ProtectedRoute><AppShellLauncher /></ProtectedRoute>}>
+        <Route path="/" element={webAppBlocked() ? <Navigate to="/descargar" replace /> : <ProtectedRoute><AppShellLauncher /></ProtectedRoute>}>
           <Route path="menu" element={<MenuLauncher />} />
           <Route path="dashboard" element={<DashboardPage />} />
           <Route path="pos" element={<SubscriptionGuard mode="block"><POSPage /></SubscriptionGuard>} />
