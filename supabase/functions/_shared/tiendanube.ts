@@ -2,7 +2,7 @@
 
 export const TN_API = 'https://api.tiendanube.com/2025-03'
 export const TN_AUTH = 'https://www.tiendanube.com/apps'
-export const TN_USER_AGENT = 'CajaGo (https://cajago.vercel.app)'
+export const TN_USER_AGENT = 'CajaGo (https://cajago.net)'
 
 export type TnVariant = { tn_product_id: number; tn_variant_id: number; name: string; sku: string | null; barcode: string | null }
 export type LocalProduct = { id: string; barcode: string | null }

@@ -300,7 +300,7 @@ export default function AdminPage() {
 
   function openWA(business: BusinessRow, type: 'activar' | 'vencido') {
     const msg = type === 'activar'
-      ? `Hola! Tu cuenta en CajaGo ha sido activada ✅. Ya podés ingresar en https://cajago.vercel.app — Cualquier consulta avisame. Saludos, Fran`
+      ? `Hola! Tu cuenta en CajaGo ha sido activada ✅. Si todavía no instalaste el programa, descargalo en https://cajago.net/descargar — Cualquier consulta avisame. Saludos, Fran`
       : `Hola! Tu período de prueba en CajaGo ha vencido 📅. Para seguir usando el sistema transferí el valor de tu plan (Básico $38.000, Premium $70.000 o VIP $110.000) al alias *${ALIAS}* y avisame por acá. Saludos, Fran`
 
     const phone = business.phone?.replace(/\D/g, '') || ''

@@ -41,10 +41,12 @@ try {
   $match = [regex]::Match($log, 'https://cajago-[a-z0-9]+-[a-z0-9-]+\.vercel\.app')
   if ($LASTEXITCODE -ne 0 -or -not $match.Success) { Write-Output $log; throw 'Falló la publicación en Vercel.' }
   $deployUrl = $match.Value
-  # cajago.vercel.app se asignó con alias: hay que moverlo a cada publicación nueva.
-  npx vercel alias set $deployUrl cajago.vercel.app
-  if ($LASTEXITCODE -ne 0) { throw 'No se pudo apuntar cajago.vercel.app a la publicación nueva.' }
-  Write-Output "Web publicada: https://cajago.vercel.app ($deployUrl)"
+  # Los dominios se asignaron con alias: hay que moverlos a cada publicación nueva.
+  foreach ($domain in @('cajago.net', 'www.cajago.net', 'cajago.vercel.app')) {
+    npx vercel alias set $deployUrl $domain
+    if ($LASTEXITCODE -ne 0) { throw "No se pudo apuntar $domain a la publicación nueva." }
+  }
+  Write-Output "Web publicada: https://cajago.net ($deployUrl)"
 } finally {
   Pop-Location
 }
