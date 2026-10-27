@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAuthStore } from '@/stores/authStore'
 import { useEffect, lazy, Suspense, useState } from 'react'
+import { useParams } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
 import SplashScreen from '@/components/SplashScreen'
 import { useBusinessStore } from '@/stores/businessStore'
@@ -210,6 +211,12 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
   // Only redirect to app if BOTH user and profile are loaded — prevents redirect loop
   if (user && profile) return <Navigate to="/menu" replace />
   return <>{children}</>
+}
+
+/** El QR de un producto abre CajaGo en ese producto (solo lo ve quien pertenece a ese negocio). */
+function ProductLinkRedirect() {
+  const { id } = useParams()
+  return <Navigate to={`/products/${id ?? ''}`} replace />
 }
 
 function RootRoute() {
@@ -539,6 +546,7 @@ export default function App() {
           }
         />
         <Route path="/completar-registro" element={<CompleteRegistrationPage />} />
+        <Route path="/p/:id" element={<ProtectedRoute><ProductLinkRedirect /></ProtectedRoute>} />
         <Route path="/subscription-blocked" element={<SubscriptionBlockedPage />} />
         <Route path="/suscripcion/listo" element={<SubscriptionReturnPage />} />
         <Route path="/tienda/:slug" element={<StorefrontPage />} />

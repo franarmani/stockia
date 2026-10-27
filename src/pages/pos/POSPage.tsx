@@ -17,7 +17,10 @@ import { combineDiscounts, pointsForPurchase, readLoyaltyConfig, type LoyaltyRed
 import LoyaltyRedeemPanel from '@/features/loyalty/LoyaltyRedeemPanel'
 import QrPaymentModal from '@/features/mpQr/QrPaymentModal'
 import { mpQr } from '@/features/mpQr/mpQrService'
-import { getLocalCustomers, getLocalProducts } from '@/sync/storage'
+import { getLocalCustomers, getLocalProducts, getLocalRows } from '@/sync/storage'
+import CameraScanner, { type ScanFeedback } from '@/features/scanner/CameraScanner'
+import { findScannedProduct } from '@/features/scanner/scanLookup'
+import { localStock, stockByProduct, type WarehouseStockRow } from '@/features/warehouses/warehouseStock'
 import { isOnline, onConnectivityChange } from '@/sync/connectivity'
 import { toast } from 'sonner'
 import Button from '@/components/ui/Button'
@@ -381,7 +384,7 @@ export default function POSPage() {
   }, [products])
 
   const handleBarcodeScanned = useCallback((code: string) => {
-    const product = products.find(p => p.barcode === code)
+    const { product } = findScannedProduct(code, products)
     if (product) {
       if (isDecimalUnit(product.unit)) {
         setQtyInputProduct(product)
@@ -396,33 +399,48 @@ export default function POSPage() {
     }
   }, [products, addItem])
 
-  async function startCameraScanner() {
-    setShowCameraScanner(true)
-    const { Html5Qrcode } = await import('html5-qrcode')
-    setTimeout(() => {
-      const scanner = new Html5Qrcode('camera-scanner-region')
-      scanner.start(
-        { facingMode: 'environment' },
-        { fps: 10, qrbox: { width: 250, height: 150 } },
-        (decodedText) => {
-          scanner.stop().catch(() => {})
-          setShowCameraScanner(false)
-          handleBarcodeScanned(decodedText)
-        },
-        () => {}
-      ).catch(() => {
-        toast.error('No se pudo acceder a la cámara')
-        setShowCameraScanner(false)
-      })
-      ;(window as any).__nexoScanner = scanner
-    }, 300)
+  /**
+   * Escáner con cámara: no se cierra después de cada lectura. Suma 1 por cada lectura del mismo producto
+   * y respeta stock (el del local, sin lo que está en depósitos), precios mayoristas y promociones.
+   */
+  async function handleCameraScan(code: string): Promise<ScanFeedback> {
+    const { product, code: shown, isProductLink } = findScannedProduct(code, products)
+    if (!product) {
+      const canCreate = profile?.role !== 'seller_jr' && !isProductLink
+      return {
+        ok: false,
+        message: 'Producto no encontrado',
+        detail: isProductLink || shown.length > 40 ? 'Ese QR no corresponde a un producto de tu negocio' : `Código ${shown}`,
+        action: canCreate && shown.length <= 40
+          ? { label: 'Crear producto con este código', run: () => { setShowCameraScanner(false); navigate(`/products?nuevo=${encodeURIComponent(shown)}`) } }
+          : undefined,
+      }
+    }
+    if (isDecimalUnit(product.unit)) {
+      setQtyInputProduct(product)
+      setQtyInputValue('1')
+      return { ok: true, message: product.name, detail: 'Indicá la cantidad', close: true }
+    }
+
+    const inCart = usePOSStore.getState().items.find((item) => item.product.id === product.id)?.quantity ?? 0
+    const warehouseRows = await getLocalRows<WarehouseStockRow>('warehouse_stock', profile!.business_id).catch(() => [])
+    const available = localStock(product.stock, stockByProduct(warehouseRows).get(product.id))
+    if (inCart + 1 > available) {
+      const stored = product.stock - available
+      return {
+        ok: false,
+        message: product.name,
+        detail: stored > 0 && product.stock > inCart ? `Sin stock en el local (${stored} en depósitos)` : `Sin stock suficiente (hay ${product.stock})`,
+      }
+    }
+    addItem(product)
+    const now = usePOSStore.getState().items.find((item) => item.product.id === product.id)
+    if (!now || now.quantity === inCart) return { ok: false, message: product.name, detail: `Sin stock suficiente (hay ${product.stock})` }
+    return { ok: true, message: product.name, detail: `En la venta: ${now.quantity} · ${formatCurrency(now.price)} c/u` }
   }
 
-  function stopCameraScanner() {
-    const scanner = (window as any).__nexoScanner
-    if (scanner) { scanner.stop().catch(() => {}); delete (window as any).__nexoScanner }
-    setShowCameraScanner(false)
-  }
+  function startCameraScanner() { setShowCameraScanner(true) }
+  function stopCameraScanner() { setShowCameraScanner(false) }
 
   async function fetchProducts() {
     const cached = await getLocalProducts(profile!.business_id)
@@ -1204,8 +1222,8 @@ export default function POSPage() {
               </div>
               <button
                 onClick={startCameraScanner}
-                className="w-11 h-11 rounded-xl border border-white/8 bg-[#0d1b2d] flex items-center justify-center text-slate-400 hover:text-primary hover:border-primary/30 hover:bg-primary/5 transition-all active:scale-90 shrink-0"
-                title="Escanear código de barras"
+                className="w-11 h-11 rounded-xl border border-primary/30 bg-primary/10 md:border-white/8 md:bg-[#0d1b2d] flex items-center justify-center text-primary md:text-slate-400 hover:text-primary hover:border-primary/30 hover:bg-primary/5 transition-all active:scale-90 shrink-0"
+                title="Escanear producto con la cámara"
               >
                 <ScanLine className="w-4.5 h-4.5" />
               </button>
@@ -1846,16 +1864,8 @@ export default function POSPage() {
         )}
       </Modal>
 
-      {/* Camera scanner modal */}
-      <Modal open={showCameraScanner} onClose={stopCameraScanner} title="Escanear código" size="md">
-        <div className="space-y-3">
-          <div id="camera-scanner-region" ref={cameraContainerRef} className="rounded-xl overflow-hidden bg-black min-h-64" />
-          <p className="text-sm text-center text-slate-400">Apuntá la cámara al código de barras</p>
-          <Button variant="outline" className="w-full" onClick={stopCameraScanner}>
-            <X className="w-4 h-4" /> Cancelar
-          </Button>
-        </div>
-      </Modal>
+      {/* Escáner con cámara (códigos de barras, código propio y QR de producto) */}
+      <CameraScanner open={showCameraScanner} onClose={stopCameraScanner} onScan={handleCameraScan} title="Escanear producto" hint="Seguí escaneando: cada lectura suma 1" />
 
       {/* Customer modal */}
       <Modal open={showCustomerModal} onClose={() => { setShowCustomerModal(false); setShowQuickCustomerForm(false) }} title="Seleccionar cliente" size="sm">

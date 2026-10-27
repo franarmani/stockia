@@ -2,13 +2,14 @@ import { useLocation } from 'react-router-dom'
 import { checkIsTauriDesktop } from '@/sync/storage'
 import { SUPPORT_WHATSAPP_URL } from '@/config/publicUrls'
 
-// Páginas de las tiendas de los comercios y el panel admin no llevan el botón de CajaGo.
-const HIDDEN_PREFIXES = ['/tienda', '/admin', '/login', '/reset-password']
+// Solo en las páginas públicas de CajaGo: dentro de la aplicación tapa botones y el escáner,
+// y en las tiendas de los comercios no corresponde.
+const PUBLIC_PATHS = ['/', '/login', '/register', '/descargar', '/terminos', '/privacidad', '/landing']
 
 /** Botón flotante de WhatsApp para que los visitantes de la web hablen con CajaGo. */
 export default function SupportWhatsAppButton() {
   const { pathname } = useLocation()
-  if (checkIsTauriDesktop() || HIDDEN_PREFIXES.some((prefix) => pathname.startsWith(prefix))) return null
+  if (checkIsTauriDesktop() || !PUBLIC_PATHS.includes(pathname)) return null
 
   const href = `${SUPPORT_WHATSAPP_URL}?text=${encodeURIComponent('Hola! Quiero consultar por CajaGo.')}`
   return (

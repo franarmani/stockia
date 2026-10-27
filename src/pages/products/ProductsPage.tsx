@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useBusinessStore } from '@/stores/businessStore'
 import { supabase } from '@/lib/supabase'
 import { syncEngine } from '@/sync/syncEngine'
 import { getLocalProducts } from '@/sync/storage'
@@ -27,8 +28,11 @@ import {
   Search, Plus, Package, AlertTriangle,
   Barcode, MinusCircle, PlusCircle, Edit3, Trash2,
   Tag, X, Truck, Upload, Download, Layers,
-  Zap, ChevronRight, Percent
+  Zap, ChevronRight, Percent, ScanLine, QrCode
 } from 'lucide-react'
+import CameraScanner, { type ScanFeedback } from '@/features/scanner/CameraScanner'
+import ProductQrModal from '@/features/scanner/ProductQrModal'
+import { findScannedProduct } from '@/features/scanner/scanLookup'
 
 const UNIT_OPTIONS: { value: ProductUnit; label: string }[] = [
   { value: 'u', label: 'Unidad (u)' },
@@ -39,6 +43,10 @@ const UNIT_OPTIONS: { value: ProductUnit; label: string }[] = [
 
 export default function ProductsPage() {
   const navigate = useNavigate()
+  const business = useBusinessStore((state) => state.business)
+  const [searchParams, setSearchParams] = useSearchParams()
+  const [scanMode, setScanMode] = useState<'list' | 'field' | null>(null)
+  const [qrProduct, setQrProduct] = useState<Product | null>(null)
   const { isPremium } = usePlan()
   const premiumOnly = (open: () => void) => () => {
     if (isSellerJr()) { toast.error('El Vendedor Jr no puede modificar productos'); return }
@@ -87,6 +95,36 @@ export default function ProductsPage() {
     fetchAll()
     return syncEngine.onSynced(() => { fetchAll() })
   }, [profile?.business_id])
+
+  // Viene del escáner ("Crear producto con este código"): abre el alta con el código ya cargado.
+  const newWithCode = searchParams.get('nuevo')
+  useEffect(() => {
+    if (!newWithCode || loading || !profile?.business_id) return
+    setSearchParams({}, { replace: true })
+    openNew().then(() => setForm((current) => ({ ...current, barcode: newWithCode.slice(0, 40) })))
+  }, [newWithCode, loading, profile?.business_id])
+
+  /** Lectura desde Productos: si existe se abre para editarlo; si no, se ofrece crearlo con ese código. */
+  async function handleProductScan(code: string): Promise<ScanFeedback> {
+    const { product, code: shown, isProductLink } = findScannedProduct(code, products)
+    if (scanMode === 'field') {
+      if (isProductLink || shown.length > 40 || /^https?:\/\//i.test(shown)) return { ok: false, message: 'Ese QR no es un código de barras' }
+      setForm((current) => ({ ...current, barcode: shown }))
+      return { ok: true, message: 'Código cargado', detail: shown, close: true }
+    }
+    if (product) {
+      openEdit(product)
+      return { ok: true, message: product.name, detail: 'Producto encontrado', close: true }
+    }
+    return {
+      ok: false,
+      message: 'Producto no encontrado',
+      detail: isProductLink || shown.length > 40 ? 'Ese QR no corresponde a un producto de tu negocio' : `Código ${shown}`,
+      action: !isProductLink && shown.length <= 40
+        ? { label: 'Crear producto con este código', run: () => { setScanMode(null); openNew().then(() => setForm((current) => ({ ...current, barcode: shown }))) } }
+        : undefined,
+    }
+  }
 
   // Primero la base local (instantánea y sin conexión), después lo que haya en el servidor.
   async function fetchAll() {
@@ -411,6 +449,20 @@ export default function ProductsPage() {
             <span>Importar</span>
           </button>
           <button
+            onClick={() => setScanMode('list')}
+            className="flex items-center justify-center gap-2 h-10 px-3.5 rounded-xl bg-white/[0.04] border border-white/[0.08] hover:bg-white/[0.08] text-xs font-semibold text-white/80 transition-all active:scale-[0.98] min-w-0"
+          >
+            <ScanLine className="w-3.5 h-3.5 text-white/60" />
+            <span>Escanear código</span>
+          </button>
+          <button
+            onClick={() => setScanMode('list')}
+            className="flex items-center justify-center gap-2 h-10 px-3.5 rounded-xl bg-white/[0.04] border border-white/[0.08] hover:bg-white/[0.08] text-xs font-semibold text-white/80 transition-all active:scale-[0.98] min-w-0"
+          >
+            <ScanLine className="w-3.5 h-3.5 text-white/60" />
+            <span>Escanear código</span>
+          </button>
+          <button
             onClick={premiumOnly(() => setShowCategoryPriceModal(true))}
             className="col-span-2 sm:col-span-1 flex items-center justify-center gap-2 h-10 px-3.5 rounded-xl bg-white/[0.04] border border-white/[0.08] hover:bg-white/[0.08] text-xs font-semibold text-white/80 transition-all active:scale-[0.98] min-w-0"
           >
@@ -671,7 +723,14 @@ export default function ProductsPage() {
 
                       {/* Action buttons */}
                       <div className="flex items-center gap-1 shrink-0 ml-1">
-                        <button 
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setQrProduct(p) }}
+                          className="w-8 h-8 rounded-lg flex items-center justify-center bg-white/[0.04] hover:bg-white/[0.1] text-white/50 hover:text-white transition-all border border-white/[0.06]"
+                          title="Generar QR del producto"
+                        >
+                          <QrCode className="w-3.5 h-3.5" />
+                        </button>
+                        <button
                           onClick={(e) => { e.stopPropagation(); openEdit(p) }} 
                           className="w-8 h-8 rounded-lg flex items-center justify-center bg-white/[0.04] hover:bg-white/[0.1] text-white/50 hover:text-white transition-all border border-white/[0.06]"
                           title="Editar producto"
@@ -1292,6 +1351,14 @@ export default function ProductsPage() {
         businessId={profile!.business_id}
         onDone={fetchAll}
       />
+      <CameraScanner
+        open={scanMode !== null}
+        onClose={() => setScanMode(null)}
+        onScan={handleProductScan}
+        title={scanMode === 'field' ? 'Leer código de barras' : 'Escanear producto'}
+        hint={scanMode === 'field' ? 'Se carga en el campo del producto' : 'Si existe se abre; si no, podés crearlo'}
+      />
+      <ProductQrModal product={qrProduct} businessName={business?.name} onClose={() => setQrProduct(null)} />
       {showCategoryPriceModal && (
         <BulkPriceModal
           open
