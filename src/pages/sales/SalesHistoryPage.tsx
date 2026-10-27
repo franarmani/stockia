@@ -11,6 +11,7 @@ import Modal from '@/components/ui/Modal'
 import Badge from '@/components/ui/Badge'
 import Button from '@/components/ui/Button'
 import { toast } from 'sonner'
+import { useManagerApproval } from '@/features/roles/managerApproval'
 import type { Sale, SaleItem, Product, Customer } from '@/types/database'
 import { useBusinessStore } from '@/stores/businessStore'
 import InvoicePreviewModal from '@/components/pdf/InvoicePreviewModal'
@@ -184,45 +185,22 @@ export default function SalesHistoryPage() {
       return
     }
     if (!confirm('¿Estás seguro de anular esta venta? Se repondrá el stock.')) return
+    // Quien no es administrador necesita el código de un encargado (se verifica en el servidor).
+    let pin: string | null = null
+    if (profile?.role !== 'admin') {
+      pin = await useManagerApproval.getState().request('Anular la venta')
+      if (!pin) return
+    }
     setVoiding(true)
     try {
-      // Mark sale as voided
-      await supabase.from('sales').update({
-        voided: true,
-        voided_at: new Date().toISOString(),
-        voided_by: profile!.id,
-      }).eq('id', selectedSale.id)
-
-      // Restore stock
-      for (const item of selectedSale.sale_items) {
-        await supabase.from('products').update({
-          stock: item.product.stock + item.quantity,
-        }).eq('id', item.product.id)
-        await supabase.from('stock_movements').insert({
-          business_id: profile!.business_id,
-          product_id: item.product.id,
-          type: 'adjustment',
-          quantity: item.quantity,
-          reference_id: selectedSale.id,
-          notes: 'Anulación de venta',
-        })
-      }
-
-      // Reverse customer balance if account payment
-      if (selectedSale.payment_method === 'account' && selectedSale.customer_id) {
-        const { data: cust } = await supabase.from('customers').select('balance').eq('id', selectedSale.customer_id).single()
-        if (cust) {
-          await supabase.from('customers').update({
-            balance: Math.max(0, cust.balance - selectedSale.total),
-          }).eq('id', selectedSale.customer_id)
-        }
-      }
-
+      const { data: result, error } = await (supabase as any).rpc('void_sale', { p_sale_id: selectedSale.id, p_pin: pin })
+      if (error) throw error
+      if (result === 'bad_pin') { toast.error('Código de encargado incorrecto'); return }
       toast.success('Venta anulada correctamente')
       setSelectedSale(null)
       fetchSales()
-    } catch {
-      toast.error('Error al anular la venta')
+    } catch (error: any) {
+      toast.error(error?.message ? `No se pudo anular: ${error.message}` : 'Error al anular la venta')
     } finally {
       setVoiding(false)
     }
@@ -560,7 +538,7 @@ export default function SalesHistoryPage() {
             </div>
 
             {/* Void button */}
-            {!selectedSale.voided && profile?.role === 'admin' && (
+            {!selectedSale.voided && (
               <Button variant="destructive" className="w-full mt-1" onClick={handleVoidSale} disabled={voiding}>
                 <Ban className="w-4 h-4" />
                 {voiding ? 'Anulando...' : 'Anular venta'}

@@ -41,6 +41,9 @@ interface POSState {
   /** Renglones a vender con las promociones aplicadas (un ítem puede quedar en pagas + bonificadas). */
   getSaleLines: () => PricedLine[]
   getPromoDiscount: () => number
+  /** El cliente elegido compra a precio mayorista. */
+  wholesaleCustomer: boolean
+  setWholesaleCustomer: (wholesale: boolean) => void
   /** Premio del club de puntos elegido para esta venta. */
   loyaltyRedemption: LoyaltyRedemption | null
   setLoyaltyRedemption: (redemption: LoyaltyRedemption | null) => void
@@ -60,6 +63,17 @@ interface POSState {
   getSubtotal: () => number
   getTotal: () => number
   clearCart: () => void
+}
+
+/**
+ * Precio unitario de un producto en la venta: el mayorista se aplica al cliente mayorista o
+ * cuando la cantidad llega al mínimo cargado en el producto.
+ */
+export function unitPrice(product: Product, quantity: number, wholesaleCustomer: boolean): number {
+  const wholesale = Number((product as any).wholesale_price) || 0
+  const minQty = Number((product as any).wholesale_min_qty) || 0
+  if (wholesale > 0 && (wholesaleCustomer || (minQty > 0 && quantity >= minQty))) return wholesale
+  return product.sale_price
 }
 
 /** Returns the default increment for a product based on its unit */
@@ -107,8 +121,13 @@ export const usePOSStore = create<POSState>((set, get) => ({
   paymentSplits: [],
   sourceQuoteId: null,
   promotions: [],
+  wholesaleCustomer: false,
 
   setPromotions: (promotions) => set({ promotions }),
+  setWholesaleCustomer: (wholesaleCustomer) => set({
+    wholesaleCustomer,
+    items: get().items.map((i) => ({ ...i, price: unitPrice(i.product, i.quantity, wholesaleCustomer) })),
+  }),
   loyaltyRedemption: null,
   setLoyaltyRedemption: (loyaltyRedemption) => set({ loyaltyRedemption }),
   getSaleLines: () => computeSaleLines(get().items, get().promotions, get().loyaltyRedemption),
@@ -129,13 +148,13 @@ export const usePOSStore = create<POSState>((set, get) => ({
       set({
         items: items.map((i) =>
           i.product.id === product.id
-            ? { ...i, quantity: Math.round(newQty * 1000) / 1000 }
+            ? { ...i, quantity: Math.round(newQty * 1000) / 1000, price: unitPrice(product, newQty, get().wholesaleCustomer) }
             : i
         ),
       })
     } else {
       if (product.stock < increment) return
-      set({ items: [...items, { product, quantity: increment, price: product.sale_price }] })
+      set({ items: [...items, { product, quantity: increment, price: unitPrice(product, increment, get().wholesaleCustomer) }] })
     }
   },
 
@@ -152,7 +171,7 @@ export const usePOSStore = create<POSState>((set, get) => ({
     if (item && quantity > item.product.stock) return
     set({
       items: get().items.map((i) =>
-        i.product.id === productId ? { ...i, quantity: Math.round(quantity * 1000) / 1000 } : i
+        i.product.id === productId ? { ...i, quantity: Math.round(quantity * 1000) / 1000, price: unitPrice(i.product, quantity, get().wholesaleCustomer) } : i
       ),
     })
   },
@@ -198,5 +217,5 @@ export const usePOSStore = create<POSState>((set, get) => ({
     loyaltyRedemption: null,
   }),
 
-  clearCart: () => set({ items: [], discount: 0, customerId: null, paymentMethod: 'cash', receiptType: loadReceiptType(), installments: 1, surchargePct: 0, pmDiscountPct: 0, paymentSplits: [], sourceQuoteId: null, loyaltyRedemption: null }),
+  clearCart: () => set({ items: [], wholesaleCustomer: false, discount: 0, customerId: null, paymentMethod: 'cash', receiptType: loadReceiptType(), installments: 1, surchargePct: 0, pmDiscountPct: 0, paymentSplits: [], sourceQuoteId: null, loyaltyRedemption: null }),
 }))

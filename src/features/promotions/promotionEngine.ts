@@ -4,7 +4,7 @@ import type { CartItem } from '@/types/database'
 // (unidades bonificadas a $0, o precio unitario rebajado), así ticket, factura ARCA, total
 // y caja usan exactamente los mismos números, sin centavos de diferencia.
 
-export type PromotionKind = 'nxm' | 'percent' | 'second_unit'
+export type PromotionKind = 'nxm' | 'percent' | 'second_unit' | 'min_total'
 
 export interface Promotion {
   id: string
@@ -17,8 +17,10 @@ export interface Promotion {
   /** 'nxm': llevás buy_qty y pagás pay_qty (2x1, 3x2). */
   buy_qty: number | null
   pay_qty: number | null
-  /** 'percent': % de descuento. 'second_unit': % de descuento en la segunda unidad. */
+  /** 'percent' y 'min_total': % de descuento. 'second_unit': % de descuento en la segunda unidad. */
   percent: number | null
+  /** 'min_total': la compra (a precio de lista) tiene que llegar a este monto. */
+  min_amount?: number | null
   /** Fechas YYYY-MM-DD inclusive (opcionales). */
   starts_on: string | null
   ends_on: string | null
@@ -109,9 +111,10 @@ export function promotionDiscount(promotion: Promotion, quantity: number, unitPr
   return round2(quantity * unitPrice - promoTotal)
 }
 
-export function describePromotion(promotion: Pick<Promotion, 'kind' | 'buy_qty' | 'pay_qty' | 'percent'>): string {
+export function describePromotion(promotion: Pick<Promotion, 'kind' | 'buy_qty' | 'pay_qty' | 'percent' | 'min_amount'>): string {
   if (promotion.kind === 'nxm') return `${promotion.buy_qty}x${promotion.pay_qty}`
   if (promotion.kind === 'second_unit') return `2da unidad al ${100 - (promotion.percent ?? 0)}%`
+  if (promotion.kind === 'min_total') return `${promotion.percent}% off desde $${Number(promotion.min_amount ?? 0).toLocaleString('es-AR')}`
   return `${promotion.percent}% off`
 }
 
@@ -121,12 +124,24 @@ export function priceCart(items: CartItem[], promotions: Promotion[], now: Date 
   const perItem: PricedCartItem[] = []
   const lines: PricedLine[] = []
 
+  // Descuento por monto mínimo: el mayor % cuyo mínimo alcanza la compra. Va como % en los
+  // productos que no tienen otra promoción (no se acumulan).
+  const cartList = items.reduce((sum, item) => sum + item.price * item.quantity, 0)
+  const minTotal = active
+    .filter((p) => p.kind === 'min_total' && cartList >= (Number(p.min_amount) || 0))
+    .sort((a, b) => (b.percent ?? 0) - (a.percent ?? 0))[0]
+  const minTotalAsPercent = minTotal ? { ...minTotal, kind: 'percent' as const } : null
+
   for (const item of items) {
     let best: { promotion: Promotion; amount: number } | null = null
     for (const promotion of active) {
-      if (!promotionAppliesTo(promotion, item.product)) continue
+      if (promotion.kind === 'min_total' || !promotionAppliesTo(promotion, item.product)) continue
       const amount = promotionDiscount(promotion, item.quantity, item.price)
       if (amount > 0 && (!best || amount > best.amount)) best = { promotion, amount }
+    }
+    if (!best && minTotalAsPercent && promotionAppliesTo(minTotalAsPercent, item.product)) {
+      const amount = promotionDiscount(minTotalAsPercent, item.quantity, item.price)
+      if (amount > 0) best = { promotion: minTotalAsPercent, amount }
     }
 
     if (!best) {

@@ -9,6 +9,7 @@ import { removeStoreImage } from '@/features/onlineStore/storeImages'
 import { BASIC_LIMITS } from '@/config/plans'
 import { withSyncNote } from '@/sync/connectivity'
 import BulkPriceModal from '@/features/products/BulkPriceModal'
+import { isSellerJr } from '@/features/roles/managerApproval'
 import LabelPrintModal from '@/features/products/LabelPrintModal'
 import { useAuthStore } from '@/stores/authStore'
 import { cn, formatCurrency } from '@/lib/utils'
@@ -26,7 +27,7 @@ import {
   Search, Plus, Package, AlertTriangle,
   Barcode, MinusCircle, PlusCircle, Edit3, Trash2,
   Tag, X, Truck, Upload, Download, Layers,
-  Zap, ChevronRight
+  Zap, ChevronRight, Percent
 } from 'lucide-react'
 
 const UNIT_OPTIONS: { value: ProductUnit; label: string }[] = [
@@ -40,6 +41,7 @@ export default function ProductsPage() {
   const navigate = useNavigate()
   const { isPremium } = usePlan()
   const premiumOnly = (open: () => void) => () => {
+    if (isSellerJr()) { toast.error('El Vendedor Jr no puede modificar productos'); return }
     if (isPremium) return open()
     toast.info('Importar, aumentos masivos y etiquetas están en el plan Premium')
     navigate('/settings?tab=subscription')
@@ -70,6 +72,7 @@ export default function ProductsPage() {
 
   const [form, setForm] = useState({
     name: '', barcode: '', sale_price: '', purchase_price: '',
+    wholesale_price: '', wholesale_min_qty: '',
     stock: '', stock_min: '3', category_id: '', unit: 'u' as string,
     brand: '', size_label: '', model: '', presentation: '', supplier_id: '',
     material: '',
@@ -151,6 +154,7 @@ export default function ProductsPage() {
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [bulkCategory, setBulkCategory] = useState('')
   const [showBulkPriceModal, setShowBulkPriceModal] = useState(false)
+  const [showCategoryPriceModal, setShowCategoryPriceModal] = useState(false)
   const [showLabelModal, setShowLabelModal] = useState(false)
   const selectedProducts = useMemo(() => products.filter(p => selected.has(p.id)), [products, selected])
   const [bulkBusy, setBulkBusy] = useState(false)
@@ -220,13 +224,15 @@ export default function ProductsPage() {
       return
     }
     setEditingProduct(null)
-    setForm({ name: '', barcode: '', sale_price: '', purchase_price: '', stock: '', stock_min: '3', category_id: '', unit: 'u', brand: '', size_label: '', model: '', presentation: '', supplier_id: '', material: '', show_online: true, image_url: null })
+    setForm({ name: '', barcode: '', sale_price: '', purchase_price: '', wholesale_price: '', wholesale_min_qty: '', stock: '', stock_min: '3', category_id: '', unit: 'u', brand: '', size_label: '', model: '', presentation: '', supplier_id: '', material: '', show_online: true, image_url: null })
     setShowProductModal(true)
   }
   function openEdit(p: Product) {
     setEditingProduct(p)
     setForm({
       name: p.name, barcode: p.barcode || '', sale_price: String(p.sale_price), purchase_price: String(p.purchase_price),
+      wholesale_price: (p as any).wholesale_price ? String((p as any).wholesale_price) : '',
+      wholesale_min_qty: (p as any).wholesale_min_qty ? String((p as any).wholesale_min_qty) : '',
       stock: String(p.stock), stock_min: String(p.stock_min), category_id: p.category_id || '',
       unit: p.unit || 'u', brand: p.brand || '', size_label: p.size_label || '',
       model: p.model || '', presentation: p.presentation || '', supplier_id: p.supplier_id || '',
@@ -238,12 +244,15 @@ export default function ProductsPage() {
   }
 
   async function handleSaveProduct() {
+    if (isSellerJr()) { toast.error('El Vendedor Jr no puede modificar productos'); return }
     if (!form.name || !form.sale_price) { toast.error('Nombre y precio son obligatorios'); return }
     setSaving(true)
     const payload = {
       business_id: profile!.business_id,
       name: form.name, barcode: form.barcode || null,
       sale_price: Number(form.sale_price), purchase_price: Number(form.purchase_price) || 0,
+      wholesale_price: Number(form.wholesale_price) > 0 ? Number(form.wholesale_price) : null,
+      wholesale_min_qty: Number(form.wholesale_min_qty) > 0 ? Number(form.wholesale_min_qty) : null,
       stock: Number(form.stock) || 0, stock_min: Number(form.stock_min) || 3,
       category_id: form.category_id || null,
       unit: form.unit || 'u',
@@ -287,6 +296,7 @@ export default function ProductsPage() {
   }
 
   async function handleDelete(p: Product) {
+    if (isSellerJr()) { toast.error('El Vendedor Jr no puede modificar productos'); return }
     if (!confirm(`¿Eliminar ${p.name}?`)) return
     await syncEngine.updateRow('products', profile!.business_id, p.id, { active: false })
     toast.success(withSyncNote('Producto eliminado')); fetchAll()
@@ -394,6 +404,13 @@ export default function ProductsPage() {
           >
             <Upload className="w-3.5 h-3.5 text-white/60" />
             <span>Importar</span>
+          </button>
+          <button
+            onClick={premiumOnly(() => setShowCategoryPriceModal(true))}
+            className="col-span-2 sm:col-span-1 flex items-center justify-center gap-2 h-10 px-3.5 rounded-xl bg-white/[0.04] border border-white/[0.08] hover:bg-white/[0.08] text-xs font-semibold text-white/80 transition-all active:scale-[0.98] min-w-0"
+          >
+            <Percent className="w-3.5 h-3.5 text-white/60" />
+            <span>Precios por categoría</span>
           </button>
           <button 
             onClick={openNew} 
@@ -792,6 +809,35 @@ export default function ProductsPage() {
                     className="w-full h-11 pl-7 pr-3.5 rounded-xl border border-white/[0.08] bg-[#0E1629] text-xs font-mono text-white focus:outline-none focus:border-violet-500/50 transition-all"
                   />
                 </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-[10px] font-bold text-white/50 uppercase tracking-wider mb-1.5 ml-0.5">Precio mayorista</label>
+                <div className="relative">
+                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/30 text-xs font-mono">$</span>
+                  <input
+                    type="number"
+                    min={0}
+                    value={form.wholesale_price}
+                    onChange={(e) => setForm({...form, wholesale_price: e.target.value})}
+                    placeholder="Opcional"
+                    className="w-full h-11 pl-7 pr-3.5 rounded-xl border border-white/[0.08] bg-[#0E1629] text-xs font-mono text-white focus:outline-none focus:border-violet-500/50 transition-all"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold text-white/50 uppercase tracking-wider mb-1.5 ml-0.5">Mayorista desde (cantidad)</label>
+                <input
+                  type="number"
+                  min={0}
+                  value={form.wholesale_min_qty}
+                  onChange={(e) => setForm({...form, wholesale_min_qty: e.target.value})}
+                  placeholder="Solo clientes mayoristas"
+                  disabled={!form.wholesale_price}
+                  className="w-full h-11 px-3.5 rounded-xl border border-white/[0.08] bg-[#0E1629] text-xs font-mono text-white focus:outline-none focus:border-violet-500/50 transition-all disabled:opacity-40"
+                />
               </div>
             </div>
 
@@ -1226,6 +1272,16 @@ export default function ProductsPage() {
         businessId={profile!.business_id}
         onDone={fetchAll}
       />
+      {showCategoryPriceModal && (
+        <BulkPriceModal
+          open
+          onClose={() => setShowCategoryPriceModal(false)}
+          products={products}
+          categories={categories}
+          businessId={profile!.business_id}
+          onDone={fetchAll}
+        />
+      )}
       <LabelPrintModal open={showLabelModal} onClose={() => setShowLabelModal(false)} products={selectedProducts} />
     </div>
   )

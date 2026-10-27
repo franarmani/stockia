@@ -38,3 +38,20 @@ describe('online store orders', () => {
     expect(whatsappOrderLink('', 'hola')).toBeNull()
   })
 })
+
+describe('forma de entrega', () => {
+  const products = [{ id: 'a', name: 'Yerba', sale_price: 3500, stock: 10, active: true, show_online: true }]
+  const base = { customer_name: 'Ana', customer_phone: '1122334455', items: [{ product_id: 'a', quantity: 1 }] }
+  it('por defecto es retiro en el local', () => {
+    expect(validateOrder(base, products)).toMatchObject({ ok: true, deliveryMethod: 'pickup', deliveryAddress: null })
+  })
+  it('el envío pide dirección', () => {
+    expect(validateOrder({ ...base, delivery_method: 'delivery' }, products)).toMatchObject({ ok: false, error: 'Ingresá la dirección de envío' })
+    expect(validateOrder({ ...base, delivery_method: 'delivery', delivery_address: 'Mitre 123, Bahía Blanca' }, products))
+      .toMatchObject({ ok: true, deliveryMethod: 'delivery', deliveryAddress: 'Mitre 123, Bahía Blanca' })
+  })
+  it('el mensaje de WhatsApp incluye la entrega', () => {
+    const text = orderMessage({ businessName: 'K', orderNumber: 1, customerName: 'Ana', customerPhone: '1', notes: null, deliveryMethod: 'delivery', deliveryAddress: 'Mitre 123', lines: [], total: 0 })
+    expect(text).toContain('Envío a: Mitre 123')
+  })
+})

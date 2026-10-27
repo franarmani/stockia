@@ -25,6 +25,8 @@ import {
   CreditCard, Banknote, ArrowRightLeft, Settings, Bell, Lock, Gift, MapPin,
 } from 'lucide-react'
 import { getSubscriptionDateState, formatSubscriptionDate, getDaysSinceExpiration } from '@/features/subscription/utils/subscriptionDates'
+import ManagerPinCard from '@/features/roles/ManagerPinCard'
+import { ROLE_LABELS } from '@/features/roles/managerApproval'
 import { cn } from '@/lib/utils'
 
 const WIZARD_STEPS = [
@@ -84,7 +86,7 @@ export default function SettingsPage() {
   const [pmDiscounts, setPmDiscounts] = useState<Record<string, number>>({
     cash: 0, debit: 0, credit: 0, transfer: 0,
   })
-  const [userForm, setUserForm] = useState({ email: '', password: '', full_name: '', role: 'seller' as 'admin' | 'seller' })
+  const [userForm, setUserForm] = useState({ email: '', password: '', full_name: '', role: 'seller' as 'admin' | 'seller' | 'seller_jr' })
   const [referrals, setReferrals] = useState<{ id: string; created_at: string; referred_rewarded: boolean; business: { name: string; email: string } | null }[]>([])
   const [loadingReferrals, setLoadingReferrals] = useState(false)
 
@@ -927,7 +929,7 @@ export default function SettingsPage() {
                       <p className="text-xs text-white/40 truncate">{u.email}</p>
                     </div>
                     <span className={cn('text-[10px] font-medium px-2 py-0.5 rounded-md', u.role === 'admin' ? 'bg-amber-500/10 text-amber-400' : 'bg-white/5 text-white/40')}>
-                      {u.role === 'admin' ? 'Admin' : 'Vendedor'}
+                      {ROLE_LABELS[u.role] ?? 'Vendedor'}
                     </span>
                     {u.id !== profile?.id && (
                       <button onClick={() => handleDeleteUser(u.id)} className="p-1.5 rounded-lg text-white/20 hover:text-red-400 hover:bg-red-400/10 transition-all">
@@ -943,6 +945,7 @@ export default function SettingsPage() {
                   </div>
                 )}
               </div>
+              <ManagerPinCard />
             </div>
           )}
         </div>
@@ -968,9 +971,10 @@ export default function SettingsPage() {
           </div>
           <div>
             <label className="block text-sm font-medium text-white/70 mb-1">Rol</label>
-            <select value={userForm.role} onChange={(e) => setUserForm({ ...userForm, role: e.target.value as 'admin' | 'seller' })}
+            <select value={userForm.role} onChange={(e) => setUserForm({ ...userForm, role: e.target.value as 'admin' | 'seller' | 'seller_jr' })}
               className="w-full h-10 px-3 rounded-xl border border-white/10 bg-white/5 text-white text-sm focus:outline-none focus:border-primary/40">
               <option value="seller" className="bg-[#0d1b2d]">Vendedor</option>
+              <option value="seller_jr" className="bg-[#0d1b2d]">Vendedor Jr (solo vende; quitar productos y anular piden código)</option>
               <option value="admin" className="bg-[#0d1b2d]">Administrador</option>
             </select>
           </div>

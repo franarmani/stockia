@@ -16,6 +16,8 @@ import PlanGate from '@/features/subscription/components/PlanGate'
 import UpdateNotificationModal from '@/components/modals/UpdateNotificationModal'
 import UpdateModal from '@/components/desktop/UpdateModal'
 import MusicDownloadPrompt from '@/features/music/MusicDownloadPrompt'
+import CashAutoCloser from '@/features/cash/CashAutoCloser'
+import ManagerPinModal from '@/features/roles/ManagerPinModal'
 import { checkIsTauriDesktop } from '@/sync/storage'
 import { syncEngine } from '@/sync/syncEngine'
 import { checkConnectivity, isOnline } from '@/sync/connectivity'
@@ -51,6 +53,9 @@ const AccountingPage = lazy(() => import('@/pages/accounting/AccountingPage'))
 const ComprobantesPage = lazy(() => import('@/pages/comprobantes/ComprobantesPage'))
 const QuotesPage = lazy(() => import('@/pages/quotes/QuotesPage'))
 const PromotionsPage = lazy(() => import('@/pages/promotions/PromotionsPage'))
+const WarehousesPage = lazy(() => import('@/pages/warehouses/WarehousesPage'))
+const LocalesPage = lazy(() => import('@/pages/locales/LocalesPage'))
+const HelpPage = lazy(() => import('@/pages/help/HelpPage'))
 const LoyaltyPage = lazy(() => import('@/pages/loyalty/LoyaltyPage'))
 const OnlineStorePage = lazy(() => import('@/pages/store/OnlineStorePage'))
 const WhatsAppPage = lazy(() => import('@/pages/whatsapp/WhatsAppPage'))
@@ -314,7 +319,7 @@ export default function App() {
         business_id: data.business_id,
         name: data.name,
         email: data.email,
-        role: data.role as 'admin' | 'seller',
+        role: data.role as 'admin' | 'seller' | 'seller_jr',
         is_superadmin: data.is_superadmin ?? false,
         created_at: data.created_at,
       }
@@ -574,6 +579,9 @@ export default function App() {
           <Route path="accounting" element={<SubscriptionGuard mode="block"><PlanGate feature="accounting"><PermissionGuard permission="accounting.read"><AccountingPage /></PermissionGuard></PlanGate></SubscriptionGuard>} />
           <Route path="comprobantes" element={<SubscriptionGuard mode="block"><ComprobantesPage /></SubscriptionGuard>} />
           <Route path="presupuestos" element={<SubscriptionGuard mode="block"><PlanGate feature="quotes"><QuotesPage /></PlanGate></SubscriptionGuard>} />
+          <Route path="ayuda" element={<HelpPage />} />
+          <Route path="locales" element={<SubscriptionGuard mode="block"><PlanGate feature="locales"><LocalesPage /></PlanGate></SubscriptionGuard>} />
+          <Route path="depositos" element={<SubscriptionGuard mode="block"><PlanGate feature="warehouses"><WarehousesPage /></PlanGate></SubscriptionGuard>} />
           <Route path="promociones" element={<SubscriptionGuard mode="block"><PlanGate feature="promotions"><PromotionsPage /></PlanGate></SubscriptionGuard>} />
           <Route path="club" element={<SubscriptionGuard mode="block"><PlanGate feature="loyalty"><LoyaltyPage /></PlanGate></SubscriptionGuard>} />
           <Route path="tienda" element={<SubscriptionGuard mode="block"><PlanGate feature="online_store"><OnlineStorePage /></PlanGate></SubscriptionGuard>} />
@@ -617,6 +625,8 @@ export default function App() {
       />
       <UpdateModal />
       <MusicDownloadPrompt />
+      <CashAutoCloser />
+      <ManagerPinModal />
     </Suspense>
   )
 }

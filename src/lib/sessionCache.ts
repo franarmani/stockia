@@ -49,3 +49,10 @@ export function clearCache() {
     localStorage.removeItem(OFFLINE_USER_CACHE_KEY)
   } catch {}
 }
+/** Al cambiar de local se vuelven a bajar perfil y negocio del servidor. */
+export function clearCachedProfileAndBusiness() {
+  try {
+    localStorage.removeItem(PROFILE_CACHE_KEY)
+    localStorage.removeItem(BUSINESS_CACHE_KEY)
+  } catch {}
+}

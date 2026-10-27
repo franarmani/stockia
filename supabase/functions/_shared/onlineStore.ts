@@ -1,7 +1,7 @@
 // Validación de pedidos de la tienda online (sin APIs de Deno: se prueba con vitest).
 // Los precios siempre salen de la base, nunca de lo que manda el navegador.
 
-export const STORE_LIMITS = { maxLines: 60, maxQuantity: 999, name: 80, phone: 30, notes: 500 } as const
+export const STORE_LIMITS = { maxLines: 60, maxQuantity: 999, name: 80, phone: 30, notes: 500, address: 200 } as const
 
 export interface StoreProductRow {
   id: string
@@ -20,7 +20,7 @@ export interface OrderLine {
 }
 
 export type OrderValidation =
-  | { ok: true; customerName: string; customerPhone: string; notes: string | null; lines: OrderLine[]; total: number }
+  | { ok: true; customerName: string; customerPhone: string; notes: string | null; deliveryMethod: 'pickup' | 'delivery'; deliveryAddress: string | null; lines: OrderLine[]; total: number }
   | { ok: false; error: string }
 
 export function isValidSlug(slug: unknown): slug is string {
@@ -34,6 +34,11 @@ export function validateOrder(input: any, products: StoreProductRow[]): OrderVal
   if (customerName.length < 2 || customerName.length > STORE_LIMITS.name) return { ok: false, error: 'Ingresá tu nombre' }
   if (!/^[\d\s+()-]{6,30}$/.test(customerPhone)) return { ok: false, error: 'Ingresá un teléfono válido' }
   if (notes.length > STORE_LIMITS.notes) return { ok: false, error: 'La nota es demasiado larga' }
+  const deliveryMethod = input?.delivery_method === 'delivery' ? 'delivery' : 'pickup'
+  const deliveryAddress = String(input?.delivery_address ?? '').trim()
+  if (deliveryMethod === 'delivery' && (deliveryAddress.length < 5 || deliveryAddress.length > STORE_LIMITS.address)) {
+    return { ok: false, error: 'Ingresá la dirección de envío' }
+  }
 
   const requested = Array.isArray(input?.items) ? input.items : []
   if (requested.length === 0) return { ok: false, error: 'El pedido está vacío' }
@@ -50,7 +55,11 @@ export function validateOrder(input: any, products: StoreProductRow[]): OrderVal
   }
 
   const total = Math.round(lines.reduce((sum, line) => sum + line.quantity * line.price, 0) * 100) / 100
-  return { ok: true, customerName, customerPhone, notes: notes || null, lines, total }
+  return {
+    ok: true, customerName, customerPhone, notes: notes || null,
+    deliveryMethod, deliveryAddress: deliveryMethod === 'delivery' ? deliveryAddress : null,
+    lines, total,
+  }
 }
 
 export function whatsappOrderLink(phone: string | null | undefined, text: string): string | null {
@@ -59,7 +68,7 @@ export function whatsappOrderLink(phone: string | null | undefined, text: string
   return `https://wa.me/${digits}?text=${encodeURIComponent(text)}`
 }
 
-export function orderMessage(input: { businessName: string; orderNumber: number; customerName: string; customerPhone: string; notes: string | null; lines: OrderLine[]; total: number }): string {
+export function orderMessage(input: { businessName: string; orderNumber: number; customerName: string; customerPhone: string; notes: string | null; deliveryMethod?: 'pickup' | 'delivery'; deliveryAddress?: string | null; lines: OrderLine[]; total: number }): string {
   const money = (value: number) => '$' + value.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
   return [
     `Hola ${input.businessName}! Te hago el pedido #${input.orderNumber} desde la tienda online:`,
@@ -69,6 +78,7 @@ export function orderMessage(input: { businessName: string; orderNumber: number;
     `Total: ${money(input.total)}`,
     `Nombre: ${input.customerName}`,
     `Teléfono: ${input.customerPhone}`,
+    input.deliveryMethod === 'delivery' ? `Envío a: ${input.deliveryAddress}` : 'Entrega: retiro en el local',
     ...(input.notes ? [`Nota: ${input.notes}`] : []),
   ].join('\n')
 }

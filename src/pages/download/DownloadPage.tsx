@@ -24,7 +24,7 @@ export default function DownloadPage() {
 
   const steps = [
     ['Descargá el instalador', 'Pesa unos 10 MB.'],
-    ['Instalalo', 'Doble clic y listo: queda en el menú Inicio y en el escritorio.'],
+    ['Instalalo', 'Doble clic y listo: queda en el menú Inicio y en el escritorio. Si Windows muestra "Windows protegió su PC", tocá "Más información" y después "Ejecutar de todas formas" (pasa con los programas nuevos; las actualizaciones ya no lo muestran).'],
     ['Creá tu cuenta o ingresá', `Desde el mismo programa. ${TRIAL_DAYS} días gratis con todo incluido, sin tarjeta.`],
   ]
 

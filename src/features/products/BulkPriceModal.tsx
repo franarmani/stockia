@@ -5,7 +5,7 @@ import { cn, formatCurrency } from '@/lib/utils'
 import { syncEngine } from '@/sync/syncEngine'
 import { withSyncNote } from '@/sync/connectivity'
 import { planPriceChanges, type PriceChangeMode, type PriceRounding, type PriceTarget } from './bulkPricing'
-import type { Product } from '@/types/database'
+import type { Category, Product } from '@/types/database'
 
 const ROUNDING_OPTIONS: { value: PriceRounding; label: string }[] = [
   { value: 0, label: 'Sin redondeo' },
@@ -20,13 +20,22 @@ export default function BulkPriceModal({
   products,
   businessId,
   onDone,
+  categories,
 }: {
   open: boolean
   onClose: () => void
   products: Product[]
   businessId: string
   onDone: () => void
+  /** Si viene, se elige una categoría y se cambian todos sus productos (products = todos). */
+  categories?: Category[]
 }) {
+  const [categoryId, setCategoryId] = useState('')
+  const scoped = useMemo(() => {
+    if (!categories) return products
+    if (!categoryId) return []
+    return products.filter((p) => p.active !== false && (categoryId === '__none__' ? !p.category_id : p.category_id === categoryId))
+  }, [products, categories, categoryId])
   const [mode, setMode] = useState<PriceChangeMode>('percent')
   const [value, setValue] = useState('10')
   const [target, setTarget] = useState<PriceTarget>('sale')
@@ -35,10 +44,10 @@ export default function BulkPriceModal({
 
   const numericValue = Number(value.replace(',', '.'))
   const changes = useMemo(
-    () => (Number.isFinite(numericValue) ? planPriceChanges(products, { mode, value: numericValue, target, rounding }) : []),
-    [products, mode, numericValue, target, rounding]
+    () => (Number.isFinite(numericValue) ? planPriceChanges(scoped, { mode, value: numericValue, target, rounding }) : []),
+    [scoped, mode, numericValue, target, rounding]
   )
-  const changed = changes.filter((c) => c.newSale !== c.oldSale || c.newCost !== c.oldCost)
+  const changed = changes.filter((c) => c.newSale !== c.oldSale || c.newCost !== c.oldCost || c.newWholesale !== c.oldWholesale)
 
   async function apply() {
     if (!Number.isFinite(numericValue) || numericValue === 0) { toast.error('Ingresá cuánto querés cambiar'); return }
@@ -50,6 +59,7 @@ export default function BulkPriceModal({
       for (const change of changed) {
         const values: Record<string, number> = {}
         if (change.newSale !== change.oldSale) values.sale_price = change.newSale
+        if (change.newWholesale !== null && change.newWholesale !== change.oldWholesale) values.wholesale_price = change.newWholesale
         // El costo de reposición también actualiza el costo promedio (igual que al editar el producto).
         if (change.newCost !== change.oldCost) { values.purchase_price = change.newCost; values.avg_cost = change.newCost }
         await syncEngine.updateRow('products', businessId, change.id, values)
@@ -68,8 +78,23 @@ export default function BulkPriceModal({
   const chip = (selected: boolean) => cn('h-8 px-3 rounded-lg text-xs font-semibold border', selected ? 'border-primary bg-primary/10 text-primary' : 'border-white/10 text-white/60 hover:bg-white/5')
 
   return (
-    <Modal open={open} onClose={onClose} title={`Cambiar precios · ${products.length} producto(s)`} size="lg">
+    <Modal open={open} onClose={onClose} title={categories ? 'Cambiar precios por categoría' : `Cambiar precios · ${products.length} producto(s)`} size="lg">
       <div className="space-y-5">
+        {categories && (
+          <div className="max-w-sm">
+            <label className="block text-xs font-medium text-white/60 mb-1">Categoría</label>
+            <select
+              value={categoryId}
+              onChange={(e) => setCategoryId(e.target.value)}
+              className="w-full h-10 px-3 rounded-xl border border-white/10 bg-white/5 text-white text-sm focus:outline-none focus:border-primary/40"
+            >
+              <option value="" className="bg-[#07142f]">Elegí una categoría</option>
+              {categories.map((c) => <option key={c.id} value={c.id} className="bg-[#07142f]">{c.name}</option>)}
+              <option value="__none__" className="bg-[#07142f]">Sin categoría</option>
+            </select>
+            {categoryId && <p className="text-[11px] text-white/40 mt-1">{scoped.length} producto(s) en esta categoría</p>}
+          </div>
+        )}
         <div className="flex flex-wrap gap-2">
           <button type="button" className={chip(mode === 'percent')} onClick={() => setMode('percent')}>Porcentaje</button>
           <button type="button" className={chip(mode === 'amount')} onClick={() => setMode('amount')}>Monto fijo</button>

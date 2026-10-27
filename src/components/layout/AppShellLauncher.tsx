@@ -1,4 +1,5 @@
-import { Outlet, useNavigate, useLocation, NavLink } from 'react-router-dom'
+import { Outlet, useNavigate, useLocation, NavLink, Navigate } from 'react-router-dom'
+import { SELLER_JR_PATHS } from '@/features/roles/managerApproval'
 import OfflineIndicator from '@/components/OfflineIndicator'
 import { usePlan } from '@/hooks/usePlan'
 import { PLANS, type PlanId } from '@/config/plans'
@@ -9,7 +10,7 @@ import {
   LogOut, LayoutDashboard,
   ShoppingCart, Package, Truck, Scale, Users, FileText, Wallet,
   Receipt, BarChart3, Settings, Menu, X, ChevronLeft, ChevronRight,
-  Music, CalendarDays, ClipboardList, TrendingUp, Sparkles, Store, ChevronDown, User, Tag, Crown, Gift, Globe, MessageCircle, ShoppingBag
+  Music, CalendarDays, ClipboardList, TrendingUp, Sparkles, Store, ChevronDown, User, Tag, Crown, Gift, Globe, MessageCircle, ShoppingBag, Warehouse, Building2, LifeBuoy
 } from 'lucide-react'
 import CajaGoBrand, { CajaGoIcon } from '@/components/brand/CajaGoBrand'
 import { cn } from '@/lib/utils'
@@ -38,6 +39,7 @@ const NAV_SECTIONS = [
     items: [
       { name: 'Productos y stock', href: '/products', icon: Package },
       { name: 'Compras', href: '/purchases', icon: Truck, plan: 'premium' as const },
+      { name: 'Depósitos', href: '/depositos', icon: Warehouse, plan: 'premium' as const },
       { name: 'Promociones', href: '/promociones', icon: Tag, plan: 'premium' as const },
     ],
   },
@@ -56,6 +58,7 @@ const NAV_SECTIONS = [
       { name: 'Reportes', href: '/reports', icon: BarChart3 },
       { name: 'Rentabilidad', href: '/rentabilidad', icon: TrendingUp, plan: 'premium' as const },
       { name: 'Contabilidad', href: '/accounting', icon: Scale, plan: 'vip' as const },
+      { name: 'Mis locales', href: '/locales', icon: Building2, plan: 'vip' as const },
     ],
   },
   {
@@ -65,6 +68,12 @@ const NAV_SECTIONS = [
       { name: 'Tiendanube', href: '/tiendanube', icon: ShoppingBag, plan: 'vip' as const },
       { name: 'WhatsApp IA', href: '/whatsapp', icon: MessageCircle, plan: 'vip' as const },
       { name: 'CajaGo Music', href: '/music', icon: Music, plan: 'premium' as const },
+    ],
+  },
+  {
+    label: 'Soporte',
+    items: [
+      { name: 'Ayuda', href: '/ayuda', icon: LifeBuoy },
     ],
   },
 ]
@@ -85,6 +94,8 @@ export default function AppShellLauncher() {
   const { isExpired, status, bannerState } = useSubscription()
 
   const shouldShowBlockingModal = isExpired || business?.subscription_status === 'expired'
+  const isJr = profile?.role === 'seller_jr'
+  const jrAllowed = (href: string) => !isJr || SELLER_JR_PATHS.some((p) => href === p || href.startsWith(`${p}/`))
 
   useEffect(() => { initAudio() }, [])
 
@@ -155,13 +166,13 @@ export default function AppShellLauncher() {
 
       {/* Secciones */}
       <nav className="flex-1 px-3 pb-4 space-y-5 overflow-y-auto custom-scrollbar">
-        {NAV_SECTIONS.map((section) => (
+        {NAV_SECTIONS.filter((section) => section.items.some((item) => jrAllowed(item.href))).map((section) => (
           <div key={section.label}>
             <p className="px-3 pb-1.5 text-[12px] font-medium text-white/35">
               {section.label}
             </p>
             <div className="space-y-0.5">
-              {section.items.filter(item => !(item.href === '/tienda' && (business as any)?.tiendanube_connected)).map((item) => {
+              {section.items.filter(item => jrAllowed(item.href) && !(item.href === '/tienda' && (business as any)?.tiendanube_connected)).map((item) => {
                 const active = isActive(item.href)
                 return (
                   <NavLink key={item.href} to={item.href} onClick={() => onCloseButton?.()} className={navItemClass(active)}>
@@ -199,6 +210,9 @@ export default function AppShellLauncher() {
       </div>
     </div>
   )
+
+  // El Vendedor Jr solo entra a las pantallas de venta.
+  if (!jrAllowed(location.pathname)) return <Navigate to="/menu" replace />
 
   // Full-bleed layout for POS
   if (isPOS) {

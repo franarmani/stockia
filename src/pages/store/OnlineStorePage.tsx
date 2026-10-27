@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
-import { Copy, ExternalLink, Globe, Phone, ShoppingCart, RefreshCw } from 'lucide-react'
+import { Copy, ExternalLink, Globe, Phone, ShoppingCart, RefreshCw, MapPin } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/authStore'
 import { useBusinessStore } from '@/stores/businessStore'
@@ -26,6 +26,8 @@ interface OnlineOrder {
   customer_name: string
   customer_phone: string
   notes: string | null
+  delivery_method?: 'pickup' | 'delivery'
+  delivery_address?: string | null
   items: Array<{ product_id: string; name: string; quantity: number; price: number }>
   total: number
   status: 'new' | 'confirmed' | 'delivered' | 'cancelled'
@@ -242,6 +244,9 @@ export default function OnlineStorePage() {
               <Phone className="w-3 h-3" /> {order.customer_phone} · {new Date(order.created_at).toLocaleString('es-AR')}
             </p>
             <p className="text-xs text-white/70">{order.items.map(item => `${item.quantity} × ${item.name}`).join(' · ')}</p>
+            <p className="text-xs text-white/60 flex items-center gap-1.5">
+              <MapPin className="w-3 h-3" /> {order.delivery_method === 'delivery' ? `Envío a: ${order.delivery_address}` : 'Retira en el local'}
+            </p>
             {order.notes && <p className="text-xs text-amber-200/80">Nota: {order.notes}</p>}
             <div className="flex flex-wrap gap-2 pt-1">
               {(order.status === 'new' || order.status === 'confirmed') && (

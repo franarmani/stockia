@@ -36,6 +36,8 @@ $config = [ordered]@{
 [IO.File]::WriteAllText((Join-Path $output 'config.json'), ($config | ConvertTo-Json -Depth 6), [Text.UTF8Encoding]::new($false))
 
 Push-Location $stage
+# Vercel escribe avisos en stderr: con 'Stop', PowerShell 5.1 los toma como error y corta.
+$ErrorActionPreference = 'Continue'
 try {
   $log = (npx vercel deploy --prebuilt --prod --yes 2>&1 | Out-String)
   $match = [regex]::Match($log, 'https://cajago-[a-z0-9]+-[a-z0-9-]+\.vercel\.app')

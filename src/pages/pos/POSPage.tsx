@@ -31,8 +31,10 @@ import {
   Search, Tag, QrCode, Plus, Minus, Trash2, ShoppingCart, CreditCard,
   Banknote, ArrowRightLeft, X, CheckCircle2, User, Wallet,
   FileText, Receipt, Percent, CircleDollarSign, Camera, ChevronRight, Check, Package,
-  LogOut, Zap, ScanLine, ChevronDown,
+  LogOut, Zap, ScanLine, ChevronDown, Coffee,
 } from 'lucide-react'
+import EmployeeConsumptionModal from '@/features/stock/EmployeeConsumptionModal'
+import { isSellerJr, requireManagerFor } from '@/features/roles/managerApproval'
 
 function playBeep() {
   try {
@@ -158,6 +160,14 @@ export default function POSPage() {
   const [search, setSearch] = useState('')
   const [showConfirmModal, setShowConfirmModal] = useState(false)
   const [showCustomerModal, setShowCustomerModal] = useState(false)
+  const [showConsumption, setShowConsumption] = useState(false)
+  // Bajar a 0 quita el producto: el Vendedor Jr necesita el código de encargado.
+  async function changeQuantity(productId: string, quantity: number, typing = false) {
+    if (quantity <= 0 && isSellerJr()) {
+      if (typing || !(await requireManagerFor('Quitar un producto'))) return
+    }
+    updateQuantity(productId, quantity)
+  }
   const [showReceiptModal, setShowReceiptModal] = useState(false)
   const [showSuccess, setShowSuccess] = useState(false)
   const [processing, setProcessing] = useState(false)
@@ -546,12 +556,14 @@ export default function POSPage() {
   function handleSelectCustomer(c: Customer | null) {
     if (c) {
       setCustomerId(c.id)
+      usePOSStore.getState().setWholesaleCustomer(!!(c as any).is_wholesale)
       setCustomerNameInput(c.name || '')
       setDocTipoCustomer((c as any).doc_tipo ? String((c as any).doc_tipo) : '80')
       setDocNroCustomer((c as any).doc_nro || '')
       setCustomerIvaCondition((c as any).iva_condition || 'consumidor_final')
     } else {
       setCustomerId(null)
+      usePOSStore.getState().setWholesaleCustomer(false)
       setCustomerNameInput('')
       setDocTipoCustomer(receiptType === 'A' ? '80' : '99')
       setDocNroCustomer('')
@@ -1372,11 +1384,18 @@ export default function POSPage() {
                 </div>
               </div>
               {items.length > 0 && (
-                <button onClick={clearCart}
+                <div className="flex items-center gap-1.5">
+                <button onClick={async () => { if (await requireManagerFor('Consumo de empleado')) setShowConsumption(true) }}
+                  className="w-8 h-8 rounded-lg border border-white/8 bg-white/5 flex items-center justify-center text-slate-500 hover:text-white hover:bg-white/10 transition-all"
+                  title="Consumo de empleado (retirar sin vender)">
+                  <Coffee className="w-3.5 h-3.5" />
+                </button>
+                <button onClick={async () => { if (await requireManagerFor('Vaciar la venta')) clearCart() }}
                   className="w-8 h-8 rounded-lg border border-white/8 bg-white/5 flex items-center justify-center text-slate-500 hover:text-red-400 hover:bg-red-400/10 hover:border-red-400/20 transition-all"
                   title="Vaciar venta">
                   <Trash2 className="w-3.5 h-3.5" />
                 </button>
+                </div>
               )}
             </div>
 
@@ -1452,13 +1471,13 @@ export default function POSPage() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between gap-2">
                           <p className="text-sm font-semibold text-white leading-snug truncate">{item.product.name}</p>
-                          <button onClick={() => removeItem(item.product.id)}
+                          <button onClick={async () => { if (await requireManagerFor('Quitar un producto')) removeItem(item.product.id) }}
                             className="w-6 h-6 rounded-md flex items-center justify-center text-slate-600 hover:text-red-400 hover:bg-red-400/10 transition-all shrink-0 opacity-0 group-hover:opacity-100">
                             <X className="w-3.5 h-3.5" />
                           </button>
                         </div>
                         <p className="text-[11px] text-slate-500 font-medium mt-0.5">
-                          {formatCurrency(item.price)} <span className="text-slate-600">×</span> {item.quantity}{unit}
+                          {formatCurrency(item.price)} <span className="text-slate-600">×</span> {item.quantity}{unit}{item.price < item.product.sale_price && <span className="ml-1.5 rounded bg-[#6178ee]/15 px-1 text-[10px] font-semibold text-[#9fb0ff]">Mayorista</span>}
                         </p>
                         {priced?.promotion && (
                           <p className="mt-1 inline-flex items-center gap-1 rounded-md bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-bold text-emerald-400">
@@ -1469,12 +1488,12 @@ export default function POSPage() {
                     </div>
                     <div className="flex items-center justify-between mt-3 pt-2.5 border-t border-white/8">
                       <div className="flex items-center gap-1 bg-white/5 rounded-lg p-0.5 border border-white/8">
-                        <button onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
+                        <button onClick={() => changeQuantity(item.product.id, item.quantity - 1)}
                           className="w-7 h-7 rounded-md flex items-center justify-center text-slate-400 hover:text-red-400 hover:bg-white/8 transition-colors active:scale-90">
                           <Minus className="w-3 h-3" />
                         </button>
                         <input type="number" step={decimal ? "0.1" : "1"} min="0.1" value={item.quantity}
-                          onChange={(e) => updateQuantity(item.product.id, parseFloat(e.target.value) || 0)}
+                          onChange={(e) => changeQuantity(item.product.id, parseFloat(e.target.value) || 0, true)}
                           className="w-14 h-7 text-center text-xs font-bold bg-transparent text-white focus:outline-none [-moz-appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none" />
                         <button onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
                           className="w-7 h-7 rounded-md flex items-center justify-center text-slate-400 hover:text-primary hover:bg-primary/10 transition-colors active:scale-90">
@@ -1705,7 +1724,7 @@ export default function POSPage() {
                     </div>
                   </div>
                   {items.length > 0 && (
-                    <button onClick={clearCart} className="w-8 h-8 rounded-lg border border-white/8 flex items-center justify-center text-slate-500 hover:text-red-400 transition-all">
+                    <button onClick={async () => { if (await requireManagerFor('Vaciar la venta')) clearCart() }} className="w-8 h-8 rounded-lg border border-white/8 flex items-center justify-center text-slate-500 hover:text-red-400 transition-all">
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   )}
@@ -1736,12 +1755,12 @@ export default function POSPage() {
                         )}
                         <div className="flex items-center justify-between mt-2 pt-2 border-t border-white/8">
                           <div className="flex items-center gap-1 bg-white/5 rounded-lg p-0.5">
-                            <button onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
+                            <button onClick={() => changeQuantity(item.product.id, item.quantity - 1)}
                               className="w-7 h-7 rounded-md flex items-center justify-center text-slate-400 hover:text-red-400 transition-colors">
                               <Minus className="w-3 h-3" />
                             </button>
                             <input type="number" step={decimal ? "0.1" : "1"} min="0.1" value={item.quantity}
-                              onChange={(e) => updateQuantity(item.product.id, parseFloat(e.target.value) || 0)}
+                              onChange={(e) => changeQuantity(item.product.id, parseFloat(e.target.value) || 0, true)}
                               className="w-14 h-7 text-center text-xs font-bold bg-transparent text-white focus:outline-none [-moz-appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none" />
                             <button onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
                               className="w-7 h-7 rounded-md flex items-center justify-center text-slate-400 hover:text-primary transition-colors">
@@ -1880,6 +1899,7 @@ export default function POSPage() {
               <button
                 onClick={() => {
                   setCustomerId(null)
+                  usePOSStore.getState().setWholesaleCustomer(false)
                   setShowQuickCustomerForm(false)
                   setShowCustomerModal(false)
                   toast.success('Datos del cliente aplicados a la venta')
@@ -2194,6 +2214,17 @@ export default function POSPage() {
           </div>
         </div>
       </Modal>
+
+      {showConsumption && (
+        <EmployeeConsumptionModal
+          open
+          onClose={() => setShowConsumption(false)}
+          items={items}
+          businessId={profile!.business_id}
+          defaultName={profile?.name ?? ''}
+          onDone={() => { clearCart(); fetchProducts() }}
+        />
+      )}
 
       <PostSaleModal
         open={showTicketModal}

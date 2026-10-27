@@ -7,6 +7,8 @@ import { cachedQuery } from '@/sync/remote'
 import { usePlan } from '@/hooks/usePlan'
 import { creditScore, GRADE_STYLES, type ChargeLite } from '@/features/customers/creditScore'
 import { useAuthStore } from '@/stores/authStore'
+import { useBusinessStore } from '@/stores/businessStore'
+import { downloadStatementExcel, downloadStatementPdf, loadStatement } from '@/features/customers/accountStatement'
 import { formatCurrency, formatDateTime } from '@/lib/utils'
 import { toast } from 'sonner'
 import Button from '@/components/ui/Button'
@@ -46,6 +48,7 @@ const customerSchema = z.object({
   doc_nro: z.string().optional(),
   iva_condition: z.string().optional(),
   credit_limit: z.string().optional(),
+  is_wholesale: z.boolean().optional(),
 })
 
 type CustomerForm = z.infer<typeof customerSchema>
@@ -120,7 +123,7 @@ export default function CustomersPage() {
 
   function openCreate() {
     setEditingCustomer(null)
-    reset({ name: '', phone: '', email: '', address: '', doc_tipo: '99', doc_nro: '', iva_condition: 'consumidor_final', credit_limit: '' })
+    reset({ name: '', phone: '', email: '', address: '', doc_tipo: '99', doc_nro: '', iva_condition: 'consumidor_final', credit_limit: '', is_wholesale: false })
     setShowModal(true)
   }
 
@@ -134,6 +137,7 @@ export default function CustomersPage() {
     setValue('doc_nro', (customer as any).doc_nro || '')
     setValue('iva_condition', (customer as any).iva_condition || 'consumidor_final')
     setValue('credit_limit', (customer as any).credit_limit ? String((customer as any).credit_limit) : '')
+    setValue('is_wholesale', !!(customer as any).is_wholesale)
     setShowModal(true)
   }
 
@@ -155,6 +159,19 @@ export default function CustomersPage() {
       created_at: payment.created_at,
     })))
     setShowHistoryModal(true)
+  }
+
+  async function exportStatement(format: 'pdf' | 'excel') {
+    if (!selectedCustomer) return
+    if (!isOnline()) { toast.info('El estado de cuenta se arma con los datos del servidor. Disponible al volver la conexión.'); return }
+    try {
+      const rows = await loadStatement(profile!.business_id, selectedCustomer.id)
+      const balance = Number(selectedCustomer.balance) || 0
+      if (format === 'excel') downloadStatementExcel(selectedCustomer.name, rows, balance)
+      else await downloadStatementPdf(useBusinessStore.getState().business?.name ?? '', selectedCustomer.name, rows, balance)
+    } catch (error: any) {
+      toast.error(error?.message || 'No se pudo generar el estado de cuenta')
+    }
   }
 
   function openPayment(customer: Customer) {
@@ -197,6 +214,7 @@ export default function CustomersPage() {
       phone: data.phone || null,
       email: data.email || null,
       address: data.address || null,
+      is_wholesale: !!data.is_wholesale,
     }
     const afipFields = {
       doc_tipo: data.doc_tipo || '99',
@@ -331,6 +349,7 @@ export default function CustomersPage() {
                   </div>
                 </TableCell>
                 <TableCell>
+                  {(customer as any).is_wholesale && <Badge variant="outline" className="mr-1">Mayorista</Badge>}
                   {customer.balance > 0 ? (
                     <Badge variant="destructive">{formatCurrency(customer.balance)}</Badge>
                   ) : (
@@ -416,6 +435,10 @@ export default function CustomersPage() {
               {...register('credit_limit')}
             />
           )}
+          <label className="flex items-center gap-2.5 text-sm text-white/80 cursor-pointer">
+            <input type="checkbox" className="h-4 w-4 accent-[#6178ee]" {...register('is_wholesale')} />
+            Cliente mayorista (se le cobra el precio mayorista de cada producto)
+          </label>
           <div className="flex gap-2.5 pt-2">
             <button
               type="button"
@@ -437,6 +460,11 @@ export default function CustomersPage() {
       {/* History Modal */}
       <Modal open={showHistoryModal} onClose={() => setShowHistoryModal(false)} title={`Historial - ${selectedCustomer?.name}`} size="lg">
         <div className="space-y-4">
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <span className="text-xs text-white/40 mr-auto">Estado de cuenta corriente</span>
+            <Button variant="outline" size="sm" onClick={() => exportStatement('pdf')}>Descargar PDF</Button>
+            <Button variant="outline" size="sm" onClick={() => exportStatement('excel')}>Descargar Excel</Button>
+          </div>
           {selectedCustomer && selectedCustomer.balance > 0 && (
             <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-center">
               <p className="text-[11px] text-red-500">Deuda pendiente</p>

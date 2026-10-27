@@ -46,3 +46,15 @@ describe('barcode labels', () => {
     expect(labels.map((label) => label.id)).toEqual(['a', 'a', 'c'])
   })
 })
+
+describe('precio mayorista en cambios masivos', () => {
+  it('acompaña al precio de venta y no cambia si solo se toca el costo', () => {
+    const product = { id: 'p', name: 'P', sale_price: 100, purchase_price: 50, wholesale_price: 80 }
+    const [sale] = planPriceChanges([product], { mode: 'percent', value: 10, target: 'sale', rounding: 0 })
+    expect(sale.newWholesale).toBe(88)
+    const [cost] = planPriceChanges([product], { mode: 'percent', value: 10, target: 'cost', rounding: 0 })
+    expect(cost.newWholesale).toBe(80)
+    const [none] = planPriceChanges([{ ...product, wholesale_price: null }], { mode: 'percent', value: 10, target: 'sale', rounding: 0 })
+    expect(none.newWholesale).toBeNull()
+  })
+})

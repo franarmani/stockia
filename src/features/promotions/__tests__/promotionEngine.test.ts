@@ -79,3 +79,19 @@ describe('cart pricing', () => {
     expect(result.lines.filter(l => l.product.id === 'z').reduce((s, l) => s + l.quantity, 0)).toBe(7)
   })
 })
+
+describe('descuento por monto mínimo', () => {
+  const minTotal: Promotion = { ...base, id: 'm', name: '15% desde $50.000', kind: 'min_total', percent: 15, min_amount: 50000, buy_qty: null, pay_qty: null }
+
+  it('no aplica si la compra no llega al mínimo', () => {
+    expect(priceCart([line('a', 4, 10000)], [minTotal]).promoDiscount).toBe(0)
+  })
+  it('aplica el % a toda la compra desde el mínimo', () => {
+    expect(priceCart([line('a', 3, 10000), line('b', 2, 10000)], [minTotal]).promoDiscount).toBe(7500)
+  })
+  it('no se suma a otra promoción del mismo producto', () => {
+    const twoForOne = { ...base, product_ids: ['a'] }
+    const result = priceCart([line('a', 2, 20000), line('b', 1, 20000)], [minTotal, twoForOne])
+    expect(result.promoDiscount).toBe(20000 + 3000)
+  })
+})

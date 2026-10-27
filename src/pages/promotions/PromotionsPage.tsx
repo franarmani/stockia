@@ -23,6 +23,7 @@ const KIND_OPTIONS: { value: PromotionKind; label: string; hint: string }[] = [
   { value: 'nxm', label: 'Llevá N, pagá M', hint: '2x1, 3x2, 4x3…' },
   { value: 'percent', label: '% de descuento', hint: 'Por ejemplo 15% off' },
   { value: 'second_unit', label: '2da unidad con descuento', hint: 'Por ejemplo 2da al 50%' },
+  { value: 'min_total', label: 'Descuento por monto', hint: 'Por ejemplo 15% desde $50.000' },
 ]
 
 type Scope = 'all' | 'category' | 'products'
@@ -34,6 +35,7 @@ interface PromotionForm {
   buy_qty: string
   pay_qty: string
   percent: string
+  min_amount: string
   scope: Scope
   category_id: string
   product_ids: string[]
@@ -44,7 +46,7 @@ interface PromotionForm {
 }
 
 const emptyForm: PromotionForm = {
-  name: '', kind: 'nxm', buy_qty: '2', pay_qty: '1', percent: '15', scope: 'products',
+  name: '', kind: 'nxm', buy_qty: '2', pay_qty: '1', percent: '15', min_amount: '50000', scope: 'products',
   category_id: '', product_ids: [], starts_on: '', ends_on: '', weekdays: [], active: true,
 }
 
@@ -131,6 +133,7 @@ export default function PromotionsPage() {
       buy_qty: String(promotion.buy_qty ?? 2),
       pay_qty: String(promotion.pay_qty ?? 1),
       percent: String(promotion.percent ?? 15),
+      min_amount: String(promotion.min_amount ?? 50000),
       scope: promotion.product_ids?.length ? 'products' : promotion.category_id ? 'category' : 'all',
       category_id: promotion.category_id ?? '',
       product_ids: promotion.product_ids ?? [],
@@ -152,6 +155,8 @@ export default function PromotionsPage() {
       return 'En "Llevá N, pagá M", N tiene que ser mayor que M (por ejemplo 2 y 1)'
     }
     if (form.kind !== 'nxm' && !(percent > 0 && percent <= 100)) return 'El porcentaje tiene que estar entre 1 y 100'
+    const minAmount = Number(form.min_amount)
+    if (form.kind === 'min_total' && !(minAmount > 0)) return 'Poné desde qué monto de compra aplica'
     if (form.scope === 'category' && !form.category_id) return 'Elegí la categoría'
     if (form.scope === 'products' && form.product_ids.length === 0) return 'Agregá al menos un producto'
     if (form.starts_on && form.ends_on && form.ends_on < form.starts_on) return 'La fecha de fin es anterior a la de inicio'
@@ -161,6 +166,7 @@ export default function PromotionsPage() {
       buy_qty: form.kind === 'nxm' ? buy : null,
       pay_qty: form.kind === 'nxm' ? pay : null,
       percent: form.kind === 'nxm' ? null : percent,
+      min_amount: form.kind === 'min_total' ? minAmount : null,
       product_ids: form.scope === 'products' ? form.product_ids : null,
       category_id: form.scope === 'category' ? form.category_id : null,
       starts_on: form.starts_on || null,
@@ -211,8 +217,12 @@ export default function PromotionsPage() {
     const values = buildValues()
     if (typeof values === 'string') return null
     const sample = { ...values, id: 'preview' } as Promotion
+    if (form.kind === 'min_total') {
+      const amount = Number(form.min_amount) || 0
+      return { qty: 1, amount, discount: promotionDiscount({ ...sample, kind: 'percent' }, 1, amount) }
+    }
     const qty = form.kind === 'nxm' ? Number(form.buy_qty) : 2
-    return { qty, discount: promotionDiscount(sample, qty, 1000) }
+    return { qty, amount: null as number | null, discount: promotionDiscount(sample, qty, 1000) }
   })()
 
   const input = 'w-full h-10 px-3 rounded-xl border border-white/10 bg-white/5 text-white text-sm focus:outline-none focus:border-primary/40'
@@ -289,7 +299,7 @@ export default function PromotionsPage() {
 
           <div>
             <label className="block text-xs font-medium text-white/60 mb-2">Tipo</label>
-            <div className="grid sm:grid-cols-3 gap-2">
+            <div className="grid sm:grid-cols-2 gap-2">
               {KIND_OPTIONS.map(option => (
                 <button key={option.value} type="button" onClick={() => setForm({ ...form, kind: option.value })}
                   className={cn('text-left rounded-xl border p-3', form.kind === option.value ? 'border-primary bg-primary/10' : 'border-white/10 bg-white/[0.03] hover:bg-white/[0.06]')}>
@@ -312,11 +322,19 @@ export default function PromotionsPage() {
               </div>
             </div>
           ) : (
-            <div className="max-w-[200px]">
-              <label className="block text-xs font-medium text-white/60 mb-1">
-                {form.kind === 'percent' ? '% de descuento' : '% de descuento en la 2da unidad'}
-              </label>
-              <input type="number" min={1} max={100} className={input} value={form.percent} onChange={e => setForm({ ...form, percent: e.target.value })} />
+            <div className="grid grid-cols-2 gap-3 max-w-md">
+              <div>
+                <label className="block text-xs font-medium text-white/60 mb-1">
+                  {form.kind === 'second_unit' ? '% de descuento en la 2da unidad' : '% de descuento'}
+                </label>
+                <input type="number" min={1} max={100} className={input} value={form.percent} onChange={e => setForm({ ...form, percent: e.target.value })} />
+              </div>
+              {form.kind === 'min_total' && (
+                <div>
+                  <label className="block text-xs font-medium text-white/60 mb-1">Desde una compra de ($)</label>
+                  <input type="number" min={1} className={input} value={form.min_amount} onChange={e => setForm({ ...form, min_amount: e.target.value })} />
+                </div>
+              )}
             </div>
           )}
 
@@ -404,7 +422,9 @@ export default function PromotionsPage() {
 
           {preview && preview.discount > 0 && (
             <p className="rounded-xl bg-emerald-500/10 border border-emerald-500/20 px-3 py-2 text-xs text-emerald-300">
-              Ejemplo: {preview.qty} unidades de un producto de $1.000 → descuento de {formatCurrency(preview.discount)}.
+              {preview.amount !== null
+                ? <>Ejemplo: en una compra de {formatCurrency(preview.amount)} → descuento de {formatCurrency(preview.discount)}. No se suma a otras promociones del mismo producto.</>
+                : <>Ejemplo: {preview.qty} unidades de un producto de $1.000 → descuento de {formatCurrency(preview.discount)}.</>}
             </p>
           )}
 

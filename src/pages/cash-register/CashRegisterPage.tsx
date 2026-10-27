@@ -3,17 +3,24 @@ import { supabase } from '@/lib/supabase'
 import { syncEngine } from '@/sync/syncEngine'
 import { withSyncNote } from '@/sync/connectivity'
 import { useAuthStore } from '@/stores/authStore'
+import { useBusinessStore } from '@/stores/businessStore'
 import { cn, formatCurrency } from '@/lib/utils'
 import { toast } from 'sonner'
 import Button from '@/components/ui/Button'
 import Modal from '@/components/ui/Modal'
 import { GlassButton } from '@/components/ui/GlassCard'
 import type { CashSession, CashMovement } from '@/types/database'
+import SessionProductsPanel from '@/features/cash/SessionProductsPanel'
+import { loadSessionProducts } from '@/features/cash/sessionProducts'
 import {
   Wallet, DoorOpen, DoorClosed, ArrowDownCircle, ArrowUpCircle,
   Clock, TrendingUp, TrendingDown, Banknote, Printer,
   ChevronRight, Plus, CalendarDays
 } from 'lucide-react'
+
+function escapeHtml(text: string) {
+  return text.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!))
+}
 
 export default function CashRegisterPage() {
   const { profile } = useAuthStore()
@@ -32,6 +39,31 @@ export default function CashRegisterPage() {
   const [incomeAmount, setIncomeAmount] = useState('')
   const [incomeReason, setIncomeReason] = useState('')
   const [saving, setSaving] = useState(false)
+  const { business, updateBusiness } = useBusinessStore()
+  const autoCloseTime = ((business as any)?.cash_auto_close_time as string | null) ?? null
+
+  async function saveAutoClose(time: string | null) {
+    try {
+      await updateBusiness({ cash_auto_close_time: time } as any)
+      toast.success(time ? `La caja se va a cerrar sola a las ${time}` : 'Cierre automático desactivado')
+    } catch {
+      toast.error('No se pudo guardar (hace falta internet)')
+    }
+  }
+  type SessionDetail = Awaited<ReturnType<typeof loadSessionProducts>>
+  const [currentDetail, setCurrentDetail] = useState<SessionDetail | null>(null)
+  const [historyDetail, setHistoryDetail] = useState<{ session: CashSession; detail: SessionDetail | null } | null>(null)
+
+  useEffect(() => {
+    if (!currentSession || !profile?.business_id) { setCurrentDetail(null); return }
+    loadSessionProducts(profile.business_id, currentSession.id, currentSession.opened_at, null).then(setCurrentDetail)
+  }, [currentSession?.id, movements.length])
+
+  async function openHistoryDetail(session: CashSession) {
+    setHistoryDetail({ session, detail: null })
+    const detail = await loadSessionProducts(profile!.business_id, session.id, session.opened_at, session.closed_at ?? null)
+    setHistoryDetail({ session, detail })
+  }
 
   useEffect(() => { 
     if (profile?.business_id) {
@@ -165,6 +197,12 @@ export default function CashRegisterPage() {
       <div class="sep"></div>
       ${movements.map(m => `<div class="row"><span>${m.type === 'sale' ? 'VTA' : m.type === 'income' ? 'ING' : 'RET'} ${new Date(m.created_at).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}</span><span>${m.type === 'withdrawal' ? '-' : '+'}$${m.amount.toFixed(2)}</span></div><div style="font-size:10px;color:#666">${m.description || ''}</div>`).join('')}
       <div class="sep"></div>
+      ${currentDetail?.sold.length ? `<h2 style="font-size:11px">Productos vendidos</h2><div class="sep"></div>
+      ${currentDetail.sold.map(p => `<div class="row"><span>${escapeHtml(p.name)} x${p.quantity}</span><span>$${p.total.toFixed(2)}</span></div>`).join('')}
+      <div class="sep"></div>` : ''}
+      ${currentDetail?.consumption.length ? `<h2 style="font-size:11px">Consumo de empleados</h2><div class="sep"></div>
+      ${currentDetail.consumption.map(c => `<div class="row"><span>${escapeHtml(c.name)} x${c.quantity}</span><span>$${c.cost.toFixed(2)}</span></div><div style="font-size:10px;color:#666">${escapeHtml(c.employee)}</div>`).join('')}
+      <div class="sep"></div>` : ''}
       <div style="text-align:center;font-size:10px;color:#666;margin-top:8px">CajaGo - Reporte automático</div>
       </body></html>`)
     w.document.close()
@@ -216,6 +254,32 @@ export default function CashRegisterPage() {
           )}
         </div>
       </div>
+
+      {profile?.role === 'admin' && (
+        <div className="mx-1 flex flex-wrap items-center gap-3 rounded-2xl border border-white/8 bg-white/[0.03] px-4 py-3">
+          <Clock className="w-4 h-4 text-white/40" />
+          <div className="flex-1 min-w-[200px]">
+            <p className="text-sm font-semibold text-white">Cierre automático</p>
+            <p className="text-xs text-white/40">
+              {autoCloseTime
+                ? `Todos los días a las ${autoCloseTime} la caja se cierra sola con el monto esperado (sin recuento).`
+                : 'Si te olvidás de cerrar la caja, el programa la cierra solo a la hora que elijas.'}
+            </p>
+          </div>
+          <input
+            type="time"
+            key={autoCloseTime ?? 'none'}
+            defaultValue={autoCloseTime ?? ''}
+            onBlur={(e) => { if (e.target.value && e.target.value !== autoCloseTime) saveAutoClose(e.target.value) }}
+            className="h-9 px-3 rounded-lg border border-white/10 bg-white/5 text-white text-sm [color-scheme:dark]"
+          />
+          {autoCloseTime && (
+            <button onClick={() => saveAutoClose(null)} className="h-9 px-3 rounded-lg bg-white/5 text-white/60 text-xs font-semibold hover:bg-white/10">
+              Desactivar
+            </button>
+          )}
+        </div>
+      )}
 
       {currentSession ? (
         <div className="space-y-6">
@@ -315,6 +379,14 @@ export default function CashRegisterPage() {
               )}
             </div>
           </div>
+
+          {currentDetail && (
+            <div className="px-1">
+              <div className="bg-white/[0.03] border border-white/5 rounded-[2.5rem] p-6">
+                <SessionProductsPanel sold={currentDetail.sold} consumption={currentDetail.consumption} />
+              </div>
+            </div>
+          )}
         </div>
       ) : (
         <div className="space-y-6">
@@ -371,7 +443,7 @@ export default function CashRegisterPage() {
                         )}
                       </div>
 
-                      <button className="mt-4 w-full h-9 rounded-xl border border-white/5 text-[10px] font-black text-white/20 uppercase tracking-[0.2em] group-hover:text-white group-hover:bg-white/5 transition-all">
+                      <button onClick={() => openHistoryDetail(s)} className="mt-4 w-full h-9 rounded-xl border border-white/5 text-[10px] font-black text-white/20 uppercase tracking-[0.2em] group-hover:text-white group-hover:bg-white/5 transition-all">
                          Ver Detalles
                       </button>
                     </div>
@@ -422,6 +494,17 @@ export default function CashRegisterPage() {
             <Button className="flex-1" onClick={handleClose} disabled={saving}>{saving ? 'Cerrando...' : 'Cerrar caja'}</Button>
           </div>
         </div>
+      </Modal>
+
+      <Modal
+        open={!!historyDetail}
+        onClose={() => setHistoryDetail(null)}
+        title={historyDetail ? `Caja del ${new Date(historyDetail.session.opened_at).toLocaleString('es-AR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}` : ''}
+        size="lg"
+      >
+        {historyDetail?.detail
+          ? <SessionProductsPanel sold={historyDetail.detail.sold} consumption={historyDetail.detail.consumption} />
+          : <div className="h-32 grid place-items-center"><div className="w-7 h-7 rounded-full border-2 border-primary border-t-transparent animate-spin" /></div>}
       </Modal>
 
       {/* Withdraw Modal */}

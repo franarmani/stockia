@@ -31,7 +31,7 @@ Deno.serve(async request => {
     if (body.action === 'catalog') {
       const [{ data: products }, { data: categories }] = await Promise.all([
         admin.from('products')
-          .select('id, name, sale_price, stock, unit, image_url, category_id, brand')
+          .select('id, name, sale_price, stock, unit, image_url, category_id, brand, store_featured')
           .eq('business_id', business.id).eq('active', true).eq('show_online', true).gt('sale_price', 0)
           .order('name').limit(3000),
         admin.from('categories').select('id, name').eq('business_id', business.id).order('name'),
@@ -56,6 +56,7 @@ Deno.serve(async request => {
           category_id: product.category_id,
           brand: product.brand,
           in_stock: Number(product.stock) > 0,
+          featured: product.store_featured === true,
         })),
       })
     }
@@ -74,6 +75,8 @@ Deno.serve(async request => {
         customer_name: order.customerName,
         customer_phone: order.customerPhone,
         notes: order.notes,
+        delivery_method: order.deliveryMethod,
+        delivery_address: order.deliveryAddress,
         items: order.lines,
         total: order.total,
       }).select('id, order_number').single()

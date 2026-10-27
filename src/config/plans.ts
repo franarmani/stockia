@@ -21,6 +21,8 @@ export type PremiumFeature =
   | 'quotes'
   | 'bulk_tools'
   | 'tiendanube'
+  | 'warehouses'
+  | 'locales'
 
 export const FEATURE_PLAN: Record<PremiumFeature, Exclude<PlanId, 'basic'>> = {
   quotes: 'premium',
@@ -31,11 +33,13 @@ export const FEATURE_PLAN: Record<PremiumFeature, Exclude<PlanId, 'basic'>> = {
   loyalty: 'premium',
   music: 'premium',
   daily_summary: 'premium',
+  warehouses: 'premium',
   accounting: 'vip',
   online_store: 'vip',
   intelligence: 'vip',
   whatsapp_ai: 'vip',
   tiendanube: 'vip',
+  locales: 'vip',
 }
 
 export interface Plan {
@@ -97,6 +101,7 @@ export const PLANS: Record<PlanId, Plan> = {
       'Compras, proveedores y libro de IVA compras',
       'Rentabilidad por producto, categoría y material',
       'Promociones: 2x1, 3x2, % off y 2da unidad',
+      'Stock por depósito',
       'Club de puntos con premios para tus clientes',
       'Límite de crédito y calificación de clientes',
       'Cobro con QR de Mercado Pago en la caja',
@@ -140,6 +145,8 @@ export const PREMIUM_FEATURE_LABELS: Record<PremiumFeature, string> = {
   quotes: 'Presupuestos',
   bulk_tools: 'Importación, aumentos masivos y etiquetas',
   tiendanube: 'Conexión con Tiendanube',
+  warehouses: 'Stock por depósito',
+  locales: 'Varios locales',
 }
 
 /** Valores viejos (pro, free) y vacío cuentan como Premium. */

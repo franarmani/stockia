@@ -13,7 +13,7 @@ interface StoreInfo {
   cover_url?: string | null
   color?: string | null
 }
-interface StoreProduct { id: string; name: string; price: number; unit: string | null; image_url: string | null; category_id: string | null; brand: string | null; in_stock: boolean }
+interface StoreProduct { id: string; name: string; price: number; unit: string | null; image_url: string | null; category_id: string | null; brand: string | null; in_stock: boolean; featured?: boolean }
 interface StoreCategory { id: string; name: string }
 
 const PAGE_SIZE = 48
@@ -45,7 +45,7 @@ export default function StorefrontPage() {
   const [limit, setLimit] = useState(PAGE_SIZE)
   const [cart, setCart] = useState<Record<string, number>>(() => loadCart(slug))
   const [cartOpen, setCartOpen] = useState(false)
-  const [checkout, setCheckout] = useState({ name: '', phone: '', notes: '' })
+  const [checkout, setCheckout] = useState({ name: '', phone: '', notes: '', delivery: 'pickup' as 'pickup' | 'delivery', address: '' })
   const [sending, setSending] = useState(false)
   const [error, setError] = useState('')
   const [done, setDone] = useState<{ order_number: number; total: number; whatsapp_url: string | null } | null>(null)
@@ -67,9 +67,11 @@ export default function StorefrontPage() {
 
   const visible = useMemo(() => {
     const term = search.trim().toLowerCase()
+    // Los destacados van primero; el resto sigue en orden alfabético.
     return products.filter(p =>
       (!category || p.category_id === category) &&
       (!term || p.name.toLowerCase().includes(term) || p.brand?.toLowerCase().includes(term)))
+      .sort((a, b) => Number(!!b.featured) - Number(!!a.featured))
   }, [products, search, category])
 
   const usedCategories = useMemo(() => categories.filter(c => products.some(p => p.category_id === c.id)), [categories, products])
@@ -98,6 +100,8 @@ export default function StorefrontPage() {
         customer_name: checkout.name,
         customer_phone: checkout.phone,
         notes: checkout.notes,
+        delivery_method: checkout.delivery,
+        delivery_address: checkout.delivery === 'delivery' ? checkout.address : null,
         items: cartLines.map(line => ({ product_id: line.product.id, quantity: line.quantity })),
       },
     })
@@ -199,6 +203,9 @@ export default function StorefrontPage() {
                     {product.image_url
                       ? <img src={product.image_url} alt={product.name} loading="lazy" className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]" />
                       : <Package className="absolute left-1/2 top-1/2 h-9 w-9 -translate-x-1/2 -translate-y-1/2" strokeWidth={1.25} style={{ color: tint(accent, 0.3) }} />}
+                    {product.featured && (
+                      <span className="absolute right-2 top-2 rounded-md px-2 py-0.5 text-[11px] font-semibold text-white shadow-sm" style={{ background: accent }}>Destacado</span>
+                    )}
                     {!product.in_stock && (
                       <span className="absolute left-2 top-2 rounded-md bg-white/95 px-2 py-0.5 text-[11px] font-medium text-amber-700 shadow-sm">Consultar stock</span>
                     )}
@@ -299,7 +306,20 @@ export default function StorefrontPage() {
                   className="h-11 w-full rounded-xl border border-slate-200 px-3 text-sm focus:border-slate-400 focus:outline-none" />
                 <input required value={checkout.phone} onChange={e => setCheckout({ ...checkout, phone: e.target.value })} placeholder="Tu teléfono" inputMode="tel" maxLength={30}
                   className="h-11 w-full rounded-xl border border-slate-200 px-3 text-sm focus:border-slate-400 focus:outline-none" />
-                <textarea value={checkout.notes} onChange={e => setCheckout({ ...checkout, notes: e.target.value })} placeholder="Notas: retiro en el local, envío a domicilio, horario…" maxLength={500} rows={2}
+                <div className="grid grid-cols-2 gap-2">
+                  {([['pickup', 'Retiro en el local'], ['delivery', 'Envío a domicilio']] as const).map(([value, label]) => (
+                    <button key={value} type="button" onClick={() => setCheckout({ ...checkout, delivery: value })}
+                      className="h-10 rounded-xl border text-sm font-medium"
+                      style={checkout.delivery === value ? { borderColor: accent, color: accent, background: tint(accent, 0.06) } : { borderColor: '#e2e8f0', color: '#475569' }}>
+                      {label}
+                    </button>
+                  ))}
+                </div>
+                {checkout.delivery === 'delivery' && (
+                  <input required value={checkout.address} onChange={e => setCheckout({ ...checkout, address: e.target.value })} placeholder="Dirección de envío (calle, número, localidad)" maxLength={200}
+                    className="h-11 w-full rounded-xl border border-slate-200 px-3 text-sm focus:border-slate-400 focus:outline-none" />
+                )}
+                <textarea value={checkout.notes} onChange={e => setCheckout({ ...checkout, notes: e.target.value })} placeholder="Notas: horario, entre calles, aclaraciones…" maxLength={500} rows={2}
                   className="w-full resize-none rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-slate-400 focus:outline-none" />
                 {error && <p className="text-sm text-red-600">{error}</p>}
                 <button disabled={sending || cartLines.length === 0} className="flex h-12 w-full items-center justify-center gap-2 rounded-xl font-semibold text-white disabled:opacity-50" style={{ background: accent }}>

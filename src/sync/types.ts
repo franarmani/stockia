@@ -27,6 +27,8 @@ export type SyncTable =
   | 'promotions'
   | 'loyalty_rewards'
   | 'loyalty_movements'
+  | 'warehouses'
+  | 'warehouse_stock'
 
 /**
  * Llamada a una función del servidor (compras, pagos, asientos) guardada para enviar después.

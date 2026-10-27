@@ -1,4 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { readInvoiceWithAi } from "@/features/purchases/invoiceAi";
+import { matchInvoiceItem } from "@/features/purchases/invoiceMatch";
+
 import {
   BarChart3,
   BookOpen,
@@ -16,10 +19,11 @@ import {
   Trash2,
   CheckCircle2,
   DollarSign,
+  Sparkles,
 } from "lucide-react";
 import { toast } from "sonner";
 import { syncEngine } from "@/sync/syncEngine";
-import { withSyncNote } from "@/sync/connectivity";
+import { isOnline, withSyncNote } from "@/sync/connectivity";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import Modal from "@/components/ui/Modal";
@@ -1031,7 +1035,50 @@ function PurchaseForm({
     [extraTaxes, setExtraTaxes] = useState<any[]>([]),
     [updateStock, setUpdateStock] = useState(false),
     [saving, setSaving] = useState(false),
-    [error, setError] = useState("");
+    [error, setError] = useState(""),
+    [reading, setReading] = useState(false),
+    invoiceInput = useRef<HTMLInputElement>(null);
+
+  // Completa el comprobante con lo que la IA leyó de la foto o el PDF de la factura.
+  async function loadInvoice(file: File) {
+    if (!isOnline()) { toast.error("Leer la factura con IA necesita internet"); return; }
+    setReading(true);
+    try {
+      const invoice = await readInvoiceWithAi(file);
+      const supplier = invoice.supplier_cuit
+        ? suppliers.find((s: Supplier) => String(s.cuit || "").replace(/\D/g, "") === invoice.supplier_cuit)
+        : null;
+      if (supplier) setSupplierId(supplier.id);
+      else if (invoice.supplier_name) toast.info(`El proveedor ${invoice.supplier_name}${invoice.supplier_cuit ? ` (CUIT ${invoice.supplier_cuit})` : ""} no está cargado: elegilo o crealo en Proveedores.`);
+      setDoc((current: any) => ({
+        ...current,
+        document_type: "invoice",
+        is_internal: false,
+        is_fiscal: true,
+        letter: invoice.letter ?? current.letter,
+        point_of_sale: invoice.point_of_sale ?? current.point_of_sale,
+        document_number: invoice.number ?? current.document_number,
+        document_date: invoice.date ?? current.document_date,
+      }));
+      let linked = 0;
+      setItems(invoice.items.map((item) => {
+        const product = matchInvoiceItem(item, products);
+        if (product) linked++;
+        return {
+          product_id: product?.id,
+          description: item.description,
+          quantity: String(item.quantity),
+          unit_cost: String(item.unit_cost),
+          vat_rate: String(item.vat_rate ?? 21),
+        };
+      }));
+      toast.success(`Factura leída: ${invoice.items.length} renglones, ${linked} vinculados a productos. Revisá antes de guardar.`);
+    } catch (err: any) {
+      toast.error(err?.message || "No se pudo leer la factura");
+    } finally {
+      setReading(false);
+    }
+  }
 
   const totals = useMemo(() => {
     const itemTotals = items.reduce(
@@ -1077,6 +1124,23 @@ function PurchaseForm({
       size="xl"
     >
       <div className="space-y-6">
+        <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-[#947FF8]/25 bg-[#947FF8]/[0.06] p-4">
+          <Sparkles className="w-5 h-5 text-[#947FF8]" />
+          <div className="flex-1 min-w-[200px]">
+            <p className="text-sm font-semibold text-white">Cargar la factura con IA</p>
+            <p className="text-xs text-[#9CA6BA]">Subí una foto o el PDF y se completan proveedor, comprobante y artículos.</p>
+          </div>
+          <input
+            ref={invoiceInput}
+            type="file"
+            accept="image/*,application/pdf"
+            className="hidden"
+            onChange={(e) => { const file = e.target.files?.[0]; e.target.value = ""; if (file) loadInvoice(file); }}
+          />
+          <Button size="sm" onClick={() => invoiceInput.current?.click()} disabled={reading} className="text-xs font-bold">
+            {reading ? "Leyendo factura..." : "Subir factura"}
+          </Button>
+        </div>
         {/* Step 1: Proveedor */}
         <div className="bg-[#0E1629] border border-white/[0.08] rounded-2xl p-4.5 space-y-2">
           <p className="text-xs font-bold uppercase tracking-wider text-[#947FF8]">
@@ -1251,6 +1315,11 @@ function PurchaseForm({
                       updateItem(index, { description: e.target.value })
                     }
                   />
+                  {item.product_id && (
+                    <p className="mt-1 text-[11px] text-emerald-300/80 truncate">
+                      Producto: {products.find((p: any) => p.id === item.product_id)?.name ?? "vinculado"}
+                    </p>
+                  )}
                 </div>
                 <div>
                   <select
