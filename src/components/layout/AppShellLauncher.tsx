@@ -341,6 +341,21 @@ export default function AppShellLauncher() {
                         <span className="block text-[10px] text-white/40">Métricas y balance del día</span>
                       </div>
                     </button>
+
+                    {profile?.is_superadmin && (
+                      <button
+                        onClick={() => { navigate('/admin'); setProfileMenuOpen(false) }}
+                        className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium text-white/90 hover:text-white hover:bg-white/[0.06] transition-colors text-left group"
+                      >
+                        <div className="w-7 h-7 rounded-lg bg-amber-500/15 border border-amber-500/25 flex items-center justify-center text-amber-400 group-hover:scale-105 transition-transform shrink-0">
+                          <Crown className="w-3.5 h-3.5" />
+                        </div>
+                        <div>
+                          <span className="block font-semibold">Panel admin</span>
+                          <span className="block text-[10px] text-white/40">Negocios, pagos y WhatsApp IA</span>
+                        </div>
+                      </button>
+                    )}
                   </div>
 
                   {/* Sign Out */}
