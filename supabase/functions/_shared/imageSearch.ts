@@ -32,6 +32,25 @@ export function parseGoogleImages(data: any): ImageResult[] {
   })
 }
 
+const decodeEntities = (text: string) =>
+  text.replace(/&quot;/g, '"').replace(/&#39;|&apos;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&')
+
+/** Resultados de la página de imágenes de Bing (cada foto trae un JSON en el atributo m="..."). */
+export function parseBingImages(html: string): ImageResult[] {
+  const results: ImageResult[] = []
+  const seen = new Set<string>()
+  for (const match of html.matchAll(/class="iusc"[^>]*?\sm="([^"]+)"/g)) {
+    let data: any
+    try { data = JSON.parse(decodeEntities(match[1])) } catch { continue }
+    const url = String(data?.murl ?? '')
+    const thumbnail = String(data?.turl ?? '')
+    if (!isSafeImageUrl(url) || !/^https:\/\//.test(thumbnail) || seen.has(url)) continue
+    seen.add(url)
+    results.push({ url, thumbnail, width: 0, height: 0, title: String(data?.t ?? '').replace(/[-]/g, '').slice(0, 120), source: typeof data?.purl === 'string' ? data.purl : null })
+  }
+  return results
+}
+
 const BLOCKED_HOSTS = /^(localhost|.*\.local|.*\.internal|.*\.lan|metadata\.google\.internal)$/i
 
 /** Solo https a un nombre de dominio público (nada de IPs ni redes internas). */

@@ -2,7 +2,8 @@
 // para que el programa la suba al negocio (el navegador no puede bajarla por CORS).
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { businessIsActive, INACTIVE_MESSAGE } from '../_shared/access.ts'
-import { MAX_IMAGE_BYTES, buildImageQuery, isSafeImageUrl, parseGoogleImages } from '../_shared/imageSearch.ts'
+import type { ImageResult } from '../_shared/imageSearch.ts'
+import { MAX_IMAGE_BYTES, buildImageQuery, isSafeImageUrl, parseBingImages, parseGoogleImages } from '../_shared/imageSearch.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -32,25 +33,42 @@ Deno.serve(async request => {
       if (name.length < 2) return json({ error: 'Escribí el nombre del producto' }, 400)
       const key = Deno.env.get('GOOGLE_CSE_KEY')
       const cx = Deno.env.get('GOOGLE_CSE_CX')
-      if (!key || !cx) return json({ error: 'La búsqueda en internet todavía no está configurada' }, 503)
+      let results: ImageResult[] = []
 
-      const search = async (strict: boolean) => {
-        const params = new URLSearchParams({
-          key, cx, q: buildImageQuery(name), searchType: 'image', num: '10', safe: 'active', imgSize: 'medium',
-          start: String(Math.min(91, Math.max(1, Number(body.start) || 1))),
-        })
-        if (strict) { params.set('fileType', 'png'); params.set('imgDominantColor', 'white') }
-        const response = await fetch(`https://www.googleapis.com/customsearch/v1?${params}`, { signal: AbortSignal.timeout(15_000) })
-        if (!response.ok) throw new Error(`Google ${response.status}: ${(await response.text()).slice(0, 200)}`)
-        return parseGoogleImages(await response.json())
+      // Sin claves ni cuotas: se lee la búsqueda de imágenes de Bing. Si algún día se configuran
+      // GOOGLE_CSE_KEY y GOOGLE_CSE_CX, se usa Google (más estable) y Bing queda de respaldo.
+      if (key && cx) {
+        try {
+          const params = new URLSearchParams({
+            key, cx, q: buildImageQuery(name), searchType: 'image', num: '10', safe: 'active', imgSize: 'medium',
+            start: String(Math.min(91, Math.max(1, Number(body.start) || 1))), fileType: 'png', imgDominantColor: 'white',
+          })
+          const response = await fetch(`https://www.googleapis.com/customsearch/v1?${params}`, { signal: AbortSignal.timeout(15_000) })
+          if (response.ok) results = parseGoogleImages(await response.json())
+        } catch (error) { console.warn('[product-images] google', error) }
       }
-      // Primero PNG con fondo blanco; si hay pocos resultados se amplía.
-      let results = await search(true)
       if (results.length < 4) {
-        const more = await search(false)
-        const seen = new Set(results.map(r => r.url))
-        results = [...results, ...more.filter(r => !seen.has(r.url))]
+        const first = Math.max(0, Number(body.start) || 0)
+        for (const [filters, query] of [
+          ['+filterui:photo-photo+filterui:imagesize-medium', buildImageQuery(name)],
+          ['+filterui:photo-photo', `${name} fondo blanco`],
+        ] as const) {
+          try {
+            const page = new URL('https://www.bing.com/images/search')
+            page.search = new URLSearchParams({ q: query, qft: filters, first: String(first), form: 'HDRSC3', setlang: 'es-AR', cc: 'AR' }).toString()
+            const response = await fetch(page, {
+              signal: AbortSignal.timeout(15_000),
+              headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36', 'Accept-Language': 'es-AR,es;q=0.9' },
+            })
+            if (!response.ok) continue
+            const seen = new Set(results.map(r => r.url))
+            results = [...results, ...parseBingImages(await response.text()).filter(r => !seen.has(r.url))]
+            if (results.length >= 12) break
+          } catch (error) { console.warn('[product-images] bing', error) }
+        }
       }
+      if (results.length === 0) return json({ error: 'No se pudo buscar en internet en este momento. Probá de nuevo en un rato o subí la foto desde tu equipo.' }, 502)
+      results = results.slice(0, 30)
       return json({ results })
     }
 

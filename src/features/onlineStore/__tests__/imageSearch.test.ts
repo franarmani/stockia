@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildImageQuery, isSafeImageUrl, parseGoogleImages } from '../../../../supabase/functions/_shared/imageSearch'
+import { buildImageQuery, isSafeImageUrl, parseBingImages, parseGoogleImages } from '../../../../supabase/functions/_shared/imageSearch'
 
 describe('búsqueda de fotos de producto', () => {
   it('siempre pide producto con fondo blanco', () => {
@@ -20,5 +20,20 @@ describe('búsqueda de fotos de producto', () => {
     ] })
     expect(results).toEqual([{ url: 'https://a.com/c.png', thumbnail: 'https://t.com/c.jpg', width: 800, height: 800, title: 'Cemento', source: 'https://a.com/p' }])
     expect(parseGoogleImages({})).toEqual([])
+  })
+})
+
+describe('lectura de Bing', () => {
+  const item = (data: object) => `<a class="iusc" style="height:180px" m="${JSON.stringify(data).replace(/"/g, '&quot;').replace(/&/g, '&amp;').replace(/&amp;quot;/g, '&quot;')}">`
+  it('extrae las fotos, sin repetidas ni inseguras', () => {
+    const html = [
+      item({ murl: 'https://i.com/a.jpg?w=2000&h=2000', turl: 'https://ts1.mm.bing.net/th?id=A&pid=15.1', t: 'Taladro \ue000Bosch\ue001', purl: 'https://tienda.com/p' }),
+      item({ murl: 'https://i.com/a.jpg?w=2000&h=2000', turl: 'https://ts1.mm.bing.net/th?id=A' }),
+      item({ murl: 'http://i.com/b.jpg', turl: 'https://ts1.mm.bing.net/th?id=B' }),
+    ].join('')
+    expect(parseBingImages(html)).toEqual([{ url: 'https://i.com/a.jpg?w=2000&h=2000', thumbnail: 'https://ts1.mm.bing.net/th?id=A&pid=15.1', width: 0, height: 0, title: 'Taladro Bosch', source: 'https://tienda.com/p' }])
+  })
+  it('sin resultados devuelve lista vacía', () => {
+    expect(parseBingImages('<html>captcha</html>')).toEqual([])
   })
 })
