@@ -19,6 +19,7 @@ import MusicDownloadPrompt from '@/features/music/MusicDownloadPrompt'
 import CashAutoCloser from '@/features/cash/CashAutoCloser'
 import ManagerPinModal from '@/features/roles/ManagerPinModal'
 import { checkIsTauriDesktop } from '@/sync/storage'
+import { isOAuthUser } from '@/features/onboarding/registration'
 import { syncEngine } from '@/sync/syncEngine'
 import { checkConnectivity, isOnline } from '@/sync/connectivity'
 import { saveOfflineSnapshot } from '@/desktop/offlineAuth'
@@ -54,6 +55,7 @@ const ComprobantesPage = lazy(() => import('@/pages/comprobantes/ComprobantesPag
 const QuotesPage = lazy(() => import('@/pages/quotes/QuotesPage'))
 const PromotionsPage = lazy(() => import('@/pages/promotions/PromotionsPage'))
 const WarehousesPage = lazy(() => import('@/pages/warehouses/WarehousesPage'))
+const CompleteRegistrationPage = lazy(() => import('@/pages/auth/CompleteRegistrationPage'))
 const LocalesPage = lazy(() => import('@/pages/locales/LocalesPage'))
 const HelpPage = lazy(() => import('@/pages/help/HelpPage'))
 const LoyaltyPage = lazy(() => import('@/pages/loyalty/LoyaltyPage'))
@@ -82,17 +84,20 @@ const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'))
 const PAYMENT_REMINDER_SNOOZE_MS = 15 * 60 * 1000
 
 /** CajaGo se usa solo como programa: en la web (salvo en desarrollo) el sistema lleva a descargarlo. */
+/**
+ * CajaGo se usa también desde el navegador (computadora, tablet y celular): la web ya no se bloquea.
+ * El programa de escritorio sigue siendo la opción con funcionamiento sin internet reforzado.
+ */
 function webAppBlocked() {
-  return !checkIsTauriDesktop() && !import.meta.env.DEV
+  return false
 }
 
-/** En la web solo se puede iniciar sesión para entrar al panel admin. */
 function webLoginAllowed() {
-  return new URLSearchParams(window.location.search).get('next') === '/admin'
+  return true
 }
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { user, loading, profile } = useAuthStore()
+  const { user, loading, profile, needsOnboarding } = useAuthStore()
   const { business } = useBusinessStore()
   const [sessionClosed, setSessionClosed] = useState(false)
   const [stuck, setStuck] = useState(false)
@@ -125,6 +130,8 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
       console.warn('[ProtectedRoute debug] error logging debug info', e)
     }
   }, [business, profile, sessionClosed])
+
+  if (user && !profile && needsOnboarding) return <Navigate to="/completar-registro" replace />
 
   // Loading OR (user exists but profile hasn't loaded yet) → show spinner
   if (loading || (user && !profile)) {
@@ -395,10 +402,15 @@ export default function App() {
           const cachedBiz = getCachedBusiness()
           if (cachedBiz) setBusiness(cachedBiz)
         } else if (lastProfileError?.includes('sin fila para este usuario')) {
-          // Solo cerramos sesión si expresamente el usuario no existe en la base de datos
-          try { sessionStorage.setItem('stockia_login_error', lastProfileError || '') } catch {}
-          await supabase.auth.signOut()
-          setUser(null)
+          if (isOAuthUser(session.user)) {
+            // Entró con Google por primera vez: falta crear su negocio.
+            useAuthStore.getState().setNeedsOnboarding(true)
+          } else {
+            // Solo cerramos sesión si expresamente el usuario no existe en la base de datos
+            try { sessionStorage.setItem('stockia_login_error', lastProfileError || '') } catch {}
+            await supabase.auth.signOut()
+            setUser(null)
+          }
         }
       }
       setLoading(false)
@@ -464,9 +476,13 @@ export default function App() {
             const cachedBiz = getCachedBusiness()
             if (cachedBiz) setBusiness(cachedBiz)
           } else if (lastProfileError?.includes('sin fila para este usuario')) {
-            try { sessionStorage.setItem('stockia_login_error', lastProfileError || '') } catch {}
-            await supabase.auth.signOut()
-            setUser(null)
+            if (isOAuthUser(session.user)) {
+              useAuthStore.getState().setNeedsOnboarding(true)
+            } else {
+              try { sessionStorage.setItem('stockia_login_error', lastProfileError || '') } catch {}
+              await supabase.auth.signOut()
+              setUser(null)
+            }
           }
         }
         setLoading(false)
@@ -522,6 +538,7 @@ export default function App() {
             )
           }
         />
+        <Route path="/completar-registro" element={<CompleteRegistrationPage />} />
         <Route path="/subscription-blocked" element={<SubscriptionBlockedPage />} />
         <Route path="/suscripcion/listo" element={<SubscriptionReturnPage />} />
         <Route path="/tienda/:slug" element={<StorefrontPage />} />

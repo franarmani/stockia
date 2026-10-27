@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/authStore'
 import { toast } from 'sonner'
 import AuthShell from '@/components/auth/AuthShell'
+import GoogleButton from '@/components/auth/GoogleButton'
 import { TRIAL_DAYS } from '@/features/onboarding/registration'
 import { Mail, Lock, ArrowRight, Eye, EyeOff, ShoppingCart, Package, BarChart3 } from 'lucide-react'
 
@@ -176,6 +177,7 @@ export default function LoginPage() {
             ) : (
               /* ─── Login form ─── */
               <form onSubmit={handleLogin} className="space-y-4">
+                <GoogleButton />
                 <div>
                   <label className="block text-[13px] font-medium text-[#FCFCFD]/70 mb-1.5">Email</label>
                   <div className="relative group">

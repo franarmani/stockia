@@ -132,3 +132,57 @@ export async function registerBusiness(data: RegistrationData): Promise<{ userId
 
   return { userId: auth.user.id, businessId: business.id, referralApplied }
 }
+
+/** ¿Entró con un proveedor externo (Google) y todavía no tiene negocio? Los de email se crean junto con el negocio. */
+export function isOAuthUser(user: { app_metadata?: Record<string, any> } | null | undefined): boolean {
+  const provider = user?.app_metadata?.provider
+  return !!provider && provider !== 'email'
+}
+
+/**
+ * Alta del negocio para quien entró con Google. El usuario ya existe en Supabase Auth:
+ * solo se crean el negocio y el perfil, con el mismo id. Nunca duplica: si la persona ya tiene
+ * perfil, o ya existe otra cuenta de CajaGo con ese email, se corta antes de crear nada.
+ */
+export async function completeOAuthRegistration(data: RegistrationData): Promise<{ businessId: string }> {
+  for (let step = 0; step < 2; step++) {
+    const error = validateRegistrationStep(step, data)
+    if (error) throw new Error(error)
+  }
+  const fullName = data.fullName.trim()
+  if (fullName.length < 2) throw new Error('Ingresá tu nombre')
+
+  const { data: sessionData } = await supabase.auth.getSession()
+  const user = sessionData.session?.user
+  if (!user) throw new Error('Tu sesión venció. Volvé a ingresar con Google.')
+  const email = (user.email ?? data.email).trim().toLowerCase()
+
+  const { data: hasProfile } = await (supabase as any).rpc('i_have_profile')
+  if (hasProfile === true) throw new Error('Esta cuenta ya tiene un negocio. Entrá desde el menú.')
+  const { data: otherAccount, error: guardError } = await (supabase as any).rpc('email_has_other_account')
+  if (guardError) throw new Error('No pudimos verificar tu cuenta. Probá de nuevo en un momento.')
+  if (otherAccount === true) {
+    throw new Error('Ya existe una cuenta de CajaGo con este email. Ingresá con tu email y contraseña (o escribinos para vincular Google).')
+  }
+
+  const trialEnd = new Date()
+  trialEnd.setDate(trialEnd.getDate() + TRIAL_DAYS)
+  const { data: business, error: businessError } = await supabase
+    .from('businesses')
+    .insert(businessRecord({ ...data, email }, trialEnd) as any)
+    .select()
+    .single()
+  if (businessError || !business) throw new Error('No se pudo crear el negocio. Probá de nuevo o escribinos.')
+
+  const { error: profileError } = await supabase.from('users').insert({
+    id: user.id,
+    business_id: business.id,
+    name: fullName,
+    email,
+    role: 'admin',
+  })
+  if (profileError) throw new Error('No se pudo crear tu usuario. Probá de nuevo o escribinos.')
+
+  try { localStorage.setItem('cajago_weather_city', `${data.city.trim()}, AR`) } catch {}
+  return { businessId: business.id }
+}

@@ -3,6 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
 import { toast } from 'sonner'
 import AuthShell from '@/components/auth/AuthShell'
+import GoogleButton from '@/components/auth/GoogleButton'
 import { TRIAL_DAYS } from '@/features/onboarding/registration'
 import RegistrationForm from '@/features/onboarding/RegistrationForm'
 import { Mail, Lock, User, Store, ArrowRight, Eye, EyeOff, Check, Gift, MapPin } from 'lucide-react'
@@ -33,6 +34,7 @@ export default function RegisterPage() {
         </p>
       }
     >
+            <div className="mb-4 space-y-4"><GoogleButton label="Registrarme con Google" /></div>
             <RegistrationForm
               initialReferral={searchParams.get('ref') || ''}
               onRegistered={async ({ referralApplied }) => {

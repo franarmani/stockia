@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils'
 import { formatCuit } from '@/features/purchases/cuit'
 import { AR_PROVINCES, BUSINESS_TYPES } from '@/config/businessTypes'
 import {
-  BUSINESS_IVA_CONDITIONS, REGISTRATION_STEPS, emptyRegistration, registerBusiness, validateRegistrationStep,
+  BUSINESS_IVA_CONDITIONS, REGISTRATION_STEPS, completeOAuthRegistration, emptyRegistration, registerBusiness, validateRegistrationStep,
   type RegistrationData,
 } from './registration'
 
@@ -14,13 +14,21 @@ export default function RegistrationForm({
   initialReferral = '',
   legalNotice,
   onRegistered,
+  oauthUser,
 }: {
   initialReferral?: string
+  /** Quien entró con Google: se piden solo los datos del negocio (2 pasos) y se usa su cuenta. */
+  oauthUser?: { email: string; fullName: string }
   legalNotice?: React.ReactNode
   onRegistered: (result: { email: string; password: string; referralApplied: boolean }) => Promise<void> | void
 }) {
   const [step, setStep] = useState(0)
-  const [data, setData] = useState<RegistrationData>({ ...emptyRegistration, referralCode: initialReferral })
+  const [data, setData] = useState<RegistrationData>({
+    ...emptyRegistration,
+    referralCode: initialReferral,
+    ...(oauthUser ? { email: oauthUser.email, fullName: oauthUser.fullName } : {}),
+  })
+  const lastStep = oauthUser ? 1 : REGISTRATION_STEPS.length - 1
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
 
@@ -30,12 +38,17 @@ export default function RegistrationForm({
     event.preventDefault()
     const error = validateRegistrationStep(step, data)
     if (error) { toast.error(error); return }
-    if (step < REGISTRATION_STEPS.length - 1) { setStep(step + 1); return }
+    if (step < lastStep) { setStep(step + 1); return }
 
     setLoading(true)
     try {
-      const result = await registerBusiness(data)
-      await onRegistered({ email: data.email.trim().toLowerCase(), password: data.password, referralApplied: result.referralApplied })
+      if (oauthUser) {
+        await completeOAuthRegistration(data)
+        await onRegistered({ email: data.email.trim().toLowerCase(), password: '', referralApplied: false })
+      } else {
+        const result = await registerBusiness(data)
+        await onRegistered({ email: data.email.trim().toLowerCase(), password: data.password, referralApplied: result.referralApplied })
+      }
     } catch (err: any) {
       toast.error(err?.message || 'No se pudo crear la cuenta')
     } finally {
@@ -50,7 +63,7 @@ export default function RegistrationForm({
   return (
     <form onSubmit={next} className="space-y-4">
       <ol className="flex items-center gap-2" aria-label="Pasos del registro">
-        {REGISTRATION_STEPS.map((name, index) => (
+        {REGISTRATION_STEPS.slice(0, lastStep + 1).map((name, index) => (
           <li key={name} className="flex-1">
             <div className={cn('h-1 rounded-full', index <= step ? 'bg-[#9aa9ff]' : 'bg-white/10')} />
             <p className={cn('mt-1.5 text-[10px] font-semibold uppercase tracking-wider', index === step ? 'text-[#FCFCFD]' : 'text-[#9CA6BA]/60')}>
@@ -179,10 +192,10 @@ export default function RegistrationForm({
         )}
         <button type="submit" disabled={loading}
           className="cg-btn-primary flex-1 h-12 text-sm">
-          {loading ? 'Creando cuenta...' : step < REGISTRATION_STEPS.length - 1 ? <>Siguiente <ArrowRight className="w-4 h-4" /></> : <>Crear cuenta gratis <ArrowRight className="w-4 h-4" /></>}
+          {loading ? 'Creando cuenta...' : step < lastStep ? <>Siguiente <ArrowRight className="w-4 h-4" /></> : <>{oauthUser ? 'Crear mi negocio' : 'Crear cuenta gratis'} <ArrowRight className="w-4 h-4" /></>}
         </button>
       </div>
-      {step === REGISTRATION_STEPS.length - 1 && legalNotice}
+      {step === lastStep && legalNotice}
     </form>
   )
 }
