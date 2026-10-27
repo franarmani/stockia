@@ -27,11 +27,11 @@ $utf8 = [Text.UTF8Encoding]::new($false)
 
 # 1. Misma versión en todos lados
 $packagePath = Join-Path $root 'package.json'
-[IO.File]::WriteAllText($packagePath, ((Get-Content $packagePath -Raw) -replace '(?m)^(\s*"version":\s*")[^"]+(")', "`${1}$Version`${2}"), $utf8)
+[IO.File]::WriteAllText($packagePath, (([IO.File]::ReadAllText($packagePath, $utf8)) -replace '(?m)^(\s*"version":\s*")[^"]+(")', "`${1}$Version`${2}"), $utf8)
 $tauriPath = Join-Path $root 'src-tauri\tauri.conf.json'
-[IO.File]::WriteAllText($tauriPath, ((Get-Content $tauriPath -Raw) -replace '(?m)^(\s*"version":\s*")[^"]+(")', "`${1}$Version`${2}"), $utf8)
+[IO.File]::WriteAllText($tauriPath, (([IO.File]::ReadAllText($tauriPath, $utf8)) -replace '(?m)^(\s*"version":\s*")[^"]+(")', "`${1}$Version`${2}"), $utf8)
 $cargoPath = Join-Path $root 'src-tauri\Cargo.toml'
-[IO.File]::WriteAllText($cargoPath, ((Get-Content $cargoPath -Raw) -replace '(?m)^version\s*=\s*"[^"]+"', "version = `"$Version`""), $utf8)
+[IO.File]::WriteAllText($cargoPath, (([IO.File]::ReadAllText($cargoPath, $utf8)) -replace '(?m)^version\s*=\s*"[^"]+"', "version = `"$Version`""), $utf8)
 $versionJson = [ordered]@{ version = $Version; buildDate = (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ'); critical = $true } | ConvertTo-Json
 [IO.File]::WriteAllText((Join-Path $root 'public\version.json'), $versionJson, $utf8)
 

@@ -2,7 +2,7 @@
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "CajaGo",
   "mainBinaryName": "CajaGo",
-  "version": "1.13.14",
+  "version": "1.13.15",
   "identifier": "com.cajago.pos",
   "build": {
     "frontendDist": "../dist",
