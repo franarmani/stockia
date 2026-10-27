@@ -8,7 +8,7 @@ import { useAuthStore } from '@/stores/authStore'
 import { useBusinessStore } from '@/stores/businessStore'
 import { usePOSStore } from '@/stores/posStore'
 import { formatCurrency, formatDate } from '@/lib/utils'
-import { openQuotePDF, getQuoteWhatsAppLink, type QuotePDFData } from '@/lib/quotePdf'
+import { openQuotePDF, downloadQuotePDF, getQuoteWhatsAppLink, type QuotePDFData } from '@/lib/quotePdf'
 import type { PrintMode } from '@/lib/documentLayout'
 import { IVA_CONDITIONS, QUOTE_STATUS_LABELS } from '@/types/database'
 import type { Quote, QuoteItem, QuoteStatus, Customer, Product, CartItem } from '@/types/database'
@@ -20,7 +20,7 @@ import LoadingSpinner from '@/components/ui/LoadingSpinner'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/Table'
 import QuoteFormModal from './QuoteFormModal'
 import {
-  ClipboardList, Plus, Search, Printer, Palette, MessageCircle, Eye,
+  ClipboardList, Plus, Search, Printer, Palette, MessageCircle, Eye, Download,
   CheckCircle2, XCircle, Trash2, ShoppingCart,
 } from 'lucide-react'
 import { toast } from 'sonner'
@@ -145,6 +145,17 @@ export default function QuotesPage() {
     const items = await loadItems(q.id)
     if (items.length === 0) { toast.error('El presupuesto no tiene productos'); return }
     openQuotePDF(buildPdfData(q, items), mode)
+  }
+
+  async function handleDownload(q: Quote, mode: PrintMode = 'color') {
+    const items = await loadItems(q.id)
+    if (items.length === 0) { toast.error('El presupuesto no tiene productos'); return }
+    try {
+      await downloadQuotePDF(buildPdfData(q, items), mode)
+    } catch (error: any) {
+      console.error('[Quotes] no se pudo descargar el PDF:', error)
+      toast.error('No se pudo generar el PDF. Probá con "Imprimir" y elegí "Guardar como PDF".')
+    }
   }
 
   async function handleWhatsApp(q: Quote) {
@@ -338,10 +349,13 @@ export default function QuotesPage() {
                         <Button size="icon" variant="ghost" title="Ver detalle" onClick={() => openDetail(q)}>
                           <Eye className="w-4 h-4" />
                         </Button>
-                        <Button size="icon" variant="ghost" title="PDF blanco y negro" onClick={() => handlePrint(q, 'bw')}>
+                        <Button size="icon" variant="ghost" title="Descargar PDF" onClick={() => handleDownload(q)}>
+                          <Download className="w-4 h-4" />
+                        </Button>
+                        <Button size="icon" variant="ghost" title="Imprimir (blanco y negro)" onClick={() => handlePrint(q, 'bw')}>
                           <Printer className="w-4 h-4" />
                         </Button>
-                        <Button size="icon" variant="ghost" title="PDF a color" onClick={() => handlePrint(q, 'color')}>
+                        <Button size="icon" variant="ghost" title="Imprimir (a color)" onClick={() => handlePrint(q, 'color')}>
                           <Palette className="w-4 h-4" />
                         </Button>
                         <Button size="icon" variant="ghost" title="Enviar por WhatsApp" onClick={() => handleWhatsApp(q)}>
@@ -451,11 +465,14 @@ export default function QuotesPage() {
 
             {/* Acciones */}
             <div className="flex flex-wrap gap-2 pt-1">
+              <Button onClick={() => handleDownload(detailQuote)}>
+                <Download className="w-4 h-4" /> Descargar PDF
+              </Button>
               <Button variant="outline" onClick={() => handlePrint(detailQuote, 'bw')}>
-                <Printer className="w-4 h-4" /> PDF B/N
+                <Printer className="w-4 h-4" /> Imprimir B/N
               </Button>
               <Button variant="outline" onClick={() => handlePrint(detailQuote, 'color')}>
-                <Palette className="w-4 h-4" /> PDF color
+                <Palette className="w-4 h-4" /> Imprimir color
               </Button>
               <Button variant="outline" onClick={() => handleWhatsApp(detailQuote)}>
                 <MessageCircle className="w-4 h-4" /> WhatsApp

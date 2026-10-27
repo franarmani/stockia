@@ -1,3 +1,4 @@
+import { saveBlob } from './saveFile'
 // @ts-ignore
 import html2pdf from 'html2pdf.js'
 import { generateInvoicePDF, type InvoicePDFData } from './invoicePdf'
@@ -65,20 +66,14 @@ export async function downloadInvoicePDF(
       },
     }
 
+    const { filename: _name, ...pdfOptions } = opt
     // @ts-ignore
-    await html2pdf().set(opt).from(sheetEl).save()
+    const blob: Blob = await html2pdf().set(pdfOptions).from(sheetEl).outputPdf('blob')
+    await saveBlob(blob, filename)
   } catch (err) {
-    console.warn('html2pdf direct render error, falling back to blob download:', err)
-    // Fallback: descargar como archivo HTML imprimible
-    const blob = new Blob([html], { type: 'text/html;charset=utf-8' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = filename.replace(/\.pdf$/i, '.html')
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    URL.revokeObjectURL(url)
+    console.warn('html2pdf direct render error, falling back to html download:', err)
+    // Respaldo: descargar como archivo HTML imprimible
+    await saveBlob(new Blob([html], { type: 'text/html;charset=utf-8' }), filename.replace(/\.pdf$/i, '.html'))
   } finally {
     if (container.parentNode) {
       document.body.removeChild(container)

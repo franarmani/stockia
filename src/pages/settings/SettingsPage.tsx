@@ -1,3 +1,4 @@
+import { saveBlob } from '@/lib/saveFile'
 import { getPlanById, normalizePlan, type PlanId } from '@/config/plans'
 import { AR_PROVINCES, BUSINESS_TYPES } from '@/config/businessTypes'
 import MpQrSettingsCard from '@/features/mpQr/MpQrSettingsCard'
@@ -272,12 +273,7 @@ export default function SettingsPage() {
       }
 
       const blob = new Blob([data.csr_pem], { type: 'application/pkcs10' })
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = data.csr_download_name || `stockia-${form.cuit.replace(/[-\s]/g, '')}.csr`
-      a.click()
-      URL.revokeObjectURL(url)
+      await saveBlob(blob, data.csr_download_name || `stockia-${form.cuit.replace(/[-\s]/g, '')}.csr`)
       updateCertStatus('csr_generated')
       toast.success('CSR generado y descargado')
     } catch (err: any) {

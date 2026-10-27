@@ -1,3 +1,4 @@
+import { saveBlob } from '@/lib/saveFile'
 import { supabase } from '@/lib/supabase'
 import type { DailySummary } from '@/types/database'
 
@@ -69,10 +70,5 @@ export function exportSummaryCSV(summary: DailySummary): void {
   ]
   const csv = rows.map(r => r.join(',')).join('\n')
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = `resumen-${summary.date}.csv`
-  a.click()
-  URL.revokeObjectURL(url)
+  saveBlob(blob, `resumen-${summary.date}.csv`).catch(() => {})
 }

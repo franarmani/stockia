@@ -1,3 +1,4 @@
+import { openPrintFrame } from '@/lib/documentLayout'
 /**
  * CajaGo — Thermal Ticket & Receipt Printing Module
  * Formats: 58mm and 80mm ESC/POS compatible thermal paper widths.
@@ -31,11 +32,7 @@ export interface ReceiptData {
 }
 
 export function printThermalReceipt(data: ReceiptData, format: '58mm' | '80mm' = '80mm') {
-  const printWindow = window.open('', '_blank', 'width=400,height=600')
-  if (!printWindow) {
-    window.print()
-    return
-  }
+  const printWindow = openPrintFrame()
 
   const is58 = format === '58mm'
   const widthClass = is58 ? 'width: 48mm; font-size: 11px;' : 'width: 72mm; font-size: 12px;'

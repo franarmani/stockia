@@ -1,5 +1,6 @@
 // Estado de cuenta corriente de un cliente: movimientos con saldo acumulado, en PDF (A4) o Excel.
 // @ts-ignore
+import { saveBlob } from '@/lib/saveFile'
 import html2pdf from 'html2pdf.js'
 import * as XLSX from 'xlsx'
 import { supabase } from '@/lib/supabase'
@@ -109,14 +110,14 @@ export async function downloadStatementPdf(businessName: string, customer: strin
   container.innerHTML = html
   document.body.appendChild(container)
   try {
-    await html2pdf().set({
+    const blob: Blob = await html2pdf().set({
       margin: 0,
-      filename: fileName(customer, 'pdf'),
       image: { type: 'jpeg', quality: 0.96 },
       html2canvas: { scale: 2, useCORS: true, logging: false },
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
       pagebreak: { mode: ['css', 'legacy'] },
-    } as any).from(container.querySelector('.sheet') as HTMLElement).save()
+    } as any).from(container.querySelector('.sheet') as HTMLElement).outputPdf('blob')
+    await saveBlob(blob, fileName(customer, 'pdf'))
   } finally {
     container.remove()
   }

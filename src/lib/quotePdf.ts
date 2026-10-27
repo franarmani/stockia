@@ -6,6 +6,7 @@
  * lleva la fecha de validez y la leyenda que lo aclara.
  */
 
+import { savePdfFromHtml } from './saveFile'
 import { formatCurrency } from '@/lib/utils'
 import {
   documentStyles, emitterBlock, watermarkBlock, printOnReadyScript, openPrintWindow,
@@ -202,6 +203,13 @@ ${emitterBlock({
 export async function openQuotePDF(data: QuotePDFData, mode: PrintMode = 'color') {
   const logoUrl = await inlineImage(data.logoUrl)
   openPrintWindow(generateQuotePDF({ ...data, logoUrl }, mode, true))
+}
+
+/** Descarga el presupuesto como PDF (se guarda en Descargas y se abre). */
+export async function downloadQuotePDF(data: QuotePDFData, mode: PrintMode = 'color') {
+  const logoUrl = await inlineImage(data.logoUrl)
+  const html = generateQuotePDF({ ...data, logoUrl }, mode, false)
+  await savePdfFromHtml(html, `Presupuesto_${pad(data.quoteNumber, 8)}.pdf`, { margin: [5, 5, 5, 5] as [number, number, number, number] })
 }
 
 /** Link de WhatsApp con el resumen del presupuesto. */

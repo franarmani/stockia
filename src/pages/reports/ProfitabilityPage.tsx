@@ -1,3 +1,4 @@
+import { saveBlob } from '@/lib/saveFile'
 import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
@@ -533,10 +534,7 @@ export default function ProfitabilityPage() {
 
     const csvContent = [headers.join(';'), ...rows.map((r) => r.join(';'))].join('\n')
     const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' })
-    const link = document.createElement('a')
-    link.href = URL.createObjectURL(blob)
-    link.download = `rentabilidad_${viewMode}_${period}.csv`
-    link.click()
+    saveBlob(blob, `rentabilidad_${viewMode}_${period}.csv`).catch(() => {})
   }
 
   // Margin color helper

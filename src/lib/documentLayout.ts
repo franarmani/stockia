@@ -395,8 +395,22 @@ export function watermarkBlock(logoUrl: string | null | undefined, fallbackText?
 
 /** Abre un documento HTML en ventana nueva para imprimir o guardar como PDF. */
 export function openPrintWindow(html: string) {
-  const w = window.open('', '_blank', 'width=800,height=1000')
-  if (!w) return
+  const w = openPrintFrame()
+  w.document.open()
   w.document.write(html)
   w.document.close()
+}
+
+/**
+ * Ventana de impresión sin abrir otra ventana: en el programa de escritorio window.open('') no
+ * funciona, así que se imprime desde un iframe oculto. Devuelve lo justo para usarlo como una ventana.
+ */
+export function openPrintFrame() {
+  const frame = document.createElement('iframe')
+  frame.setAttribute('aria-hidden', 'true')
+  frame.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;opacity:0;pointer-events:none'
+  document.body.appendChild(frame)
+  const win = frame.contentWindow!
+  setTimeout(() => frame.remove(), 10 * 60_000)
+  return { document: win.document, focus: () => win.focus(), print: () => win.print(), close: () => {} }
 }

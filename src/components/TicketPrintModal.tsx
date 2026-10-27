@@ -1,3 +1,4 @@
+import { openPrintFrame } from '@/lib/documentLayout'
 import { useEffect, useRef, useState } from 'react'
 import Modal from '@/components/ui/Modal'
 import Button from '@/components/ui/Button'
@@ -95,8 +96,7 @@ export default function TicketPrintModal({ open, onClose, data, width = '80mm' }
     const content = printRef.current
     if (!content) return
 
-    const printWindow = window.open('', '_blank', 'width=400,height=600')
-    if (!printWindow) return
+    const printWindow = openPrintFrame()
 
     const accentColor = data?.primaryColor || '#1DB954'
     printWindow.document.write(`

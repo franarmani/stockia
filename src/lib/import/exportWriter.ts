@@ -3,6 +3,7 @@
  * Generates .xlsx and .csv from products data.
  */
 
+import { saveBlob } from '@/lib/saveFile'
 import * as XLSX from 'xlsx'
 import Papa from 'papaparse'
 import { generateTemplate } from './excelParser'
@@ -56,14 +57,7 @@ function buildRows(products: ProductWithCategory[], columns: ExportColumn[]): Re
 }
 
 export function triggerDownload(blob: Blob, filename: string) {
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = filename
-  document.body.appendChild(a)
-  a.click()
-  document.body.removeChild(a)
-  URL.revokeObjectURL(url)
+  saveBlob(blob, filename).catch(() => {})
 }
 
 export function toArrayBuffer(bytes: Uint8Array): ArrayBuffer {

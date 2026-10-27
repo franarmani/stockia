@@ -1,3 +1,4 @@
+import { openPrintFrame } from '@/lib/documentLayout'
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { syncEngine } from '@/sync/syncEngine'
@@ -173,8 +174,7 @@ export default function CashRegisterPage() {
     const opening = currentSession?.opening_amount || 0
     const now = new Date().toLocaleString('es-AR')
     const openedAt = currentSession ? new Date(currentSession.opened_at).toLocaleString('es-AR') : ''
-    const w = window.open('', '_blank', 'width=320,height=600')
-    if (!w) return
+    const w = openPrintFrame()
     w.document.write(`<!DOCTYPE html><html><head><title>Reporte de Caja</title>
       <style>body{font-family:monospace;font-size:12px;width:280px;margin:0 auto;padding:16px}
       .sep{border-top:1px dashed #000;margin:8px 0}

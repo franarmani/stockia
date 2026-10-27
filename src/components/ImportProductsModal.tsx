@@ -2,6 +2,7 @@
  * ImportProductsModal.tsx
  * 4-step wizard: upload → column mapping → preview/validate → import + results
  */
+import { saveBlob } from '@/lib/saveFile'
 import { useState, useRef, useCallback } from 'react'
 import Modal from '@/components/ui/Modal'
 import Button from '@/components/ui/Button'
@@ -169,18 +170,14 @@ export default function ImportProductsModal({ open, onClose, onDone }: Props) {
     const rows = errors.map(e => ({ Fila: e.rowIndex, Campo: e.field, Error: e.message, Valor: String(e.value ?? '') }))
     const csv = Papa.unparse(rows, { quotes: true })
     const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a'); a.href = url; a.download = 'errores_importacion.csv'
-    document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url)
+    saveBlob(blob, 'errores_importacion.csv').catch(() => {})
   }
 
   function downloadTemplate() {
     const buf = generateTemplate()
     const arrayBuffer = Uint8Array.from(buf).buffer
     const blob = new Blob([arrayBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a'); a.href = url; a.download = 'plantilla_productos.xlsx'
-    document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url)
+    saveBlob(blob, 'plantilla_productos.xlsx').catch(() => {})
   }
 
   const errorRows = mappedRows.filter(r => r.errors.length > 0)

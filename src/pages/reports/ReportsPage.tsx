@@ -1,3 +1,4 @@
+import { saveBlob } from '@/lib/saveFile'
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
@@ -200,10 +201,7 @@ export default function ReportsPage() {
     })
     const csv = rows.map(r => r.join(',')).join('\n')
     const blob = new Blob([csv], { type: 'text/csv' })
-    const a = document.createElement('a')
-    a.href = URL.createObjectURL(blob)
-    a.download = `ventas-${period}.csv`
-    a.click()
+    saveBlob(blob, `ventas-${period}.csv`).catch(() => {})
   }
 
   if (loading) return <div className="flex items-center justify-center h-96"><div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full" /></div>

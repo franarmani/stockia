@@ -1,6 +1,7 @@
 // Reporte mensual del negocio en PDF (A4): ventas, ganancia, comparación con el mes anterior,
 // ventas por día, medios de pago, productos y categorías. Se arma en HTML y se descarga con html2pdf.
 // @ts-ignore
+import { saveBlob } from '@/lib/saveFile'
 import html2pdf from 'html2pdf.js'
 import { supabase } from '@/lib/supabase'
 import { inlineImage } from '@/lib/documentLayout'
@@ -245,7 +246,9 @@ export async function downloadMonthlyReport(data: MonthlyReportData) {
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
       pagebreak: { mode: ['css', 'legacy'], avoid: '.section' },
     }
-    await html2pdf().set(options).from(container.querySelector('.sheet') as HTMLElement).save()
+    const { filename, ...pdfOptions } = options
+    const blob: Blob = await html2pdf().set(pdfOptions).from(container.querySelector('.sheet') as HTMLElement).outputPdf('blob')
+    await saveBlob(blob, filename)
   } finally {
     container.remove()
   }
