@@ -43,6 +43,7 @@ import {
   reportNetworkFailure,
 } from './connectivity'
 import { migrateLegacyOfflineSales } from './legacyMigration'
+import { fingerprint, hadRecentRemoteWrite } from './freshness'
 import { getDeviceId } from '../desktop/device'
 import type {
   SyncOperation,
@@ -770,85 +771,297 @@ class SyncEngine {
     }
   }
 
+  /** Notifica a las pantallas suscriptas que la base local recibió datos nuevos en segundo plano. */
+  public notifyDataUpdated(): void {
+    this.syncedListeners.forEach((fn) => fn())
+  }
+
   // ──────────────────────────────────────────────
-  // DESCARGA (servidor → base local)
+  // DESCARGA LOCAL-FIRST (0ms desde PC + refresco en 2do plano)
   // ──────────────────────────────────────────────
+
+  private productsRefreshInFlight = new Map<string, Promise<LocalProduct[]>>()
+  private productsLastRefreshedAt = new Map<string, number>()
+  private customersRefreshInFlight = new Map<string, Promise<LocalCustomer[]>>()
+  private customersLastRefreshedAt = new Map<string, number>()
+  private rowsRefreshInFlight = new Map<string, Promise<any[]>>()
+  private rowsLastRefreshedAt = new Map<string, number>()
+
+  private async refreshProductsFromServer(businessId: string, notifyIfChanged: boolean, previousFp?: string): Promise<LocalProduct[]> {
+    const existing = this.productsRefreshInFlight.get(businessId)
+    if (existing) return existing
+
+    const promise = (async () => {
+      try {
+        const data = await fetchAllProductsInBatches(businessId)
+        const mapped: LocalProduct[] = data.map((p: any) => ({
+          ...p,
+          sale_price: Number(p.sale_price) || 0,
+          purchase_price: Number(p.purchase_price) || 0,
+          avg_cost: Number(p.avg_cost) || 0,
+          unit: p.unit || 'u',
+          stock: Number(p.stock) || 0,
+          stock_min: Number(p.stock_min) || 0,
+          active: Boolean(p.active),
+          updated_at: p.updated_at || p.created_at || new Date().toISOString(),
+        }))
+
+        if (await this.hasPendingWrites(businessId, 'products')) return getLocalProducts(businessId)
+        this.productsLastRefreshedAt.set(businessId, Date.now())
+        const nextFp = fingerprint(mapped)
+        if (!previousFp || nextFp !== previousFp) {
+          await saveLocalProducts(mapped, businessId)
+          if (notifyIfChanged) this.notifyDataUpdated()
+        }
+        return mapped
+      } catch (err) {
+        if (isNetworkError(err)) reportNetworkFailure()
+        console.warn('[CajaGo Sync] Failed to pull latest products:', err)
+        return getLocalProducts(businessId)
+      } finally {
+        this.productsRefreshInFlight.delete(businessId)
+      }
+    })()
+
+    this.productsRefreshInFlight.set(businessId, promise)
+    return promise
+  }
 
   /**
-   * Pull fresh product catalog to the local DB. If there are local writes still waiting
-   * to sync (or the server is unreachable) the local snapshot is returned untouched.
+   * Devuelve el catálogo de productos desde la base local al instante si ya existe en la PC,
+   * y actualiza en segundo plano desde Supabase sin frenar la navegación.
    */
-  public async pullLatestProducts(businessId: string): Promise<LocalProduct[]> {
+  public async pullLatestProducts(businessId: string, options?: { forceRemote?: boolean }): Promise<LocalProduct[]> {
     await this.init()
-    if (!isOnline() || await this.hasPendingWrites(businessId, 'products')) return getLocalProducts(businessId)
+    const local = await getLocalProducts(businessId)
+    if (!isOnline() || await this.hasPendingWrites(businessId, 'products')) return local
 
-    try {
-      const data = await fetchAllProductsInBatches(businessId)
-      const mapped: LocalProduct[] = data.map((p: any) => ({
-        ...p,
-        sale_price: Number(p.sale_price) || 0,
-        purchase_price: Number(p.purchase_price) || 0,
-        avg_cost: Number(p.avg_cost) || 0,
-        unit: p.unit || 'u',
-        stock: Number(p.stock) || 0,
-        stock_min: Number(p.stock_min) || 0,
-        active: Boolean(p.active),
-        updated_at: p.updated_at || p.created_at || new Date().toISOString(),
-      }))
-
-      // Una venta pudo entrar a la cola mientras descargábamos.
-      if (await this.hasPendingWrites(businessId, 'products')) return getLocalProducts(businessId)
-      await saveLocalProducts(mapped, businessId)
-      return mapped
-    } catch (err) {
-      if (isNetworkError(err)) reportNetworkFailure()
-      console.warn('[CajaGo Sync] Failed to pull latest products:', err)
-      return getLocalProducts(businessId)
+    const forceRemote = options?.forceRemote || hadRecentRemoteWrite()
+    if (local.length > 0 && !forceRemote) {
+      const last = this.productsLastRefreshedAt.get(businessId) || 0
+      if (Date.now() - last > 20_000) {
+        const prevFp = fingerprint(local)
+        void this.refreshProductsFromServer(businessId, true, prevFp)
+      }
+      return local
     }
+
+    return this.refreshProductsFromServer(businessId, false)
   }
 
-  public async pullLatestCustomers(businessId: string): Promise<LocalCustomer[]> {
-    await this.init()
-    if (!isOnline() || await this.hasPendingWrites(businessId, 'customers')) return getLocalCustomers(businessId)
+  private async refreshCustomersFromServer(businessId: string, notifyIfChanged: boolean, previousFp?: string): Promise<LocalCustomer[]> {
+    const existing = this.customersRefreshInFlight.get(businessId)
+    if (existing) return existing
 
-    try {
-      const { data, error } = await supabase
-        .from('customers')
-        .select('*')
-        .eq('business_id', businessId)
-        .order('name')
+    const promise = (async () => {
+      try {
+        const { data, error } = await supabase
+          .from('customers')
+          .select('*')
+          .eq('business_id', businessId)
+          .order('name')
 
-      if (error || !data) throw error || new Error('Sin datos')
-      const customers = data as LocalCustomer[]
-      if (await this.hasPendingWrites(businessId, 'customers')) return getLocalCustomers(businessId)
-      await saveLocalCustomers(customers, businessId)
-      return customers
-    } catch (error) {
-      if (isNetworkError(error)) reportNetworkFailure()
-      console.warn('[CajaGo Sync] Failed to pull latest customers:', error)
-      return getLocalCustomers(businessId)
-    }
+        if (error || !data) throw error || new Error('Sin datos')
+        const customers = data as LocalCustomer[]
+        if (await this.hasPendingWrites(businessId, 'customers')) return getLocalCustomers(businessId)
+        this.customersLastRefreshedAt.set(businessId, Date.now())
+        const nextFp = fingerprint(customers)
+        if (!previousFp || nextFp !== previousFp) {
+          await saveLocalCustomers(customers, businessId)
+          if (notifyIfChanged) this.notifyDataUpdated()
+        }
+        return customers
+      } catch (error) {
+        if (isNetworkError(error)) reportNetworkFailure()
+        console.warn('[CajaGo Sync] Failed to pull latest customers:', error)
+        return getLocalCustomers(businessId)
+      } finally {
+        this.customersRefreshInFlight.delete(businessId)
+      }
+    })()
+
+    this.customersRefreshInFlight.set(businessId, promise)
+    return promise
   }
 
-  /** Descarga genérica para tablas secundarias guardadas en local_rows. */
+  public async pullLatestCustomers(businessId: string, options?: { forceRemote?: boolean }): Promise<LocalCustomer[]> {
+    await this.init()
+    const local = await getLocalCustomers(businessId)
+    if (!isOnline() || await this.hasPendingWrites(businessId, 'customers')) return local
+
+    const forceRemote = options?.forceRemote || hadRecentRemoteWrite()
+    if (local.length > 0 && !forceRemote) {
+      const last = this.customersLastRefreshedAt.get(businessId) || 0
+      if (Date.now() - last > 20_000) {
+        const prevFp = fingerprint(local)
+        void this.refreshCustomersFromServer(businessId, true, prevFp)
+      }
+      return local
+    }
+
+    return this.refreshCustomersFromServer(businessId, false)
+  }
+
+  /** Descarga genérica local-first para tablas secundarias guardadas en local_rows. */
   public async pullRows<T extends { id: string }>(
     table: SyncTable,
     businessId: string,
-    fetchRemote: () => PromiseLike<{ data: T[] | null; error: any }>
+    fetchRemote: () => PromiseLike<{ data: T[] | null; error: any }>,
+    options?: { forceRemote?: boolean }
   ): Promise<T[]> {
     await this.init()
-    if (!isOnline() || await this.hasPendingWrites(businessId, table)) return getLocalRows<T>(table, businessId)
+    const local = await getLocalRows<T>(table, businessId)
+    if (!isOnline() || await this.hasPendingWrites(businessId, table)) return local
+
+    const key = `${table}:${businessId}`
+    const forceRemote = options?.forceRemote || hadRecentRemoteWrite()
+    if (local.length > 0 && !forceRemote) {
+      const last = this.rowsLastRefreshedAt.get(key) || 0
+      if (Date.now() - last > 20_000 && !this.rowsRefreshInFlight.has(key)) {
+        const prevFp = fingerprint(local)
+        const bgPromise = (async () => {
+          try {
+            const { data, error } = await fetchRemote()
+            if (error || !data) throw error || new Error('Sin datos')
+            if (await this.hasPendingWrites(businessId, table)) return getLocalRows<T>(table, businessId)
+            this.rowsLastRefreshedAt.set(key, Date.now())
+            if (fingerprint(data) !== prevFp) {
+              await saveLocalRows(table, businessId, data)
+              this.notifyDataUpdated()
+            }
+            return data
+          } catch (error) {
+            if (isNetworkError(error)) reportNetworkFailure()
+            return local
+          } finally {
+            this.rowsRefreshInFlight.delete(key)
+          }
+        })()
+        this.rowsRefreshInFlight.set(key, bgPromise)
+      }
+      return local
+    }
 
     try {
       const { data, error } = await fetchRemote()
       if (error || !data) throw error || new Error('Sin datos')
       if (await this.hasPendingWrites(businessId, table)) return getLocalRows<T>(table, businessId)
+      this.rowsLastRefreshedAt.set(key, Date.now())
       await saveLocalRows(table, businessId, data)
       return data
     } catch (error) {
       if (isNetworkError(error)) reportNetworkFailure()
       console.warn(`[CajaGo Sync] Failed to pull ${table}:`, error)
-      return getLocalRows<T>(table, businessId)
+      return local
+    }
+  }
+
+  /**
+   * Precarga inicial rápida al abrir CajaGo:
+   * 1. Calienta la caché en memoria RAM desde SQLite/IndexedDB de la PC.
+   * 2. Sube cualquier operación pendiente en la cola local.
+   * 3. Descarga en paralelo las tablas principales y reportes del mes a la PC.
+   */
+  public async preloadBusinessData(businessId: string): Promise<void> {
+    await this.init()
+
+    // 1. Calentar caché en RAM desde disco local inmediatamente
+    await Promise.all([
+      getLocalProducts(businessId),
+      getLocalCustomers(businessId),
+      getLocalRows('categories', businessId),
+      getLocalRows('suppliers', businessId),
+      getLocalRows('promotions', businessId),
+      getLocalRows('loyalty_rewards', businessId),
+      getLocalRows('warehouses', businessId),
+    ]).catch(() => {})
+
+    if (!isOnline()) return
+
+    // 2. Subir cola pendiente y refrescar catálogo completo en segundo plano
+    void (async () => {
+      try {
+        await this.processQueue()
+      } catch {}
+
+      await Promise.allSettled([
+        this.pullLatestProducts(businessId, { forceRemote: true }),
+        this.pullLatestCustomers(businessId, { forceRemote: true }),
+        this.pullRows<any>('categories', businessId, () => supabase.from('categories').select('*').eq('business_id', businessId), { forceRemote: true }),
+        this.pullRows<any>('suppliers', businessId, () => supabase.from('suppliers').select('*').eq('business_id', businessId), { forceRemote: true }),
+        this.pullRows<any>('promotions', businessId, () => (supabase as any).from('promotions').select('*').eq('business_id', businessId), { forceRemote: true }),
+        this.pullRows<any>('loyalty_rewards', businessId, () => (supabase as any).from('loyalty_rewards').select('*').eq('business_id', businessId), { forceRemote: true }),
+        this.pullRows<any>('warehouses', businessId, () => (supabase as any).from('warehouses').select('*').eq('business_id', businessId), { forceRemote: true }),
+        this.warmAnalyticsCache(businessId),
+      ])
+    })()
+  }
+
+  /**
+   * Pre-descarga en segundo plano las ventas de los últimos 30 días / mes actual y las guarda
+   * en local_config para que Reportes y Rentabilidad abran en 0ms sin pantalla de carga.
+   */
+  private async warmAnalyticsCache(businessId: string): Promise<void> {
+    try {
+      const now = new Date()
+      const dayKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+      const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString()
+      const weekStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7).toISOString()
+      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
+      const thirtyDaysStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 30).toISOString()
+      const earliestISO = monthStart < thirtyDaysStart ? monthStart : thirtyDaysStart
+
+      let allSales: any[] = []
+      let from = 0
+      const batchSize = 1000
+      let hasMore = true
+
+      while (hasMore) {
+        const { data, error } = await supabase
+          .from('sales')
+          .select('id, business_id, total, payment_method, seller_id, customer_id, created_at, sale_items(product_id, quantity, price, cost_at_sale), seller:users!sales_seller_id_fkey(name), customer:customers(name)')
+          .eq('business_id', businessId)
+          .gte('created_at', earliestISO)
+          .order('created_at', { ascending: false })
+          .range(from, from + batchSize - 1)
+
+        if (error) return
+        if (data && data.length > 0) {
+          allSales = allSales.concat(data)
+          hasMore = data.length === batchSize
+          from += batchSize
+        } else {
+          hasMore = false
+        }
+      }
+
+      const sellersRes = await supabase.from('users').select('id, name').eq('business_id', businessId)
+      const sellers = sellersRes.data || []
+
+      const sales30d = allSales.filter((s) => s.created_at >= thirtyDaysStart)
+      const salesMonth = allSales.filter((s) => s.created_at >= monthStart)
+      const salesWeek = allSales.filter((s) => s.created_at >= weekStart)
+      const salesToday = allSales.filter((s) => s.created_at >= todayStart)
+
+      const soldIdsSet = new Set<string>()
+      sales30d.forEach((s) => {
+        s.sale_items?.forEach((si: any) => {
+          if (si.product_id) soldIdsSet.add(si.product_id)
+        })
+      })
+      const soldIds = Array.from(soldIdsSet)
+
+      await Promise.all([
+        setLocalConfig(`read_cache:reports:${businessId}:month:${dayKey}`, JSON.stringify({ sales: salesMonth, sellers, soldIds })),
+        setLocalConfig(`read_cache:reports:${businessId}:week:${dayKey}`, JSON.stringify({ sales: salesWeek, sellers, soldIds })),
+        setLocalConfig(`read_cache:profitability:${businessId}:month:${monthStart.slice(0, 10)}:`, JSON.stringify(salesMonth)),
+        setLocalConfig(`read_cache:profitability:${businessId}:30days:${thirtyDaysStart.slice(0, 10)}:`, JSON.stringify(sales30d)),
+        setLocalConfig(`read_cache:profitability:${businessId}:7days:${weekStart.slice(0, 10)}:`, JSON.stringify(salesWeek)),
+        setLocalConfig(`read_cache:profitability:${businessId}:today:${todayStart.slice(0, 10)}:`, JSON.stringify(salesToday)),
+      ])
+      this.notifyDataUpdated()
+    } catch {
+      // Silencioso: es precarga en segundo plano
     }
   }
 }

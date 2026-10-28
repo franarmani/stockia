@@ -27,7 +27,7 @@ const PAYMENT_ICONS: Record<string, typeof Banknote> = {
 }
 
 // Trae todas las ventas del período en lotes de 1000 (límite por defecto de Supabase),
-// para que los totales del reporte no se trunquen en negocios con mucho volumen.
+// sin el join pesado de product:products(*) (los productos ya están en la base local).
 async function fetchAllSalesInBatches(businessId: string, startISO: string): Promise<any[]> {
   let allSales: any[] = []
   let from = 0
@@ -37,7 +37,7 @@ async function fetchAllSalesInBatches(businessId: string, startISO: string): Pro
   while (hasMore) {
     const { data, error } = await supabase
       .from('sales')
-      .select('*, sale_items(*, product:products(*)), seller:users!sales_seller_id_fkey(name), customer:customers(name)')
+      .select('id, business_id, total, payment_method, seller_id, customer_id, created_at, sale_items(product_id, quantity, price, cost_at_sale), seller:users!sales_seller_id_fkey(name), customer:customers(name)')
       .eq('business_id', businessId)
       .gte('created_at', startISO)
       .order('created_at', { ascending: false })
@@ -66,49 +66,72 @@ export default function ReportsPage() {
   const [dormantProducts, setDormantProducts] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => { if (profile?.business_id) fetchAll() }, [profile?.business_id, period])
+  useEffect(() => {
+    if (!profile?.business_id) return
+    fetchAll(false)
+    const unsub = syncEngine.onSynced(() => {
+      fetchAll(true)
+    })
+    return unsub
+  }, [profile?.business_id, period])
 
-  async function fetchAll() {
-    setLoading(true)
+  async function fetchAll(silent = false) {
+    if (!silent && sales.length === 0) setLoading(true)
     const now = new Date()
     let start: string
     if (period === 'month') {
       start = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
     } else {
-      start = new Date(now.getTime() - 7 * 86400000).toISOString()
+      start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7).toISOString()
     }
-    const thirtyDaysAgo = new Date(now.getTime() - 30 * 86400000).toISOString()
+    const thirtyDaysAgo = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 30).toISOString()
 
-    // Sin conexión se muestra el último reporte guardado en este equipo.
+    // Con datos en la PC se muestra al instante (0ms) y se actualiza en segundo plano.
     const businessId = profile!.business_id
     try {
       const [report, products] = await Promise.all([
         cachedRead(`reports:${businessId}:${period}:${todayKey()}`, async () => {
-          const [allSales, sellersRes, recentRes] = await Promise.all([
-            fetchAllSalesInBatches(businessId, start),
+          const earliest = start < thirtyDaysAgo ? start : thirtyDaysAgo
+          const [fetchedSales, sellersRes] = await Promise.all([
+            fetchAllSalesInBatches(businessId, earliest),
             supabase.from('users').select('id, name').eq('business_id', businessId),
-            // Products with no sale items in 30 days
-            supabase
-              .from('sale_items').select('product_id, sale:sales!inner(created_at, business_id)')
-              .gte('sale.created_at', thirtyDaysAgo).eq('sale.business_id', businessId),
           ])
           if (sellersRes.error) throw sellersRes.error
-          if (recentRes.error) throw recentRes.error
+          const allSales = fetchedSales.filter((s: any) => s.created_at >= start)
+          const soldIdsSet = new Set<string>()
+          fetchedSales.forEach((s: any) => {
+            if (s.created_at >= thirtyDaysAgo) {
+              s.sale_items?.forEach((si: any) => {
+                if (si.product_id) soldIdsSet.add(si.product_id)
+              })
+            }
+          })
           return {
             sales: allSales,
             sellers: sellersRes.data || [],
-            soldIds: (recentRes.data || []).map((si: any) => si.product_id) as string[],
+            soldIds: Array.from(soldIdsSet),
           }
         }),
         syncEngine.pullLatestProducts(businessId),
       ])
 
-      setSales(report.sales)
+      const productMap = new Map<string, any>()
+      products.forEach((p: any) => productMap.set(p.id, p))
+
+      const enrichedSales = (report.sales || []).map((s: any) => ({
+        ...s,
+        sale_items: s.sale_items?.map((i: any) => ({
+          ...i,
+          product: i.product || productMap.get(i.product_id) || null,
+        })),
+      }))
+
+      setSales(enrichedSales)
       setSellers(report.sellers)
       const soldIds = new Set(report.soldIds)
       setDormantProducts(products.filter((p: any) => p.active !== false && !soldIds.has(p.id)).slice(0, 10))
     } catch (error: any) {
-      toast.error(error?.message || 'No se pudieron cargar los reportes')
+      if (!silent) toast.error(error?.message || 'No se pudieron cargar los reportes')
     } finally {
       setLoading(false)
     }

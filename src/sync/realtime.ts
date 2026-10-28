@@ -55,7 +55,7 @@ class RealtimeManager {
           this.stockListeners.forEach((fn) => fn(payload))
           // Automatically refresh local products snapshot
           if (isOnline()) {
-            syncEngine.pullLatestProducts(businessId)
+            syncEngine.pullLatestProducts(businessId, { forceRemote: true })
           }
         }
       )

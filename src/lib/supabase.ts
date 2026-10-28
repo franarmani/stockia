@@ -5,6 +5,7 @@ const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://mrpenblsmooeqz
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || ''
 
 import { checkIsTauriDesktop } from '@/sync/storage'
+import { isRemoteWriteRequest, markRemoteWrite } from '@/sync/freshness'
 
 /**
  * Conexión con reintento por proxy.
@@ -64,6 +65,9 @@ async function fetchWithTimeout(url: string, init: RequestInit | undefined, ms: 
 
 const fetchWithProxyFallback: typeof fetch = async (input, init) => {
   const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url
+  // Una escritura hace que las pantallas lean del servidor unos segundos (ver sync/freshness).
+  const method = init?.method || (typeof input === 'object' && !(input instanceof URL) ? input.method : 'GET') || 'GET'
+  if (url.startsWith(supabaseUrl) && isRemoteWriteRequest(url, method)) markRemoteWrite()
 
   // En la aplicación de escritorio o peticiones que no van a Supabase: conexión directa nativa.
   if (!url.startsWith(supabaseUrl)) return fetch(input, init)

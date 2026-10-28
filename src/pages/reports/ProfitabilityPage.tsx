@@ -87,12 +87,15 @@ export default function ProfitabilityPage() {
   const [mobileTableView, setMobileTableView] = useState(false)
 
   useEffect(() => {
-    if (profile?.business_id) {
-      loadAllData()
-    }
+    if (!profile?.business_id) return
+    loadAllData(false)
+    const unsub = syncEngine.onSynced(() => {
+      loadAllData(true)
+    })
+    return unsub
   }, [profile?.business_id, period, customStart, customEnd])
 
-  // Get date limits based on preset
+  // Get date limits based on preset (day-aligned so local cache keys stay stable throughout the day)
   function getDateLimits(): { startISO?: string; endISO?: string } {
     const now = new Date()
     let start: Date | null = null
@@ -101,11 +104,11 @@ export default function ProfitabilityPage() {
     if (period === 'today') {
       start = new Date(now.getFullYear(), now.getMonth(), now.getDate())
     } else if (period === '7days') {
-      start = new Date(now.getTime() - 7 * 86400000)
+      start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7)
     } else if (period === 'month') {
       start = new Date(now.getFullYear(), now.getMonth(), 1)
     } else if (period === '30days') {
-      start = new Date(now.getTime() - 30 * 86400000)
+      start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 30)
     } else if (period === 'year') {
       start = new Date(now.getFullYear(), 0, 1)
     } else if (period === 'custom') {
@@ -119,13 +122,13 @@ export default function ProfitabilityPage() {
     }
   }
 
-  async function loadAllData() {
-    setLoading(true)
+  async function loadAllData(silent = false) {
+    if (!silent && products.length === 0 && sales.length === 0) setLoading(true)
     try {
       const bizId = profile!.business_id
       const { startISO, endISO } = getDateLimits()
 
-      // Productos, categorías y proveedores salen de la base local (se actualizan si hay conexión)
+      // Productos, categorías y proveedores salen de la base local al instante (y se actualizan detrás)
       const [prods, cats, sups] = await Promise.all([
         syncEngine.pullLatestProducts(bizId),
         syncEngine.pullRows<any>('categories', bizId, () => supabase.from('categories').select('*').eq('business_id', bizId)),
@@ -133,8 +136,9 @@ export default function ProfitabilityPage() {
       ])
       const byName = (a: any, b: any) => String(a.name).localeCompare(String(b.name), 'es')
 
-      // Ventas del período (sin conexión: las últimas descargadas en este equipo)
-      const allSales: any[] = await cachedRead(`profitability:${bizId}:${startISO ?? ''}:${endISO?.slice(0, 10) ?? ''}`, async () => {
+      // Ventas del período (clave estable por día para devolver 0ms desde la base local)
+      const cacheKey = `profitability:${bizId}:${period}:${startISO?.slice(0, 10) ?? 'all'}:${endISO?.slice(0, 10) ?? ''}`
+      const allSales: any[] = await cachedRead(cacheKey, async () => {
       let allSales: any[] = []
       let from = 0
       const batchSize = 1000
@@ -170,7 +174,7 @@ export default function ProfitabilityPage() {
       setSales(allSales)
     } catch (err: any) {
       console.error('Error fetching profitability data:', err)
-      toast.error(err?.message || 'No se pudieron cargar los datos de rentabilidad')
+      if (!silent) toast.error(err?.message || 'No se pudieron cargar los datos de rentabilidad')
     } finally {
       setLoading(false)
       setRefreshing(false)

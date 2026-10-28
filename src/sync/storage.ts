@@ -47,6 +47,15 @@ const IDB_VERSION = 5
 let tauriDb: any = null
 let localWriteQueue: Promise<void> = Promise.resolve()
 
+// Caché en RAM sobre la base local (SQLite / IndexedDB) para que cada lectura entre
+// pantallas sea instantánea (<1ms) sin volver a consultar el disco ni parsear JSON.
+const memProducts = new Map<string, LocalProduct>()
+const memProductsLoadedBiz = new Set<string>()
+const memCustomers = new Map<string, LocalCustomer>()
+const memCustomersLoadedBiz = new Set<string>()
+const memRows = new Map<string, Map<string, { id: string } & Record<string, any>>>()
+const memConfig = new Map<string, string | null>()
+
 function withLocalWriteLock<T>(work: () => Promise<T>): Promise<T> {
   const result = localWriteQueue.then(work, work)
   localWriteQueue = result.then(() => undefined, () => undefined)
@@ -246,12 +255,51 @@ function getIDB(): Promise<IDBDatabase> {
 // ──────────────────────────────────────────────
 
 export async function saveLocalProducts(products: LocalProduct[], businessId?: string): Promise<void> {
+  const targetBusinessId = businessId || products[0]?.business_id
+  if (targetBusinessId) {
+    for (const [id, p] of memProducts) {
+      if (p.business_id === targetBusinessId) memProducts.delete(id)
+    }
+    memProductsLoadedBiz.add(targetBusinessId)
+  }
+  for (const p of products) {
+    memProducts.set(p.id, { ...p })
+  }
+
   if (tauriDb) {
     return withLocalWriteLock(async () => {
-      const targetBusinessId = businessId || products[0]?.business_id
       const syncToken = crypto.randomUUID()
-      for (const p of products) {
-        await sqliteWriteProduct(p, syncToken)
+      const chunkSize = 50 // 50 * 16 = 800 parámetros (< 999 límite SQLite)
+      for (let i = 0; i < products.length; i += chunkSize) {
+        const chunk = products.slice(i, i + chunkSize)
+        const placeholders = chunk.map(() => '(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)').join(', ')
+        const values: any[] = []
+        for (const p of chunk) {
+          values.push(
+            p.id,
+            p.business_id,
+            p.name,
+            Number(p.sale_price) || 0,
+            Number(p.purchase_price) || 0,
+            Number(p.avg_cost) || 0,
+            p.barcode || null,
+            p.unit || 'u',
+            Number(p.stock) || 0,
+            Number(p.stock_min) || 0,
+            p.brand || null,
+            p.category_id || null,
+            p.active === false ? 0 : 1,
+            p.updated_at || new Date().toISOString(),
+            JSON.stringify(p),
+            syncToken
+          )
+        }
+        await tauriDb.execute(
+          `INSERT OR REPLACE INTO local_products
+           (id, business_id, name, sale_price, purchase_price, avg_cost, barcode, unit, stock, stock_min, brand, category_id, active, updated_at, row_json, sync_token)
+           VALUES ${placeholders}`,
+          values
+        )
       }
       if (targetBusinessId) {
         await tauriDb.execute(
@@ -266,7 +314,6 @@ export async function saveLocalProducts(products: LocalProduct[], businessId?: s
   return new Promise((resolve, reject) => {
     const tx = db.transaction('local_products', 'readwrite')
     const store = tx.objectStore('local_products')
-    const targetBusinessId = businessId || products[0]?.business_id
     if (targetBusinessId) {
       const request = store.index('business_id').openKeyCursor(IDBKeyRange.only(targetBusinessId))
       request.onsuccess = () => {
@@ -286,13 +333,24 @@ export async function saveLocalProducts(products: LocalProduct[], businessId?: s
 }
 
 export async function getLocalProducts(businessId?: string): Promise<LocalProduct[]> {
+  if (businessId && memProductsLoadedBiz.has(businessId)) {
+    const cached: LocalProduct[] = []
+    for (const p of memProducts.values()) {
+      if (p.business_id === businessId && p.active !== false) cached.push({ ...p })
+    }
+    return cached
+  }
+
   if (tauriDb) {
     if (businessId) {
       const rows = await tauriDb.select(
         'SELECT * FROM local_products WHERE business_id = ? AND active = 1',
         [businessId]
       )
-      return rows.map(mapSqliteProduct)
+      const mapped = rows.map(mapSqliteProduct)
+      for (const p of mapped) memProducts.set(p.id, { ...p })
+      memProductsLoadedBiz.add(businessId)
+      return mapped
     }
     const rows = await tauriDb.select('SELECT * FROM local_products WHERE active = 1')
     return rows.map(mapSqliteProduct)
@@ -305,11 +363,16 @@ export async function getLocalProducts(businessId?: string): Promise<LocalProduc
     if (businessId) {
       const index = store.index('business_id')
       const req = index.getAll(businessId)
-      req.onsuccess = () => resolve((req.result || []).filter((p: LocalProduct) => p.active))
+      req.onsuccess = () => {
+        const active = (req.result || []).filter((p: LocalProduct) => p.active !== false)
+        for (const p of active) memProducts.set(p.id, { ...p })
+        memProductsLoadedBiz.add(businessId)
+        resolve(active)
+      }
       req.onerror = () => reject(req.error)
     } else {
       const req = store.getAll()
-      req.onsuccess = () => resolve((req.result || []).filter((p: LocalProduct) => p.active))
+      req.onsuccess = () => resolve((req.result || []).filter((p: LocalProduct) => p.active !== false))
       req.onerror = () => reject(req.error)
     }
   })
@@ -319,13 +382,19 @@ export async function findLocalProductByBarcode(barcode: string): Promise<LocalP
   if (!barcode) return null
   const cleaned = barcode.trim()
 
+  for (const p of memProducts.values()) {
+    if (p.barcode === cleaned && p.active !== false) return { ...p }
+  }
+
   if (tauriDb) {
     const rows = await tauriDb.select(
       'SELECT * FROM local_products WHERE barcode = ? AND active = 1 LIMIT 1',
       [cleaned]
     )
     if (rows && rows.length > 0) {
-      return mapSqliteProduct(rows[0])
+      const mapped = mapSqliteProduct(rows[0])
+      memProducts.set(mapped.id, { ...mapped })
+      return mapped
     }
     return null
   }
@@ -374,6 +443,9 @@ function sqliteWriteProduct(p: LocalProduct, syncToken: string) {
 }
 
 async function getLocalProductById(productId: string): Promise<LocalProduct | null> {
+  const fromMem = memProducts.get(productId)
+  if (fromMem) return { ...fromMem }
+
   if (tauriDb) {
     const rows = await tauriDb.select('SELECT * FROM local_products WHERE id = ? LIMIT 1', [productId])
     return rows?.length ? mapSqliteProduct(rows[0]) : null
@@ -400,6 +472,8 @@ export async function patchLocalProduct(
     updated_at: new Date().toISOString(),
   } as LocalProduct
 
+  memProducts.set(productId, { ...next })
+
   if (tauriDb) {
     return withLocalWriteLock(() => sqliteWriteProduct(next, 'local'))
   }
@@ -414,14 +488,32 @@ export async function patchLocalProduct(
 
 export async function saveLocalCustomers(customers: LocalCustomer[], businessId?: string): Promise<void> {
   const targetBusinessId = businessId || customers[0]?.business_id
+  if (targetBusinessId) {
+    for (const [id, c] of memCustomers) {
+      if (c.business_id === targetBusinessId) memCustomers.delete(id)
+    }
+    memCustomersLoadedBiz.add(targetBusinessId)
+  }
+  for (const customer of customers) {
+    memCustomers.set(customer.id, { ...customer })
+  }
+
   if (tauriDb) {
     return withLocalWriteLock(async () => {
       const syncToken = crypto.randomUUID()
-      for (const customer of customers) {
+      const now = new Date().toISOString()
+      const chunkSize = 100 // 100 * 6 = 600 parámetros
+      for (let i = 0; i < customers.length; i += chunkSize) {
+        const chunk = customers.slice(i, i + chunkSize)
+        const placeholders = chunk.map(() => '(?, ?, ?, ?, ?, ?)').join(', ')
+        const values: any[] = []
+        for (const customer of chunk) {
+          values.push(customer.id, customer.business_id, customer.name, JSON.stringify(customer), now, syncToken)
+        }
         await tauriDb.execute(
           `INSERT OR REPLACE INTO local_customers (id, business_id, name, row_json, updated_at, sync_token)
-           VALUES (?, ?, ?, ?, ?, ?)`,
-          [customer.id, customer.business_id, customer.name, JSON.stringify(customer), new Date().toISOString(), syncToken]
+           VALUES ${placeholders}`,
+          values
         )
       }
       if (targetBusinessId) {
@@ -454,24 +546,41 @@ export async function saveLocalCustomers(customers: LocalCustomer[], businessId?
 }
 
 export async function getLocalCustomers(businessId: string): Promise<LocalCustomer[]> {
+  if (businessId && memCustomersLoadedBiz.has(businessId)) {
+    const cached: LocalCustomer[] = []
+    for (const c of memCustomers.values()) {
+      if (c.business_id === businessId) cached.push({ ...c })
+    }
+    return cached.sort((a, b) => (a.name || '').localeCompare(b.name || ''))
+  }
+
   if (tauriDb) {
     const rows = await tauriDb.select(
       'SELECT row_json FROM local_customers WHERE business_id = ? ORDER BY name',
       [businessId]
     )
-    return rows.map((row: any) => JSON.parse(row.row_json))
+    const mapped: LocalCustomer[] = rows.map((row: any) => JSON.parse(row.row_json))
+    for (const c of mapped) memCustomers.set(c.id, { ...c })
+    memCustomersLoadedBiz.add(businessId)
+    return mapped
   }
 
   const db = await getIDB()
   return new Promise((resolve, reject) => {
     const tx = db.transaction('local_customers', 'readonly')
     const request = tx.objectStore('local_customers').index('business_id').getAll(businessId)
-    request.onsuccess = () => resolve((request.result || []).sort((a, b) => a.name.localeCompare(b.name)))
+    request.onsuccess = () => {
+      const list = (request.result || []).sort((a: LocalCustomer, b: LocalCustomer) => (a.name || '').localeCompare(b.name || ''))
+      for (const c of list) memCustomers.set(c.id, { ...c })
+      memCustomersLoadedBiz.add(businessId)
+      resolve(list)
+    }
     request.onerror = () => reject(request.error)
   })
 }
 
 export async function upsertLocalCustomer(customer: LocalCustomer): Promise<void> {
+  memCustomers.set(customer.id, { ...customer })
   if (tauriDb) {
     return withLocalWriteLock(async () => {
       await tauriDb.execute(
@@ -496,23 +605,26 @@ export async function patchLocalCustomer(
   patch: Partial<LocalCustomer>,
   businessId?: string
 ): Promise<void> {
-  let current: LocalCustomer | null = null
-  if (tauriDb) {
-    const rows = await tauriDb.select('SELECT row_json FROM local_customers WHERE id = ? LIMIT 1', [customerId])
-    current = rows?.length ? JSON.parse(rows[0].row_json) : null
-  } else {
-    const db = await getIDB()
-    current = await new Promise((resolve, reject) => {
-      const req = db.transaction('local_customers', 'readonly').objectStore('local_customers').get(customerId)
-      req.onsuccess = () => resolve(req.result || null)
-      req.onerror = () => reject(req.error)
-    })
+  let current: LocalCustomer | null = memCustomers.get(customerId) || null
+  if (!current) {
+    if (tauriDb) {
+      const rows = await tauriDb.select('SELECT row_json FROM local_customers WHERE id = ? LIMIT 1', [customerId])
+      current = rows?.length ? JSON.parse(rows[0].row_json) : null
+    } else {
+      const db = await getIDB()
+      current = await new Promise((resolve, reject) => {
+        const req = db.transaction('local_customers', 'readonly').objectStore('local_customers').get(customerId)
+        req.onsuccess = () => resolve(req.result || null)
+        req.onerror = () => reject(req.error)
+      })
+    }
   }
   if (!current && !businessId) return
   await upsertLocalCustomer({ ...(current || { id: customerId, business_id: businessId, balance: 0 }), ...patch } as LocalCustomer)
 }
 
 export async function deleteLocalCustomer(customerId: string): Promise<void> {
+  memCustomers.delete(customerId)
   if (tauriDb) {
     return withLocalWriteLock(async () => {
       await tauriDb.execute('DELETE FROM local_customers WHERE id = ?', [customerId])
@@ -574,6 +686,12 @@ export function decrementLocalStock(productId: string, quantity: number): Promis
 
 /** Suma (o resta, con delta negativo) stock local sin bajar de cero. */
 export async function adjustLocalStock(productId: string, delta: number): Promise<void> {
+  const inMem = memProducts.get(productId)
+  if (inMem) {
+    inMem.stock = Math.max(0, Math.round(((Number(inMem.stock) || 0) + delta) * 1000) / 1000)
+    inMem.updated_at = new Date().toISOString()
+  }
+
   if (tauriDb) {
     return withLocalWriteLock(async () => {
       await tauriDb.execute(
@@ -729,15 +847,27 @@ type LocalRow = { id: string } & Record<string, any>
 
 /** Reemplaza el snapshot local de una tabla de un negocio con lo que vino del servidor. */
 export async function saveLocalRows(table: string, businessId: string, rows: LocalRow[]): Promise<void> {
+  const memKey = `${table}:${businessId}`
+  const bucket = new Map<string, LocalRow>()
+  for (const row of rows) bucket.set(row.id, { ...row })
+  memRows.set(memKey, bucket)
+
   const now = new Date().toISOString()
   if (tauriDb) {
     return withLocalWriteLock(async () => {
       const syncToken = crypto.randomUUID()
-      for (const row of rows) {
+      const chunkSize = 100 // 100 * 6 = 600 parámetros
+      for (let i = 0; i < rows.length; i += chunkSize) {
+        const chunk = rows.slice(i, i + chunkSize)
+        const placeholders = chunk.map(() => '(?, ?, ?, ?, ?, ?)').join(', ')
+        const values: any[] = []
+        for (const row of chunk) {
+          values.push(table, row.id, businessId, JSON.stringify(row), now, syncToken)
+        }
         await tauriDb.execute(
           `INSERT OR REPLACE INTO local_rows (table_name, id, business_id, row_json, updated_at, sync_token)
-           VALUES (?, ?, ?, ?, ?, ?)`,
-          [table, row.id, businessId, JSON.stringify(row), now, syncToken]
+           VALUES ${placeholders}`,
+          values
         )
       }
       await tauriDb.execute(
@@ -767,25 +897,48 @@ export async function saveLocalRows(table: string, businessId: string, rows: Loc
 }
 
 export async function getLocalRows<T = LocalRow>(table: string, businessId: string): Promise<T[]> {
+  const memKey = `${table}:${businessId}`
+  const inMem = memRows.get(memKey)
+  if (inMem) {
+    return [...inMem.values()].map((r) => ({ ...r }) as unknown as T)
+  }
+
   if (tauriDb) {
     const rows = await tauriDb.select(
       'SELECT row_json FROM local_rows WHERE table_name = ? AND business_id = ?',
       [table, businessId]
     )
-    return rows.map((row: any) => JSON.parse(row.row_json))
+    const parsed: LocalRow[] = rows.map((row: any) => JSON.parse(row.row_json))
+    const bucket = new Map<string, LocalRow>()
+    for (const r of parsed) bucket.set(r.id, { ...r })
+    memRows.set(memKey, bucket)
+    return parsed as unknown as T[]
   }
 
   const db = await getIDB()
   return new Promise((resolve, reject) => {
     const req = db.transaction('local_rows', 'readonly').objectStore('local_rows')
       .index('table_business').getAll([table, businessId])
-    req.onsuccess = () => resolve((req.result || []).map((entry: any) => entry.row))
+    req.onsuccess = () => {
+      const parsed: LocalRow[] = (req.result || []).map((entry: any) => entry.row)
+      const bucket = new Map<string, LocalRow>()
+      for (const r of parsed) bucket.set(r.id, { ...r })
+      memRows.set(memKey, bucket)
+      resolve(parsed as unknown as T[])
+    }
     req.onerror = () => reject(req.error)
   })
 }
 
 /** Inserta o fusiona (merge) una fila local. */
 export async function upsertLocalRow(table: string, businessId: string, row: LocalRow): Promise<void> {
+  const memKey = `${table}:${businessId}`
+  const bucket = memRows.get(memKey)
+  if (bucket) {
+    const prev = bucket.get(row.id)
+    bucket.set(row.id, prev ? { ...prev, ...row } : { ...row })
+  }
+
   const now = new Date().toISOString()
   if (tauriDb) {
     return withLocalWriteLock(async () => {
@@ -817,6 +970,10 @@ export async function upsertLocalRow(table: string, businessId: string, row: Loc
 }
 
 export async function deleteLocalRow(table: string, id: string): Promise<void> {
+  for (const [key, bucket] of memRows) {
+    if (key.startsWith(`${table}:`)) bucket.delete(id)
+  }
+
   if (tauriDb) {
     return withLocalWriteLock(async () => {
       await tauriDb.execute('DELETE FROM local_rows WHERE table_name = ? AND id = ?', [table, id])
@@ -901,21 +1058,32 @@ export async function recordStockConflict(conflict: StockConflict): Promise<void
 }
 
 export async function getLocalConfig(key: string): Promise<string | null> {
+  if (memConfig.has(key)) {
+    return memConfig.get(key) ?? null
+  }
+
   if (tauriDb) {
     const rows = await tauriDb.select('SELECT value FROM local_config WHERE key = ? LIMIT 1', [key])
-    return rows && rows.length > 0 ? rows[0].value : null
+    const val = rows && rows.length > 0 ? rows[0].value : null
+    memConfig.set(key, val)
+    return val
   }
 
   const db = await getIDB()
   return new Promise((resolve) => {
     const tx = db.transaction('local_config', 'readonly')
     const req = tx.objectStore('local_config').get(key)
-    req.onsuccess = () => resolve(req.result ? req.result.value : null)
+    req.onsuccess = () => {
+      const val = req.result ? req.result.value : null
+      memConfig.set(key, val)
+      resolve(val)
+    }
     req.onerror = () => resolve(null)
   })
 }
 
 export async function setLocalConfig(key: string, value: string): Promise<void> {
+  memConfig.set(key, value)
   if (tauriDb) {
     await tauriDb.execute(
       'INSERT OR REPLACE INTO local_config (key, value) VALUES (?, ?)',

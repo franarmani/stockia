@@ -248,9 +248,8 @@ export default function App() {
   useEffect(() => {
     if (!activeProfile?.business_id) return
     syncEngine.init().then(async () => {
-      // Sin conexión los pulls devuelven el snapshot local sin tocarlo.
-      await syncEngine.pullLatestProducts(activeProfile.business_id)
-      await syncEngine.pullLatestCustomers(activeProfile.business_id)
+      // Precarga instantánea en la PC + subida de cola pendiente y descarga de tablas en segundo plano.
+      await syncEngine.preloadBusinessData(activeProfile.business_id)
     }, (error) => {
       // Solo un fallo al abrir la base es grave; la causa se muestra para poder diagnosticarlo.
       console.error('[Local DB] initialization failed:', error)
