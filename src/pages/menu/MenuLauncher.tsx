@@ -27,6 +27,14 @@ interface QuickStats {
   cajaExpected: number
 }
 
+/** Importe corto para espacios chicos: $2,4 M · $780 k · $950. */
+function compactMoney(value: number): string {
+  const n = Math.round(value)
+  if (n >= 1_000_000) return `$${(n / 1_000_000).toLocaleString('es-AR', { maximumFractionDigits: 1 })} M`
+  if (n >= 1_000) return `$${Math.round(n / 1_000).toLocaleString('es-AR')} k`
+  return `$${n}`
+}
+
 export default function MenuLauncher() {
   const navigate = useNavigate()
   const { profile } = useAuthStore()
@@ -370,7 +378,7 @@ export default function MenuLauncher() {
               </div>
 
               {weeklySales.length > 0 ? (
-                <div className="flex items-end gap-3 flex-1 min-h-[190px] pt-4 pb-1">
+                <div className="flex items-end gap-1.5 sm:gap-3 flex-1 min-h-[190px] pt-4 pb-1">
                   {weeklySales.map((value, i) => {
                     const percent = maxWeekly > 0 ? (value / maxWeekly) * 100 : 0
                     const days = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb']
@@ -378,7 +386,7 @@ export default function MenuLauncher() {
                     const isCurrentDay = i === 6
 
                     return (
-                      <div key={i} className="flex-1 flex flex-col items-center h-full group" title={`$${Math.round(value).toLocaleString('es-AR')}`}>
+                      <div key={i} className="flex-1 min-w-0 flex flex-col items-center h-full group" title={`$${Math.round(value).toLocaleString('es-AR')}`}>
                         {/* Bar Track */}
                         <div className="w-full flex-1 bg-white/[0.02] hover:bg-white/[0.05] rounded-xl flex flex-col justify-end relative overflow-hidden transition-colors p-1">
                           {/* Fill Bar */}
@@ -402,9 +410,13 @@ export default function MenuLauncher() {
                             {days[dayIndex]}
                           </span>
                           {value > 0 ? (
-                            <span className="text-[10px] text-white/90 font-bold font-mono tabular-nums leading-none">
-                              ${Math.round(value).toLocaleString('es-AR')}
-                            </span>
+                            <>
+                              {/* En celular los importes van abreviados (2,4 M / 780 k) para que entren las 7 barras. */}
+                              <span className="sm:hidden text-[10px] text-white/90 font-bold tabular-nums leading-none">{compactMoney(value)}</span>
+                              <span className="hidden sm:inline text-[10px] text-white/90 font-bold font-mono tabular-nums leading-none">
+                                ${Math.round(value).toLocaleString('es-AR')}
+                              </span>
+                            </>
                           ) : (
                             <span className="text-[10px] text-white/20 font-bold leading-none">-</span>
                           )}
