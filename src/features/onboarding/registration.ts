@@ -34,7 +34,7 @@ export const emptyRegistration: RegistrationData = {
   cuit: '', razonSocial: '', ivaCondition: 'monotributo', fullName: '', email: '', password: '', referralCode: '',
 }
 
-export const REGISTRATION_STEPS = ['Tu negocio', 'Ubicación y datos fiscales', 'Tu cuenta'] as const
+export const REGISTRATION_STEPS = ['Tu negocio', 'Ubicación y fiscal', 'Tu cuenta'] as const
 
 /** Valida un paso del registro. Devuelve el primer problema o null si está completo. */
 export function validateRegistrationStep(step: number, data: RegistrationData): string | null {

@@ -62,7 +62,7 @@ export default function RegistrationForm({
 
   return (
     <form onSubmit={next} className="space-y-4">
-      <ol className="flex items-center gap-2" aria-label="Pasos del registro">
+      <ol className="flex items-start gap-2" aria-label="Pasos del registro">
         {REGISTRATION_STEPS.slice(0, lastStep + 1).map((name, index) => (
           <li key={name} className="flex-1">
             <div className={cn('h-1 rounded-full', index <= step ? 'bg-[#9aa9ff]' : 'bg-white/10')} />
