@@ -129,15 +129,14 @@ export default function POSPage() {
   const [showQrModal, setShowQrModal] = useState(false)
   const qrPaidOrderRef = useRef<string | null>(null)
   const qrSaleIdRef = useRef<string | null>(null)
-  const loyaltyConfig = readLoyaltyConfig((useBusinessStore.getState().business as any)?.loyalty_config)
+  const { business } = useBusinessStore()
+  const loyaltyConfig = useMemo(() => readLoyaltyConfig((business as any)?.loyalty_config), [business])
   // Promociones aplicadas a cada ítem del carrito (para mostrarlas; la venta usa getSaleLines).
   const pricedCart = useMemo(() => priceCart(items, promotions), [items, promotions])
   const promoByProduct = useMemo(
     () => new Map(pricedCart.items.map(entry => [entry.item.product.id, entry])),
     [pricedCart]
   )
-
-  const { business } = useBusinessStore()
   const fiscalCertStatus = useFiscalStore((s) => s.settings?.cert_status)
   const isFiscalConnected = fiscalCertStatus === 'connected'
   const fiscalEnv = useFiscalStore((s) => s.env)
@@ -465,10 +464,13 @@ export default function POSPage() {
   // Promociones: solo con plan Premium (o en la prueba). Se guardan en la base local.
   async function fetchPromotions() {
     const businessId = profile!.business_id
-    if (!hasPremiumAccess(useBusinessStore.getState().business)) { setPromotions([]); return }
-    const rows = await syncEngine.pullRows<Promotion>('promotions', businessId, () =>
-      (supabase as any).from('promotions').select('*').eq('business_id', businessId))
-    setPromotions(rows)
+    if (hasPremiumAccess(useBusinessStore.getState().business)) {
+      const rows = await syncEngine.pullRows<Promotion>('promotions', businessId, () =>
+        (supabase as any).from('promotions').select('*').eq('business_id', businessId))
+      setPromotions(rows)
+    } else {
+      setPromotions([])
+    }
     const rewards = await syncEngine.pullRows<LoyaltyReward>('loyalty_rewards', businessId, () =>
       (supabase as any).from('loyalty_rewards').select('*').eq('business_id', businessId))
     setLoyaltyRewards(rewards)
@@ -484,7 +486,7 @@ export default function POSPage() {
 
   // Suma los puntos de la compra y descuenta los del premio canjeado (queda en la cola si no hay conexión).
   async function recordLoyaltyAfterSale(saleCustomerId: string | null, saleId: string, saleTotal: number, redemption: LoyaltyRedemption | null) {
-    if (!saleCustomerId || !loyaltyConfig.enabled || !hasPremiumAccess(useBusinessStore.getState().business)) return
+    if (!saleCustomerId || !loyaltyConfig.enabled) return
     try {
       const businessId = profile!.business_id
       if (redemption) {
@@ -517,7 +519,7 @@ export default function POSPage() {
 
   /** Puntos del cliente y premios para canjear: se ve apenas se elige el cliente (y de nuevo al confirmar). */
   function renderLoyaltyPanel() {
-    if (!selectedCustomer || !loyaltyConfig.enabled || !hasPremiumAccess(business)) return null
+    if (!selectedCustomer || !loyaltyConfig.enabled) return null
     return (
       <LoyaltyRedeemPanel
         customerName={selectedCustomer.name}
