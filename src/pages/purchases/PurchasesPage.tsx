@@ -533,7 +533,11 @@ function Documents({
                   <span className="font-semibold text-[#FCFCFD]">
                     {p.document_type.replace("_", " ").toUpperCase()} {p.letter || ""}
                   </span>{" "}
-                  {p.point_of_sale ? String(p.point_of_sale).padStart(4, "0") : ""}-{p.document_number ? String(p.document_number).padStart(8, "0") : ""}
+                  {p.point_of_sale || p.document_number ? (
+                    `${p.point_of_sale ? String(p.point_of_sale).padStart(4, "0") : "0000"}-${p.document_number ? String(p.document_number).padStart(8, "0") : ""}`
+                  ) : (
+                    <span className="text-[#9CA6BA]/60 text-xs italic">S/N</span>
+                  )}
                   {!p.is_fiscal && (
                     <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20 font-bold">
                       NO FISCAL
@@ -1022,8 +1026,8 @@ function PurchaseForm({
 }: any) {
   const [supplierId, setSupplierId] = useState(""),
     [doc, setDoc] = useState<any>({
-      document_type: "invoice",
-      letter: "A",
+      document_type: "internal",
+      letter: "",
       point_of_sale: "",
       document_number: "",
       document_date: new Date().toISOString().slice(0, 10),
@@ -1031,8 +1035,8 @@ function PurchaseForm({
       payment_condition: "account",
       payment_method_id: "",
       currency: "ARS",
-      is_fiscal: true,
-      is_internal: false,
+      is_fiscal: false,
+      is_internal: true,
       notes: "",
     }),
     [items, setItems] = useState<PurchaseDraftItem[]>([emptyItem()]),
@@ -1220,7 +1224,7 @@ function PurchaseForm({
 
             <Input
               label="Letra"
-              placeholder="A"
+              placeholder="A, B, C (opcional)"
               maxLength={1}
               value={doc.letter}
               onChange={(e) =>
@@ -1228,18 +1232,18 @@ function PurchaseForm({
               }
             />
             <Input
-              label="Punto de Venta"
+              label="Punto de Venta (opcional)"
               type="number"
-              placeholder="0001"
+              placeholder="Ej. 0001 (opcional)"
               value={doc.point_of_sale}
               onChange={(e) =>
                 updateDoc({ point_of_sale: e.target.value })
               }
             />
             <Input
-              label="Número"
+              label="Número (opcional)"
               type="number"
-              placeholder="00000001"
+              placeholder="Ej. 12345 (opcional)"
               value={doc.document_number}
               onChange={(e) =>
                 updateDoc({ document_number: e.target.value })
@@ -1305,14 +1309,24 @@ function PurchaseForm({
             </div>
 
             {duplicatePurchase && (
-              <div className="col-span-2 md:col-span-4 flex items-start gap-2.5 p-3 rounded-xl bg-amber-500/10 border border-amber-500/25 text-amber-300 text-xs">
-                <AlertTriangle className="w-4 h-4 shrink-0 text-amber-400 mt-0.5" />
-                <div className="space-y-0.5">
-                  <p className="font-semibold text-amber-200">Comprobante ya registrado previamente</p>
-                  <p className="text-amber-300/90 leading-relaxed">
-                    Ya existe un comprobante con Punto de Venta <strong>{doc.point_of_sale}</strong> y Número <strong>{doc.document_number}</strong> para este proveedor (cargado el {duplicatePurchase.document_date}). Modificá la numeración para evitar duplicados.
-                  </p>
+              <div className="col-span-2 md:col-span-4 flex flex-wrap items-center justify-between gap-3 p-3 rounded-xl bg-amber-500/10 border border-amber-500/25 text-amber-300 text-xs">
+                <div className="flex items-start gap-2.5">
+                  <AlertTriangle className="w-4 h-4 shrink-0 text-amber-400 mt-0.5" />
+                  <div className="space-y-0.5">
+                    <p className="font-semibold text-amber-200">Comprobante ya registrado previamente</p>
+                    <p className="text-amber-300/90 leading-relaxed">
+                      Ya existe un comprobante con PV <strong>{doc.point_of_sale}</strong> y N° <strong>{doc.document_number}</strong> para este proveedor ({duplicatePurchase.document_date}).
+                    </p>
+                  </div>
                 </div>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => updateDoc({ point_of_sale: "", document_number: "" })}
+                  className="text-xs bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 border-amber-500/30 font-semibold"
+                >
+                  Guardar sin número (S/N)
+                </Button>
               </div>
             )}
           </div>
@@ -1508,8 +1522,6 @@ function PurchaseForm({
               !supplierId ||
               Boolean(duplicatePurchase) ||
               items.some((i) => !i.description || !i.unit_cost) ||
-              !doc.point_of_sale ||
-              !doc.document_number ||
               (doc.payment_condition === "cash" && !doc.payment_method_id)
             }
             onClick={async () => {
@@ -1591,7 +1603,7 @@ function PaymentForm({
             <option value="" className="bg-[#0E1629] text-[#FCFCFD]">Sin imputar a comprobante específico</option>
             {pending.map((p: PurchaseDocument) => (
               <option key={p.id} value={p.id} className="bg-[#0E1629] text-[#FCFCFD]">
-                {p.document_type.toUpperCase()} {p.point_of_sale}-{p.document_number} · Saldo pendiente: {formatCurrency(Number(p.balance_due))}
+                {p.document_type.toUpperCase()} {p.point_of_sale || p.document_number ? `${p.point_of_sale ? String(p.point_of_sale).padStart(4, "0") + "-" : ""}${p.document_number}` : `S/N (${p.document_date})`} · Saldo pendiente: {formatCurrency(Number(p.balance_due))}
               </option>
             ))}
           </select>
