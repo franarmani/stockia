@@ -16,6 +16,7 @@ import {
   Settings2,
   Truck,
   AlertTriangle,
+  AlertCircle,
   ChevronRight,
   Trash2,
   CheckCircle2,
@@ -345,6 +346,7 @@ export default function PurchasesPage() {
         taxes={taxes.filter((t) => t.active)}
         methods={methods}
         products={products}
+        purchases={purchases}
         onClose={() => setPurchaseModal(false)}
         onSave={async (data: any) => {
           if (!businessId) return;
@@ -1014,6 +1016,7 @@ function PurchaseForm({
   taxes,
   methods,
   products,
+  purchases = [],
   onClose,
   onSave,
 }: any) {
@@ -1039,6 +1042,31 @@ function PurchaseForm({
     [error, setError] = useState(""),
     [reading, setReading] = useState(false),
     invoiceInput = useRef<HTMLInputElement>(null);
+
+  const selectBaseClass =
+    "w-full h-11 rounded-[10px] bg-white/[0.035] text-[#FCFCFD] border border-white/10 px-3 text-sm focus:outline-none focus:ring-[3px] focus:ring-[#947FF8]/20 focus:border-[#947FF8] hover:border-white/20 hover:bg-white/[0.05] transition-all cursor-pointer";
+
+  const updateDoc = (patch: any) => {
+    if (error) setError("");
+    setDoc((prev: any) => ({ ...prev, ...patch }));
+  };
+
+  const duplicatePurchase = useMemo(() => {
+    if (!supplierId || !doc.point_of_sale || !doc.document_number) return null;
+    const pos = parseInt(String(doc.point_of_sale), 10);
+    const num = parseInt(String(doc.document_number), 10);
+    if (isNaN(pos) || isNaN(num)) return null;
+    return (
+      purchases?.find(
+        (p: any) =>
+          p.supplier_id === supplierId &&
+          p.document_type === doc.document_type &&
+          Number(p.point_of_sale) === pos &&
+          Number(p.document_number) === num &&
+          p.status !== "voided"
+      ) || null
+    );
+  }, [supplierId, doc.document_type, doc.point_of_sale, doc.document_number, purchases]);
 
   // Completa el comprobante con lo que la IA leyó de la foto o el PDF de la factura.
   async function loadInvoice(file: File) {
@@ -1149,8 +1177,11 @@ function PurchaseForm({
           </p>
           <select
             value={supplierId}
-            onChange={(e) => setSupplierId(e.target.value)}
-            className="w-full h-11 rounded-xl bg-white/[0.04] text-[#FCFCFD] border border-white/[0.08] px-3.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#947FF8] focus:border-[#947FF8]"
+            onChange={(e) => {
+              if (error) setError("");
+              setSupplierId(e.target.value);
+            }}
+            className={selectBaseClass}
           >
             <option value="" className="bg-[#0E1629] text-[#FCFCFD]">Seleccionar proveedor...</option>
             {suppliers.map((s: Supplier) => (
@@ -1167,19 +1198,18 @@ function PurchaseForm({
             2 · Datos del Comprobante
           </p>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5">
-            <div>
-              <label className="text-xs font-semibold text-[#9CA6BA] block mb-1">Tipo Doc.</label>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-foreground">Tipo Doc.</label>
               <select
                 value={doc.document_type}
                 onChange={(e) =>
-                  setDoc({
-                    ...doc,
+                  updateDoc({
                     document_type: e.target.value,
                     is_internal: e.target.value === "internal",
                     is_fiscal: e.target.value !== "internal",
                   })
                 }
-                className="w-full h-11 rounded-xl bg-white/[0.04] text-[#FCFCFD] border border-white/[0.08] px-3 text-xs focus:outline-none focus:ring-1 focus:ring-[#947FF8]"
+                className={selectBaseClass}
               >
                 <option value="invoice" className="bg-[#0E1629] text-[#FCFCFD]">Factura</option>
                 <option value="credit_note" className="bg-[#0E1629] text-[#FCFCFD]">Nota de crédito</option>
@@ -1194,7 +1224,7 @@ function PurchaseForm({
               maxLength={1}
               value={doc.letter}
               onChange={(e) =>
-                setDoc({ ...doc, letter: e.target.value.toUpperCase() })
+                updateDoc({ letter: e.target.value.toUpperCase() })
               }
             />
             <Input
@@ -1203,7 +1233,7 @@ function PurchaseForm({
               placeholder="0001"
               value={doc.point_of_sale}
               onChange={(e) =>
-                setDoc({ ...doc, point_of_sale: e.target.value })
+                updateDoc({ point_of_sale: e.target.value })
               }
             />
             <Input
@@ -1212,7 +1242,7 @@ function PurchaseForm({
               placeholder="00000001"
               value={doc.document_number}
               onChange={(e) =>
-                setDoc({ ...doc, document_number: e.target.value })
+                updateDoc({ document_number: e.target.value })
               }
             />
 
@@ -1221,41 +1251,41 @@ function PurchaseForm({
               type="date"
               value={doc.document_date}
               onChange={(e) =>
-                setDoc({ ...doc, document_date: e.target.value })
+                updateDoc({ document_date: e.target.value })
               }
             />
             <Input
               label="Fecha Vto."
               type="date"
               value={doc.due_date}
-              onChange={(e) => setDoc({ ...doc, due_date: e.target.value })}
+              onChange={(e) => updateDoc({ due_date: e.target.value })}
             />
 
-            <div>
-              <label className="text-xs font-semibold text-[#9CA6BA] block mb-1">Condición Pago</label>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-foreground">Condición Pago</label>
               <select
                 value={doc.payment_condition}
                 onChange={(e) =>
-                  setDoc({ ...doc, payment_condition: e.target.value })
+                  updateDoc({ payment_condition: e.target.value })
                 }
-                className="w-full h-11 rounded-xl bg-white/[0.04] text-[#FCFCFD] border border-white/[0.08] px-3 text-xs focus:outline-none focus:ring-1 focus:ring-[#947FF8]"
+                className={selectBaseClass}
               >
                 <option value="account" className="bg-[#0E1629] text-[#FCFCFD]">Cuenta corriente</option>
                 <option value="cash" className="bg-[#0E1629] text-[#FCFCFD]">Contado</option>
               </select>
             </div>
 
-            <div>
-              <label className="text-xs font-semibold text-[#9CA6BA] block mb-1">
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-foreground">
                 {doc.payment_condition === "cash" ? "Medio de Pago" : "Moneda"}
               </label>
               {doc.payment_condition === "cash" ? (
                 <select
                   value={doc.payment_method_id}
                   onChange={(e) =>
-                    setDoc({ ...doc, payment_method_id: e.target.value })
+                    updateDoc({ payment_method_id: e.target.value })
                   }
-                  className="w-full h-11 rounded-xl bg-white/[0.04] text-[#FCFCFD] border border-white/[0.08] px-3 text-xs focus:outline-none focus:ring-1 focus:ring-[#947FF8]"
+                  className={selectBaseClass}
                 >
                   <option value="" className="bg-[#0E1629] text-[#FCFCFD]">Seleccionar...</option>
                   {methods.map((m: PaymentMethod) => (
@@ -1268,11 +1298,23 @@ function PurchaseForm({
                 <Input
                   value={doc.currency}
                   onChange={(e) =>
-                    setDoc({ ...doc, currency: e.target.value.toUpperCase() })
+                    updateDoc({ currency: e.target.value.toUpperCase() })
                   }
                 />
               )}
             </div>
+
+            {duplicatePurchase && (
+              <div className="col-span-2 md:col-span-4 flex items-start gap-2.5 p-3 rounded-xl bg-amber-500/10 border border-amber-500/25 text-amber-300 text-xs">
+                <AlertTriangle className="w-4 h-4 shrink-0 text-amber-400 mt-0.5" />
+                <div className="space-y-0.5">
+                  <p className="font-semibold text-amber-200">Comprobante ya registrado previamente</p>
+                  <p className="text-amber-300/90 leading-relaxed">
+                    Ya existe un comprobante con Punto de Venta <strong>{doc.point_of_sale}</strong> y Número <strong>{doc.document_number}</strong> para este proveedor (cargado el {duplicatePurchase.document_date}). Modificá la numeración para evitar duplicados.
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -1303,99 +1345,107 @@ function PurchaseForm({
               <span></span>
             </div>
 
-            {items.map((item, index) => (
-              <div
-                key={index}
-                className="grid grid-cols-2 md:grid-cols-[1.5fr_1fr_90px_120px_90px_36px] gap-2.5 p-3 rounded-xl bg-white/[0.02] border border-white/[0.06] items-center"
-              >
-                <div className="col-span-2 md:col-span-1">
-                  <ProductSearchInput
-                    value={item.description}
-                    products={products}
-                    onChange={(text) =>
-                      updateItem(index, { description: text, product_id: undefined })
-                    }
-                    onSelect={(product) =>
-                      updateItem(index, {
-                        product_id: product.id,
-                        description: product.name,
-                        unit_cost: item.unit_cost || (Number(product.purchase_price) > 0 ? String(product.purchase_price) : ""),
-                      })
-                    }
-                  />
-                  {item.product_id && (
-                    <p className="mt-1 text-[11px] text-emerald-300/80 truncate">
-                      Producto: {products.find((p: any) => p.id === item.product_id)?.name ?? "vinculado"}
-                    </p>
-                  )}
-                </div>
-                <div>
-                  <select
-                    value={item.concept_id || ""}
-                    onChange={(e) =>
-                      updateItem(index, { concept_id: e.target.value })
-                    }
-                    className="w-full h-11 rounded-xl bg-white/[0.04] text-[#FCFCFD] border border-white/[0.08] px-3 text-xs focus:outline-none focus:ring-1 focus:ring-[#947FF8]"
-                  >
-                    <option value="" className="bg-[#0E1629] text-[#FCFCFD]">Concepto...</option>
-                    {concepts.map((c: PurchaseConcept) => (
-                      <option key={c.id} value={c.id} className="bg-[#0E1629] text-[#FCFCFD]">
-                        {c.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <Input
-                    type="number"
-                    step="0.001"
-                    placeholder="1"
-                    value={item.quantity}
-                    onChange={(e) =>
-                      updateItem(index, { quantity: e.target.value })
-                    }
-                  />
-                </div>
-                <div>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    placeholder="$0.00"
-                    value={item.unit_cost}
-                    onChange={(e) =>
-                      updateItem(index, { unit_cost: e.target.value })
-                    }
-                  />
-                </div>
-                <div>
-                  <select
-                    value={item.vat_rate}
-                    onChange={(e) =>
-                      updateItem(index, { vat_rate: e.target.value })
-                    }
-                    className="w-full h-11 rounded-xl bg-white/[0.04] text-[#FCFCFD] border border-white/[0.08] px-3 text-xs focus:outline-none focus:ring-1 focus:ring-[#947FF8]"
-                  >
-                    {taxes
-                      .filter((t: TaxType) => t.kind === "vat")
-                      .map((t: TaxType) => (
-                        <option key={t.id} value={t.rate || 0} className="bg-[#0E1629] text-[#FCFCFD]">
-                          {t.rate}%
+            {items.map((item, index) => {
+              const linkedProduct = item.product_id
+                ? products.find((p: any) => p.id === item.product_id)
+                : null;
+              return (
+                <div
+                  key={index}
+                  className="grid grid-cols-2 md:grid-cols-[1.5fr_1fr_90px_120px_90px_36px] gap-2.5 p-3 rounded-xl bg-white/[0.02] border border-white/[0.06] items-start"
+                >
+                  <div className="col-span-2 md:col-span-1">
+                    <ProductSearchInput
+                      value={item.description}
+                      products={products}
+                      onChange={(text) =>
+                        updateItem(index, { description: text, product_id: undefined })
+                      }
+                      onSelect={(product) =>
+                        updateItem(index, {
+                          product_id: product.id,
+                          description: product.name,
+                          unit_cost: item.unit_cost || (Number(product.purchase_price) > 0 ? String(product.purchase_price) : ""),
+                        })
+                      }
+                    />
+                    {item.product_id && (
+                      <div className="mt-1.5 flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-emerald-500/10 border border-emerald-500/20 text-[11px] text-emerald-300 font-medium w-fit max-w-full">
+                        <CheckCircle2 className="w-3.5 h-3.5 shrink-0 text-emerald-400" />
+                        <span className="truncate">
+                          Catálogo: {linkedProduct?.name ?? "vinculado"}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  <div>
+                    <select
+                      value={item.concept_id || ""}
+                      onChange={(e) =>
+                        updateItem(index, { concept_id: e.target.value })
+                      }
+                      className={selectBaseClass}
+                    >
+                      <option value="" className="bg-[#0E1629] text-[#FCFCFD]">Concepto...</option>
+                      {concepts.map((c: PurchaseConcept) => (
+                        <option key={c.id} value={c.id} className="bg-[#0E1629] text-[#FCFCFD]">
+                          {c.name}
                         </option>
                       ))}
-                  </select>
+                    </select>
+                  </div>
+                  <div>
+                    <Input
+                      type="number"
+                      step="0.001"
+                      placeholder="1"
+                      value={item.quantity}
+                      onChange={(e) =>
+                        updateItem(index, { quantity: e.target.value })
+                      }
+                    />
+                  </div>
+                  <div>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      placeholder="$0.00"
+                      value={item.unit_cost}
+                      onChange={(e) =>
+                        updateItem(index, { unit_cost: e.target.value })
+                      }
+                    />
+                  </div>
+                  <div>
+                    <select
+                      value={item.vat_rate}
+                      onChange={(e) =>
+                        updateItem(index, { vat_rate: e.target.value })
+                      }
+                      className={selectBaseClass}
+                    >
+                      {taxes
+                        .filter((t: TaxType) => t.kind === "vat")
+                        .map((t: TaxType) => (
+                          <option key={t.id} value={t.rate || 0} className="bg-[#0E1629] text-[#FCFCFD]">
+                            {t.rate}%
+                          </option>
+                        ))}
+                    </select>
+                  </div>
+                  <div className="flex justify-end h-11 items-center">
+                    <button
+                      type="button"
+                      onClick={() => removeItem(index)}
+                      className="w-8 h-8 rounded-lg flex items-center justify-center text-[#9CA6BA] hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
+                      title="Eliminar fila"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
-                <div className="flex justify-end">
-                  <button
-                    type="button"
-                    onClick={() => removeItem(index)}
-                    className="w-8 h-8 rounded-lg flex items-center justify-center text-[#9CA6BA] hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
-                    title="Eliminar fila"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 
@@ -1405,7 +1455,7 @@ function PurchaseForm({
             <Input
               label="Observaciones"
               value={doc.notes}
-              onChange={(e) => setDoc({ ...doc, notes: e.target.value })}
+              onChange={(e) => updateDoc({ notes: e.target.value })}
               placeholder="Notas internas de la operación..."
             />
             <label className="flex items-center gap-2 text-xs text-[#9CA6BA] mt-3 cursor-pointer">
@@ -1429,9 +1479,21 @@ function PurchaseForm({
           </div>
         </div>
 
-        {error && (
-          <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/25 text-rose-400 text-xs">
-            {error}
+        {(error || duplicatePurchase) && (
+          <div className="flex items-start gap-3 p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/25 text-rose-300 text-xs">
+            <AlertCircle className="w-4 h-4 shrink-0 text-rose-400 mt-0.5" />
+            <div className="space-y-1">
+              <p className="font-semibold text-rose-200">
+                {(error.includes("ya fue registrado") || duplicatePurchase)
+                  ? "Este comprobante ya fue registrado para este proveedor"
+                  : "No se pudo registrar el comprobante"}
+              </p>
+              <p className="text-rose-300/90 leading-relaxed">
+                {(error.includes("ya fue registrado") || duplicatePurchase)
+                  ? `Ya existe un comprobante con Punto de Venta ${doc.point_of_sale || "---"} y Número ${doc.document_number || "---"} asociado a este proveedor. Verificá y modificá la numeración en el Paso 2 para continuar.`
+                  : error}
+              </p>
+            </div>
           </div>
         )}
 
@@ -1444,6 +1506,7 @@ function PurchaseForm({
             disabled={
               saving ||
               !supplierId ||
+              Boolean(duplicatePurchase) ||
               items.some((i) => !i.description || !i.unit_cost) ||
               !doc.point_of_sale ||
               !doc.document_number ||
