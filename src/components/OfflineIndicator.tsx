@@ -154,7 +154,7 @@ export default function OfflineIndicator() {
       </button>
 
       {open && (
-        <div className="absolute right-0 mt-2 w-[min(22rem,calc(100vw-2rem))] z-50 rounded-xl border border-white/10 bg-[#0b1626] shadow-2xl p-3 text-xs text-white/80 space-y-3">
+        <div className="fixed left-4 right-4 top-16 sm:absolute sm:left-auto sm:right-0 sm:top-auto sm:mt-2 sm:w-[22rem] z-50 rounded-xl border border-white/10 bg-[#0b1626] shadow-2xl p-3 text-xs text-white/80 space-y-3">
           <div className="flex items-center justify-between">
             <span className="font-bold text-white">Sincronización</span>
             <button onClick={() => setOpen(false)} className="text-white/40 hover:text-white" aria-label="Cerrar">

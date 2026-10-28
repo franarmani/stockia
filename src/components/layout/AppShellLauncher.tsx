@@ -446,13 +446,17 @@ export default function AppShellLauncher() {
             <span>Stock</span>
           </NavLink>
 
-          <button
-            onClick={() => setMobileDrawerOpen(true)}
-            className="flex flex-col items-center gap-1 py-1 px-3 rounded-lg text-[10px] font-medium text-[#9CA6BA] hover:text-[#FCFCFD]"
+          {/* El menú completo sigue en el botón de arriba a la izquierda. */}
+          <NavLink
+            to="/cash-register"
+            className={({ isActive }) => cn(
+              'flex flex-col items-center gap-1 py-1 px-3 rounded-lg text-[10px] font-medium transition-colors',
+              isActive ? 'text-[#9aa9ff] font-bold' : 'text-[#9CA6BA]'
+            )}
           >
-            <Menu className="w-4 h-4" />
-            <span>Menú</span>
-          </button>
+            <Wallet className="w-4 h-4" />
+            <span>Caja</span>
+          </NavLink>
         </nav>
       </div>
 
