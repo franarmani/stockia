@@ -21,7 +21,7 @@ import { getLocalCustomers, getLocalProducts, getLocalRows } from '@/sync/storag
 import CameraScanner, { type ScanFeedback } from '@/features/scanner/CameraScanner'
 import { findScannedProduct } from '@/features/scanner/scanLookup'
 import { localStock, stockByProduct, type WarehouseStockRow } from '@/features/warehouses/warehouseStock'
-import { isOnline, onConnectivityChange } from '@/sync/connectivity'
+import { isOnline, onConnectivityChange, withSyncNote } from '@/sync/connectivity'
 import { toast } from 'sonner'
 import Button from '@/components/ui/Button'
 import Badge from '@/components/ui/Badge'
@@ -32,7 +32,7 @@ import { CajaGoIcon } from '@/components/brand/CajaGoBrand'
 import type { Product, Customer, CartItem } from '@/types/database'
 import {
   Search, Tag, QrCode, Plus, Minus, Trash2, ShoppingCart, CreditCard,
-  Banknote, ArrowRightLeft, X, CheckCircle2, User, Wallet,
+  Banknote, ArrowRightLeft, X, CheckCircle2, User, UserPlus, Wallet,
   FileText, Receipt, Percent, CircleDollarSign, Camera, ChevronRight, Check, Package,
   LogOut, Zap, ScanLine, ChevronDown, Coffee,
 } from 'lucide-react'
@@ -188,8 +188,9 @@ export default function POSPage() {
   const [docTipoCustomer, setDocTipoCustomer] = useState('99')
   const [docNroCustomer, setDocNroCustomer] = useState('')
   const [customerNameInput, setCustomerNameInput] = useState('')
+  const [customerPhoneInput, setCustomerPhoneInput] = useState('')
   const [customerIvaCondition, setCustomerIvaCondition] = useState('consumidor_final')
-  const [saveCustomerCheck, setSaveCustomerCheck] = useState(false)
+  const [saveCustomerCheck, setSaveCustomerCheck] = useState(true)
   const [showQuickCustomerForm, setShowQuickCustomerForm] = useState(false)
   const [accountNote, setAccountNote] = useState('')
   const [qtyInputProduct, setQtyInputProduct] = useState<Product | null>(null)
@@ -596,6 +597,7 @@ export default function POSPage() {
       setCustomerId(c.id)
       usePOSStore.getState().setWholesaleCustomer(!!(c as any).is_wholesale)
       setCustomerNameInput(c.name || '')
+      setCustomerPhoneInput(c.phone || '')
       setDocTipoCustomer((c as any).doc_tipo ? String((c as any).doc_tipo) : '80')
       setDocNroCustomer((c as any).doc_nro || '')
       setCustomerIvaCondition((c as any).iva_condition || 'consumidor_final')
@@ -603,10 +605,45 @@ export default function POSPage() {
       setCustomerId(null)
       usePOSStore.getState().setWholesaleCustomer(false)
       setCustomerNameInput('')
+      setCustomerPhoneInput('')
       setDocTipoCustomer(receiptType === 'A' ? '80' : '99')
       setDocNroCustomer('')
       setCustomerIvaCondition('consumidor_final')
-      setSaveCustomerCheck(false)
+      setSaveCustomerCheck(true)
+    }
+  }
+
+  async function handleCreateAndSelectCustomer() {
+    const name = customerNameInput.trim()
+    if (!name) {
+      toast.error('Ingresá el nombre o razón social del cliente')
+      return
+    }
+    const cleanDoc = docNroCustomer.replace(/[^0-9]/g, '')
+    const newCustomer = {
+      id: crypto.randomUUID(),
+      business_id: profile!.business_id,
+      name,
+      phone: customerPhoneInput.trim() || null,
+      email: null,
+      address: null,
+      doc_tipo: docTipoCustomer || '99',
+      doc_nro: cleanDoc || null,
+      iva_condition: customerIvaCondition || 'consumidor_final',
+      balance: 0,
+      created_at: new Date().toISOString(),
+    }
+
+    try {
+      await syncEngine.createRow('customers', profile!.business_id, newCustomer)
+      setCustomers(prev => [...prev, newCustomer as Customer])
+      handleSelectCustomer(newCustomer as Customer)
+      setShowQuickCustomerForm(false)
+      setShowCustomerModal(false)
+      toast.success(withSyncNote(`Cliente "${name}" guardado y seleccionado`))
+    } catch (e: any) {
+      console.error('[POS] Error guardando cliente:', e)
+      toast.error(e?.message || 'No se pudo guardar el cliente')
     }
   }
 
@@ -793,7 +830,7 @@ export default function POSPage() {
               id: crypto.randomUUID(),
               business_id: profile!.business_id,
               name: resolvedCustomerName,
-              phone: null,
+              phone: customerPhoneInput.trim() || null,
               email: null,
               address: null,
               doc_tipo: String(docTipoNum),
@@ -889,17 +926,22 @@ export default function POSPage() {
       let finalCustomerId = customerId
       if (saveCustomerCheck && !customerId && resolvedCustomerName && resolvedCustomerName !== 'Consumidor Final') {
         try {
-          const { data: newCust } = await supabase.from('customers').insert({
+          const newCust = {
+            id: crypto.randomUUID(),
             business_id: profile!.business_id,
             name: resolvedCustomerName,
+            phone: customerPhoneInput.trim() || null,
+            email: null,
+            address: null,
             doc_tipo: String(docTipoNum),
             doc_nro: cleanDoc || null,
             iva_condition: customerIvaCondition || 'consumidor_final',
-          }).select().single()
-          if (newCust) {
-            finalCustomerId = newCust.id
-            setCustomers(prev => [...prev, newCust as Customer])
+            balance: 0,
+            created_at: new Date().toISOString(),
           }
+          await syncEngine.createRow('customers', profile!.business_id, newCust)
+          finalCustomerId = newCust.id
+          setCustomers(prev => [...prev, newCust as Customer])
         } catch (e) {
           console.warn('No se pudo guardar el cliente en la base de datos:', e)
         }
@@ -1882,26 +1924,29 @@ export default function POSPage() {
           {!showQuickCustomerForm ? (
             <button
               onClick={() => setShowQuickCustomerForm(true)}
-              className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl border border-dashed border-primary/40 bg-primary/5 hover:bg-primary/10 text-primary text-xs font-semibold transition"
+              className="w-full flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl border border-dashed border-primary/40 bg-primary/5 hover:bg-primary/10 text-primary text-xs font-semibold transition"
             >
-              <Plus className="w-3.5 h-3.5" /> Ingresar CUIT y nombre para esta venta
+              <UserPlus className="w-4 h-4" /> + Crear nuevo cliente en agenda
             </button>
           ) : (
-            <div className="p-3 rounded-xl bg-white/[0.04] border border-white/10 space-y-2.5 animate-fade-in">
+            <div className="p-3.5 rounded-xl bg-white/[0.04] border border-white/10 space-y-3 animate-fade-in">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-white">Datos de facturación</span>
+                <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                  <UserPlus className="w-3.5 h-3.5 text-primary" /> Datos del nuevo cliente
+                </span>
                 <button onClick={() => setShowQuickCustomerForm(false)} className="text-[11px] text-slate-400 hover:text-white">
                   Ocultar
                 </button>
               </div>
               <div>
-                <label className="text-[10px] font-semibold text-slate-400 block mb-1 uppercase tracking-wider">Nombre o Razón Social</label>
+                <label className="text-[10px] font-semibold text-slate-400 block mb-1 uppercase tracking-wider">Nombre o Razón Social *</label>
                 <input
                   type="text"
-                  placeholder="Ej: Juan Pérez / Empresa SRL"
+                  placeholder="Ej: Caloclor / Juan Pérez / Empresa SRL"
                   value={customerNameInput}
                   onChange={(e) => setCustomerNameInput(e.target.value)}
                   className="w-full h-9 px-3 rounded-lg border border-white/10 bg-[#0d1b2d] text-white placeholder:text-slate-500 text-xs focus:outline-none focus:border-primary/50"
+                  autoFocus
                 />
               </div>
               <div className="grid grid-cols-3 gap-2">
@@ -1918,7 +1963,7 @@ export default function POSPage() {
                   </select>
                 </div>
                 <div className="col-span-2">
-                  <label className="text-[10px] font-semibold text-slate-400 block mb-1 uppercase tracking-wider">CUIT / DNI</label>
+                  <label className="text-[10px] font-semibold text-slate-400 block mb-1 uppercase tracking-wider">CUIT / DNI (opcional)</label>
                   <input
                     type="text"
                     placeholder="20-12345678-9"
@@ -1928,18 +1973,38 @@ export default function POSPage() {
                   />
                 </div>
               </div>
-              <button
-                onClick={() => {
-                  setCustomerId(null)
-                  usePOSStore.getState().setWholesaleCustomer(false)
-                  setShowQuickCustomerForm(false)
-                  setShowCustomerModal(false)
-                  toast.success('Datos del cliente aplicados a la venta')
-                }}
-                className="w-full h-8 rounded-lg bg-primary hover:bg-primary/90 text-white text-xs font-bold transition"
-              >
-                Aplicar a la venta
-              </button>
+              <div>
+                <label className="text-[10px] font-semibold text-slate-400 block mb-1 uppercase tracking-wider">Teléfono (opcional)</label>
+                <input
+                  type="text"
+                  placeholder="Ej: 11 1234-5678"
+                  value={customerPhoneInput}
+                  onChange={(e) => setCustomerPhoneInput(e.target.value)}
+                  className="w-full h-9 px-3 rounded-lg border border-white/10 bg-[#0d1b2d] text-white placeholder:text-slate-500 text-xs focus:outline-none focus:border-primary/50"
+                />
+              </div>
+              <div className="pt-1 space-y-1.5">
+                <button
+                  type="button"
+                  onClick={handleCreateAndSelectCustomer}
+                  className="w-full h-9 rounded-lg bg-primary hover:bg-primary/90 text-white text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-md shadow-primary/20"
+                >
+                  <UserPlus className="w-3.5 h-3.5" /> Guardar en agenda y seleccionar
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCustomerId(null)
+                    usePOSStore.getState().setWholesaleCustomer(false)
+                    setShowQuickCustomerForm(false)
+                    setShowCustomerModal(false)
+                    toast.success('Datos aplicados solo a esta venta')
+                  }}
+                  className="w-full h-7 rounded-lg bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white text-[11px] font-medium transition"
+                >
+                  Solo aplicar a esta venta (sin guardar en agenda)
+                </button>
+              </div>
             </div>
           )}
 
@@ -2120,12 +2185,12 @@ export default function POSPage() {
 
           {renderLoyaltyPanel()}
 
-          {receiptType !== 'ticket' && (
+          {(receiptType !== 'ticket' || customerNameInput.trim() || docNroCustomer.trim() || selectedCustomer) && (
             <div className="space-y-3 p-3.5 rounded-xl bg-white/[0.03] border border-white/10">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
                   <User className="w-3.5 h-3.5 text-primary" />
-                  Datos del cliente (Factura {receiptType})
+                  Datos del cliente {receiptType !== 'ticket' ? `(Factura ${receiptType})` : ''}
                 </span>
                 {selectedCustomer && (
                   <span className="text-[10px] bg-primary/15 text-primary px-2 py-0.5 rounded-md font-medium">
