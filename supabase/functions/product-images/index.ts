@@ -1,5 +1,5 @@
-// Fotos de producto desde internet: busca (Google Programmable Search) y descarga la elegida
-// para que el programa la suba al negocio (el navegador no puede bajarla por CORS).
+// Fotos de producto desde internet: busca (Google Programmable Search / Bing) y descarga la elegida
+// para que el programa la suba al negocio (el navegador no puede bajarla directamente por CORS).
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { businessIsActive, INACTIVE_MESSAGE } from '../_shared/access.ts'
 import type { ImageResult } from '../_shared/imageSearch.ts'
@@ -8,6 +8,81 @@ import { MAX_IMAGE_BYTES, buildImageQuery, isSafeImageUrl, parseBingImages, pars
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Expose-Headers': 'X-Image-Type',
+}
+
+const BROWSER_UA =
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
+
+function sniffImageMime(bytes: Uint8Array, headerType: string): string | null {
+  const clean = headerType.split(';')[0].trim().toLowerCase()
+  if (bytes.byteLength >= 4) {
+    // PNG: 89 50 4E 47
+    if (bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47) return 'image/png'
+    // JPEG: FF D8 FF
+    if (bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) return 'image/jpeg'
+    // GIF: 47 49 46 38
+    if (bytes[0] === 0x47 && bytes[1] === 0x49 && bytes[2] === 0x46 && bytes[3] === 0x38) return 'image/gif'
+    // WEBP: RIFF....WEBP
+    if (
+      bytes.byteLength >= 12 &&
+      bytes[0] === 0x52 && bytes[1] === 0x49 && bytes[2] === 0x46 && bytes[3] === 0x46 &&
+      bytes[8] === 0x57 && bytes[9] === 0x45 && bytes[10] === 0x42 && bytes[11] === 0x50
+    ) {
+      return 'image/webp'
+    }
+  }
+  if (clean === 'image/jpg' || clean === 'image/pjpeg') return 'image/jpeg'
+  if (/^image\/(png|jpeg|webp|gif|avif|bmp)$/.test(clean)) return clean
+  return null
+}
+
+async function fetchImageCandidate(rawTarget: string): Promise<{ bytes: Uint8Array; mime: string } | null> {
+  let target = rawTarget.trim()
+  for (let hop = 0; hop < 5; hop++) {
+    if (!isSafeImageUrl(target)) return null
+    let origin = 'https://www.bing.com/'
+    try {
+      origin = new URL(target).origin + '/'
+    } catch {}
+
+    let response: Response
+    try {
+      response = await fetch(target, {
+        redirect: 'manual',
+        signal: AbortSignal.timeout(12_000),
+        headers: {
+          'User-Agent': BROWSER_UA,
+          'Accept': 'image/avif,image/webp,image/apng,image/*,*/*;q=0.8',
+          'Accept-Language': 'es-AR,es;q=0.9,en;q=0.8',
+          'Referer': origin,
+        },
+      })
+    } catch {
+      return null
+    }
+
+    if ([301, 302, 303, 307, 308].includes(response.status)) {
+      const next = response.headers.get('location')
+      if (!next) return null
+      try {
+        target = new URL(next, target).toString()
+      } catch {
+        return null
+      }
+      continue
+    }
+
+    if (!response.ok) return null
+    const bytes = new Uint8Array(await response.arrayBuffer())
+    if (bytes.byteLength === 0 || bytes.byteLength > MAX_IMAGE_BYTES) return null
+
+    const mime = sniffImageMime(bytes, response.headers.get('content-type') ?? '')
+    if (!mime) return null
+
+    return { bytes, mime }
+  }
+  return null
 }
 
 Deno.serve(async request => {
@@ -58,7 +133,7 @@ Deno.serve(async request => {
             page.search = new URLSearchParams({ q: query, qft: filters, first: String(first), form: 'HDRSC3', setlang: 'es-AR', cc: 'AR' }).toString()
             const response = await fetch(page, {
               signal: AbortSignal.timeout(15_000),
-              headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36', 'Accept-Language': 'es-AR,es;q=0.9' },
+              headers: { 'User-Agent': BROWSER_UA, 'Accept-Language': 'es-AR,es;q=0.9' },
             })
             if (!response.ok) continue
             const seen = new Set(results.map(r => r.url))
@@ -68,28 +143,50 @@ Deno.serve(async request => {
         }
       }
       if (results.length === 0) return json({ error: 'No se pudo buscar en internet en este momento. Probá de nuevo en un rato o subí la foto desde tu equipo.' }, 502)
-      results = results.slice(0, 30)
+      results = results.slice(0, 30).map(r => ({
+        ...r,
+        // Adjuntamos el thumbnail como respaldo en el hash para clientes que solo envían result.url
+        url: r.thumbnail && r.thumbnail !== r.url && !r.url.includes('#fallback=')
+          ? `${r.url}#fallback=${encodeURIComponent(r.thumbnail)}`
+          : r.url,
+      }))
       return json({ results })
     }
 
     if (body.action === 'fetch') {
-      let target = String(body.url ?? '')
-      for (let hop = 0; hop < 4; hop++) {
-        if (!isSafeImageUrl(target)) return json({ error: 'Dirección de imagen no permitida' }, 400)
-        const response = await fetch(target, { redirect: 'manual', signal: AbortSignal.timeout(15_000), headers: { 'User-Agent': 'Mozilla/5.0 CajaGo' } })
-        if ([301, 302, 303, 307, 308].includes(response.status)) {
-          const next = response.headers.get('location')
-          if (!next) return json({ error: 'No se pudo bajar la imagen' }, 502)
-          target = new URL(next, target).toString()
-          continue
-        }
-        if (!response.ok) return json({ error: 'No se pudo bajar la imagen' }, 502)
-        const type = (response.headers.get('content-type') ?? '').split(';')[0].trim().toLowerCase()
-        if (!/^image\/(png|jpeg|webp|gif)$/.test(type)) return json({ error: 'El archivo no es una imagen compatible' }, 415)
-        const bytes = new Uint8Array(await response.arrayBuffer())
-        if (bytes.byteLength > MAX_IMAGE_BYTES) return json({ error: 'La imagen es demasiado pesada' }, 413)
-        return new Response(bytes, { headers: { ...corsHeaders, 'Content-Type': type } })
+      const rawUrl = String(body.url ?? '').trim()
+      const fallbackParam = typeof body.fallbackUrl === 'string' ? body.fallbackUrl.trim() : ''
+
+      let primaryUrl = rawUrl
+      let hashFallback = ''
+      const hashIdx = rawUrl.indexOf('#fallback=')
+      if (hashIdx !== -1) {
+        primaryUrl = rawUrl.slice(0, hashIdx)
+        try {
+          hashFallback = decodeURIComponent(rawUrl.slice(hashIdx + '#fallback='.length))
+        } catch {}
       }
+
+      const candidates = Array.from(new Set([primaryUrl, fallbackParam, hashFallback].filter(Boolean)))
+      if (candidates.length === 0 || !candidates.some(isSafeImageUrl)) {
+        return json({ error: 'Dirección de imagen no permitida' }, 400)
+      }
+
+      for (const candidate of candidates) {
+        const downloaded = await fetchImageCandidate(candidate)
+        if (downloaded) {
+          // IMPORTANTE: @supabase/functions-js solo devuelve un Blob cuando Content-Type es
+          // application/octet-stream (con image/* ejecuta response.text() y corrompe los bytes).
+          return new Response(downloaded.bytes, {
+            headers: {
+              ...corsHeaders,
+              'Content-Type': 'application/octet-stream',
+              'X-Image-Type': downloaded.mime,
+            },
+          })
+        }
+      }
+
       return json({ error: 'No se pudo bajar la imagen' }, 502)
     }
 

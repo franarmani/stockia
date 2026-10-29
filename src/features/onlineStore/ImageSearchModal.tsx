@@ -5,6 +5,40 @@ import { supabase } from '@/lib/supabase'
 import Modal from '@/components/ui/Modal'
 import type { ImageResult } from '../../../supabase/functions/_shared/imageSearch'
 
+async function downloadImageBlob(result: ImageResult): Promise<Blob> {
+  // 1. Intentar por Edge Function (con fallback automático al thumbnail de Bing/Google CDN)
+  const { data, error: invokeError } = await supabase.functions.invoke('product-images', {
+    body: { action: 'fetch', url: result.url, fallbackUrl: result.thumbnail },
+  })
+  if (!invokeError && data instanceof Blob && data.size > 0) {
+    return data
+  }
+
+  // 2. Si el origen falló y el thumbnail es distinto, probar pedir directamente el thumbnail al servidor
+  if (result.thumbnail && result.thumbnail !== result.url) {
+    const retry = await supabase.functions.invoke('product-images', {
+      body: { action: 'fetch', url: result.thumbnail },
+    })
+    if (!retry.error && retry.data instanceof Blob && retry.data.size > 0) {
+      return retry.data
+    }
+  }
+
+  // 3. Respaldo directo desde el navegador contra el thumbnail CDN
+  if (result.thumbnail) {
+    try {
+      const res = await fetch(result.thumbnail, { mode: 'cors', credentials: 'omit' })
+      if (res.ok) {
+        const blob = await res.blob()
+        if (blob.size > 0) return blob
+      }
+    } catch {}
+  }
+
+  const detail = await (invokeError as any)?.context?.json?.().catch(() => null)
+  throw new Error(detail?.error || 'No se pudo bajar esa imagen, probá con otra')
+}
+
 /** Busca fotos del producto en internet (fondo blanco) y devuelve la elegida como archivo. */
 export default function ImageSearchModal({
   open,
@@ -47,12 +81,9 @@ export default function ImageSearchModal({
   async function choose(result: ImageResult) {
     setChoosing(result.url)
     try {
-      const { data, error: invokeError } = await supabase.functions.invoke('product-images', { body: { action: 'fetch', url: result.url } })
-      if (invokeError || !(data instanceof Blob)) {
-        const detail = await (invokeError as any)?.context?.json?.().catch(() => null)
-        throw new Error(detail?.error || 'No se pudo bajar esa imagen, probá con otra')
-      }
-      await onPick(new File([data], 'producto', { type: data.type || 'image/png' }))
+      const blob = await downloadImageBlob(result)
+      const mimeType = blob.type && blob.type.startsWith('image/') ? blob.type : 'image/jpeg'
+      await onPick(new File([blob], 'producto.jpg', { type: mimeType }))
       onClose()
     } catch (err: any) {
       toast.error(err?.message || 'No se pudo usar esa imagen')

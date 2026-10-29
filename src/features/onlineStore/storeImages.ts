@@ -5,18 +5,54 @@ import { supabase } from '@/lib/supabase'
 
 const BUCKET = 'product-images'
 
+async function decodeImage(file: Blob): Promise<{ width: number; height: number; draw: (ctx: CanvasRenderingContext2D, w: number, h: number) => void; close: () => void }> {
+  try {
+    const bitmap = await createImageBitmap(file)
+    return {
+      width: bitmap.width,
+      height: bitmap.height,
+      draw: (ctx, w, h) => ctx.drawImage(bitmap, 0, 0, w, h),
+      close: () => bitmap.close(),
+    }
+  } catch {
+    const url = URL.createObjectURL(file)
+    try {
+      const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+        const el = new Image()
+        el.onload = () => resolve(el)
+        el.onerror = () => reject(new Error('El archivo no es una imagen válida'))
+        el.src = url
+      })
+      return {
+        width: img.naturalWidth || img.width,
+        height: img.naturalHeight || img.height,
+        draw: (ctx, w, h) => ctx.drawImage(img, 0, 0, w, h),
+        close: () => URL.revokeObjectURL(url),
+      }
+    } catch (err) {
+      URL.revokeObjectURL(url)
+      throw err
+    }
+  }
+}
+
 async function toWebp(file: File, maxSide: number, quality = 0.82): Promise<Blob> {
-  if (!file.type.startsWith('image/')) throw new Error('El archivo no es una imagen')
-  const bitmap = await createImageBitmap(file)
-  const scale = Math.min(1, maxSide / Math.max(bitmap.width, bitmap.height))
-  const canvas = document.createElement('canvas')
-  canvas.width = Math.round(bitmap.width * scale)
-  canvas.height = Math.round(bitmap.height * scale)
-  canvas.getContext('2d')!.drawImage(bitmap, 0, 0, canvas.width, canvas.height)
-  bitmap.close()
-  const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, 'image/webp', quality))
-  if (!blob) throw new Error('No se pudo procesar la imagen')
-  return blob
+  if (file.type && !file.type.startsWith('image/') && file.type !== 'application/octet-stream') {
+    throw new Error('El archivo no es una imagen')
+  }
+  const decoded = await decodeImage(file)
+  try {
+    const scale = Math.min(1, maxSide / Math.max(decoded.width, decoded.height))
+    const canvas = document.createElement('canvas')
+    canvas.width = Math.max(1, Math.round(decoded.width * scale))
+    canvas.height = Math.max(1, Math.round(decoded.height * scale))
+    decoded.draw(canvas.getContext('2d')!, canvas.width, canvas.height)
+    const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, 'image/webp', quality))
+    if (!blob) throw new Error('No se pudo procesar la imagen')
+    return blob
+  } finally {
+    decoded.close()
+  }
 }
 
 /** Sube la foto y devuelve su URL pública. kind 'cover' es la portada de la tienda (más ancha). */
