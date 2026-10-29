@@ -37,7 +37,7 @@ import { getGlobalCopilotInsight, type AnalysisResult } from '@/services/intelli
 import { Zap, Loader2, CheckCircle2, Info, ChevronRight } from 'lucide-react'
 import { toast } from 'sonner'
 import { usePlan } from '@/hooks/usePlan'
-import { MercadoPagoPromptBanner } from '@/features/subscription'
+import { MercadoPagoPromptBanner, SubscriptionStatusWidget } from '@/features/subscription'
 import PaymentNotificationModal from '@/components/modals/PaymentNotificationModal'
 
 interface DashboardData {
@@ -187,6 +187,9 @@ export default function DashboardPage() {
     <div className="space-y-6 animate-fade-in">
       {/* Alerta de suscripción a débito automático con Mercado Pago */}
       <MercadoPagoPromptBanner />
+
+      {/* Días disponibles de suscripción */}
+      <SubscriptionStatusWidget />
 
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">

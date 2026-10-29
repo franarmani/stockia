@@ -1,4 +1,5 @@
 export { useSubscription } from './hooks/useSubscription'
 export { default as MercadoPagoPromptBanner } from './components/MercadoPagoPromptBanner'
+export { default as SubscriptionStatusWidget } from './components/SubscriptionStatusWidget'
 export { getSubscriptionDateState, formatSubscriptionDate, calculateRawRemainingDays, isSubscriptionExpired } from './utils/subscriptionDates'
 export type { SubscriptionDateState, SubscriptionStatus, PaymentStatus, BusinessSubscription, SubscriptionBannerState } from './types/subscription.types'
