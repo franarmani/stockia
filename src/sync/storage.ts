@@ -42,7 +42,7 @@ export function checkIsTauriDesktop(): boolean {
 }
 
 const IDB_NAME = 'cajago_local'
-const IDB_VERSION = 5
+const IDB_VERSION = 6
 
 let tauriDb: any = null
 let localWriteQueue: Promise<void> = Promise.resolve()
@@ -191,43 +191,77 @@ export async function initStorage(): Promise<void> {
 
   // Web / PWA IndexedDB init
   return new Promise((resolve, reject) => {
+    openIDBWithUpgrade()
+      .then((db) => {
+        db.close()
+        resolve()
+      })
+      .catch(reject)
+  })
+}
+
+function ensureStores(db: IDBDatabase) {
+  if (!db.objectStoreNames.contains('sync_queue')) {
+    const store = db.createObjectStore('sync_queue', { keyPath: 'operation_id' })
+    store.createIndex('status', 'status', { unique: false })
+    store.createIndex('idempotency_key', 'idempotency_key', { unique: true })
+    store.createIndex('created_at', 'created_at', { unique: false })
+  }
+  if (!db.objectStoreNames.contains('local_products')) {
+    const store = db.createObjectStore('local_products', { keyPath: 'id' })
+    store.createIndex('barcode', 'barcode', { unique: false })
+    store.createIndex('business_id', 'business_id', { unique: false })
+  }
+  if (!db.objectStoreNames.contains('local_customers')) {
+    const store = db.createObjectStore('local_customers', { keyPath: 'id' })
+    store.createIndex('business_id', 'business_id', { unique: false })
+  }
+  if (!db.objectStoreNames.contains('local_sales')) {
+    const store = db.createObjectStore('local_sales', { keyPath: 'id' })
+    store.createIndex('business_id', 'business_id', { unique: false })
+    store.createIndex('sync_status', 'sync_status', { unique: false })
+  }
+  if (!db.objectStoreNames.contains('stock_conflicts')) {
+    db.createObjectStore('stock_conflicts', { keyPath: 'conflict_id' })
+  }
+  if (!db.objectStoreNames.contains('local_config')) {
+    db.createObjectStore('local_config', { keyPath: 'key' })
+  }
+  if (!db.objectStoreNames.contains('local_rows')) {
+    const store = db.createObjectStore('local_rows', { keyPath: ['table_name', 'id'] })
+    store.createIndex('table_business', ['table_name', 'business_id'], { unique: false })
+  }
+}
+
+const REQUIRED_IDB_STORES = ['sync_queue', 'local_products', 'local_customers', 'local_sales', 'stock_conflicts', 'local_config', 'local_rows']
+
+function openIDBWithUpgrade(): Promise<IDBDatabase> {
+  return new Promise((resolve, reject) => {
     const req = indexedDB.open(IDB_NAME, IDB_VERSION)
-    req.onupgradeneeded = (event) => {
-      const db = req.result
-      if (!db.objectStoreNames.contains('sync_queue')) {
-        const store = db.createObjectStore('sync_queue', { keyPath: 'operation_id' })
-        store.createIndex('status', 'status', { unique: false })
-        store.createIndex('idempotency_key', 'idempotency_key', { unique: true })
-        store.createIndex('created_at', 'created_at', { unique: false })
-      }
-      if (!db.objectStoreNames.contains('local_products')) {
-        const store = db.createObjectStore('local_products', { keyPath: 'id' })
-        store.createIndex('barcode', 'barcode', { unique: false })
-        store.createIndex('business_id', 'business_id', { unique: false })
-      }
-      if (!db.objectStoreNames.contains('local_customers')) {
-        const store = db.createObjectStore('local_customers', { keyPath: 'id' })
-        store.createIndex('business_id', 'business_id', { unique: false })
-      }
-      if (!db.objectStoreNames.contains('local_sales')) {
-        const store = db.createObjectStore('local_sales', { keyPath: 'id' })
-        store.createIndex('business_id', 'business_id', { unique: false })
-        store.createIndex('sync_status', 'sync_status', { unique: false })
-      }
-      if (!db.objectStoreNames.contains('stock_conflicts')) {
-        db.createObjectStore('stock_conflicts', { keyPath: 'conflict_id' })
-      }
-      if (!db.objectStoreNames.contains('local_config')) {
-        db.createObjectStore('local_config', { keyPath: 'key' })
-      }
-      if (!db.objectStoreNames.contains('local_rows')) {
-        const store = db.createObjectStore('local_rows', { keyPath: ['table_name', 'id'] })
-        store.createIndex('table_business', ['table_name', 'business_id'], { unique: false })
-      }
+    req.onupgradeneeded = () => {
+      ensureStores(req.result)
     }
     req.onsuccess = () => {
-      releaseOnVersionChange(req.result)
-      resolve()
+      const db = req.result
+      releaseOnVersionChange(db)
+      // Check if all required object stores exist
+      const missing = REQUIRED_IDB_STORES.filter(s => !db.objectStoreNames.contains(s))
+      if (missing.length > 0) {
+        db.close()
+        console.warn('[IDB] Faltaban almacenes en la base web (' + missing.join(', ') + '). Recreando base limpia...')
+        const delReq = indexedDB.deleteDatabase(IDB_NAME)
+        delReq.onsuccess = delReq.onerror = () => {
+          const retryReq = indexedDB.open(IDB_NAME, IDB_VERSION)
+          retryReq.onupgradeneeded = () => ensureStores(retryReq.result)
+          retryReq.onsuccess = () => {
+            releaseOnVersionChange(retryReq.result)
+            resolve(retryReq.result)
+          }
+          retryReq.onerror = () => reject(retryReq.error)
+        }
+        return
+      }
+      resolve(db)
     }
     req.onerror = () => reject(req.error)
     req.onblocked = () => reject(new Error('otra pestaña de CajaGo tiene abierta una versión anterior; cerrala y recargá'))
@@ -240,14 +274,7 @@ function releaseOnVersionChange(db: IDBDatabase) {
 }
 
 function getIDB(): Promise<IDBDatabase> {
-  return new Promise((resolve, reject) => {
-    const req = indexedDB.open(IDB_NAME, IDB_VERSION)
-    req.onsuccess = () => {
-      releaseOnVersionChange(req.result)
-      resolve(req.result)
-    }
-    req.onerror = () => reject(req.error)
-  })
+  return openIDBWithUpgrade()
 }
 
 // ──────────────────────────────────────────────

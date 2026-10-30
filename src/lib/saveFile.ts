@@ -72,25 +72,49 @@ export function isolateHtml(html: string): string {
 
 /** Arma el PDF (A4) de un bloque HTML y lo guarda. El HTML puede ser un documento completo con un .sheet adentro. */
 export async function savePdfFromHtml(html: string, filename: string, options: { margin?: number | [number, number, number, number]; width?: number; avoid?: string } = {}): Promise<void> {
-  // @ts-ignore
-  const { default: html2pdf } = await import('html2pdf.js')
   const container = document.createElement('div')
-  container.style.cssText = `position:fixed;left:-99999px;top:0;width:${options.width ?? 794}px;background:#fff;color:#000;pointer-events:none`
+  // Posicionamiento en pantalla segura fuera del flujo sin romper el motor de layout de html2canvas
+  container.style.cssText = `position:fixed;left:0;top:0;width:${options.width ?? 794}px;background:#fff;color:#000;pointer-events:none;z-index:-9999;opacity:0`
   container.innerHTML = isolateHtml(html)
   document.body.appendChild(container)
   try {
-    // Las imágenes (logo) tienen que estar cargadas antes de dibujar.
+    // Las imágenes (logo) tienen que estar cargadas antes de dibujar (con timeout de 2.5s para no trabarse)
     await Promise.all(Array.from(container.querySelectorAll('img')).map((img) =>
-      img.complete ? Promise.resolve() : new Promise<void>((resolve) => { img.onload = img.onerror = () => resolve() })))
+      new Promise<void>((resolve) => {
+        if (img.complete) return resolve()
+        const timer = setTimeout(resolve, 2500)
+        img.onload = img.onerror = () => {
+          clearTimeout(timer)
+          resolve()
+        }
+      })
+    ))
     const source = container.querySelector(`.${SCOPE}`) as HTMLElement
-    const blob: Blob = await html2pdf().set({
+    // @ts-ignore
+    const { default: html2pdf } = await import('html2pdf.js')
+    const worker = html2pdf().set({
       margin: options.margin ?? 0,
       image: { type: 'jpeg', quality: 0.98 },
       html2canvas: { scale: 2, useCORS: true, logging: false },
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
       pagebreak: { mode: ['css', 'legacy'], ...(options.avoid ? { avoid: options.avoid } : {}) },
-    } as any).from(source).outputPdf('blob')
+    } as any).from(source)
+
+    // Timeout de 15 segundos para evitar pantallas de carga congeladas
+    const pdfPromise = Promise.resolve(worker.outputPdf('blob')) as Promise<Blob>
+    const timeoutPromise = new Promise<Blob>((_, reject) =>
+      setTimeout(() => reject(new Error('La generación de PDF superó el tiempo máximo')), 15000)
+    )
+
+    const blob = await Promise.race([pdfPromise, timeoutPromise])
     await saveBlob(blob, filename)
+  } catch (err: any) {
+    console.warn('[savePdfFromHtml] Error o timeout en html2pdf, recurriendo a descarga HTML:', err)
+    // Respaldo de descarga segura: archivo HTML imprimible
+    const fallbackFilename = filename.replace(/\.pdf$/i, '.html')
+    const fallbackBlob = new Blob([html], { type: 'text/html;charset=utf-8' })
+    await saveBlob(fallbackBlob, fallbackFilename)
+    toast.info('Se descargó el documento en formato imprimible de respaldo')
   } finally {
     container.remove()
   }

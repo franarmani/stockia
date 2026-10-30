@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
 
 @keyframes landing-marquee {
   from { transform: translate3d(0, 0, 0); }
@@ -34,34 +35,34 @@
   --color-purple-light: #9bacff;
   --color-pink-soft: #aab6c8;
 
-  --color-background: #0b0e13;
-  --color-background-dark: #07090d;
-  --color-foreground: #f4f6f8;
+  --color-background: var(--app-bg);
+  --color-background-dark: var(--app-bg-dark);
+  --color-foreground: var(--app-text);
 
-  --color-surface: #12171f;
-  --color-surface-secondary: #171e28;
-  --color-surface-elevated: #1a222d;
-  --color-surface-hover: rgba(111, 140, 255, 0.08);
+  --color-surface: var(--app-surface);
+  --color-surface-secondary: var(--app-surface-secondary);
+  --color-surface-elevated: var(--app-surface-elevated);
+  --color-surface-hover: var(--app-surface-hover);
 
-  --color-text-primary: #f4f6f8;
-  --color-text-secondary: #a7b0bf;
-  --color-text-muted: #737f91;
-  --color-muted: rgba(255, 255, 255, 0.045);
-  --color-muted-foreground: #8d98a9;
+  --color-text-primary: var(--app-text);
+  --color-text-secondary: var(--app-text-secondary);
+  --color-text-muted: var(--app-text-muted);
+  --color-muted: var(--app-muted);
+  --color-muted-foreground: var(--app-text-muted);
 
   --color-destructive: #ef6a72;
   --color-destructive-foreground: #ffffff;
   --color-warning: #e5ad57;
   --color-success: #49b98a;
 
-  --color-border: rgba(166, 180, 201, 0.13);
-  --color-border-strong: rgba(166, 180, 201, 0.24);
-  --color-input-bg: rgba(255, 255, 255, 0.035);
+  --color-border: var(--app-border);
+  --color-border-strong: var(--app-border-strong);
+  --color-input-bg: var(--app-input-bg);
   --color-ring: #6f8cff;
 
-  --color-sidebar: #0d1117;
-  --color-sidebar-foreground: #f4f6f8;
-  --color-sidebar-border: rgba(166, 180, 201, 0.11);
+  --color-sidebar: var(--app-sidebar);
+  --color-sidebar-foreground: var(--app-text);
+  --color-sidebar-border: var(--app-border);
 
   --radius-sm: 0.25rem;
   --radius-md: 0.5rem;
@@ -73,12 +74,16 @@
 :root {
   color-scheme: dark;
   --app-bg: #0b0e13;
+  --app-bg-dark: #07090d;
   --app-sidebar: #0d1117;
   --app-surface: #12171f;
+  --app-surface-secondary: #171e28;
   --app-surface-elevated: #1a222d;
   --app-surface-hover: rgba(111, 140, 255, 0.08);
   --app-border: rgba(166, 180, 201, 0.13);
   --app-border-strong: rgba(166, 180, 201, 0.24);
+  --app-input-bg: rgba(255, 255, 255, 0.035);
+  --app-muted: rgba(255, 255, 255, 0.045);
   --app-text: #f4f6f8;
   --app-text-secondary: #a7b0bf;
   --app-text-muted: #737f91;
@@ -95,6 +100,37 @@
   --app-paper-foreground: #f4f6f8;
   --shadow-panel: 0 18px 54px rgba(2, 5, 10, 0.28);
   --shadow-float: 0 24px 72px rgba(2, 5, 10, 0.42);
+}
+
+html.light, :root.light {
+  color-scheme: light;
+  --app-bg: #f8fafc;
+  --app-bg-dark: #f1f5f9;
+  --app-sidebar: #ffffff;
+  --app-surface: #ffffff;
+  --app-surface-secondary: #f8fafc;
+  --app-surface-elevated: #ffffff;
+  --app-surface-hover: rgba(99, 102, 241, 0.06);
+  --app-border: #e2e8f0;
+  --app-border-strong: #cbd5e1;
+  --app-input-bg: #ffffff;
+  --app-muted: #f1f5f9;
+  --app-text: #0f172a;
+  --app-text-secondary: #475569;
+  --app-text-muted: #64748b;
+  --app-accent: #4f46e5;
+  --app-accent-hover: #4338ca;
+  --app-accent-soft: rgba(79, 70, 229, 0.08);
+  --app-danger: #ef4444;
+  --app-danger-soft: rgba(239, 68, 68, 0.1);
+  --app-warning: #f59e0b;
+  --app-warning-soft: rgba(245, 158, 11, 0.1);
+  --app-success: #10b981;
+  --app-success-soft: rgba(16, 185, 129, 0.1);
+  --app-paper: #ffffff;
+  --app-paper-foreground: #0f172a;
+  --shadow-panel: 0 4px 20px rgba(0, 0, 0, 0.06);
+  --shadow-float: 0 10px 30px rgba(0, 0, 0, 0.08);
 }
 
 /* En la capa base: si quedan sueltas les ganan a las clases de Tailwind (tamaños de letra, bordes). */
@@ -270,22 +306,45 @@
   align-items: center;
   justify-content: center;
   gap: 0.6rem;
-  border-radius: 0.8rem;
-  background: #fff;
-  color: #0a0e15 !important;
+  border-radius: 0.75rem;
+  background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%) !important;
+  border: 1px solid rgba(199, 210, 254, 0.45) !important;
+  color: #ffffff !important;
   font-weight: 700;
-  box-shadow: 0 12px 40px rgba(154, 169, 255, 0.25);
-  transition: transform 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+  box-shadow: 0 4px 14px rgba(79, 70, 229, 0.28), 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+  transition: transform 0.15s ease, background 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.cg-btn-primary *,
+.cg-btn-primary :is(span, svg, kbd, p, div),
+html.light .cg-btn-primary,
+html.light .cg-btn-primary *,
+html.light .cg-btn-primary :is(span, svg, kbd, p, div) {
+  color: #ffffff !important;
+  stroke: #ffffff !important;
+}
+
+.cg-btn-primary :is(span.font-mono, kbd) {
+  background: rgba(0, 0, 0, 0.32) !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
 }
 
 .cg-btn-primary:hover:not(:disabled) {
   transform: translateY(-1px);
-  background: #eef1ff;
-  box-shadow: 0 16px 48px rgba(154, 169, 255, 0.32);
+  background: linear-gradient(135deg, #4338ca 0%, #2563eb 100%) !important;
+  border-color: rgba(224, 231, 255, 0.8) !important;
+  box-shadow: 0 6px 20px rgba(79, 70, 229, 0.38) !important;
+  color: #ffffff !important;
+}
+
+.cg-btn-primary:active:not(:disabled) {
+  transform: translateY(0);
 }
 
 .cg-btn-primary:disabled {
-  opacity: 0.6;
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 .cg-btn-ghost {
@@ -293,17 +352,19 @@
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  border-radius: 0.8rem;
-  border: 1px solid rgba(255, 255, 255, 0.13);
-  background: rgba(255, 255, 255, 0.035);
-  color: #fff;
+  border-radius: 0.75rem;
+  border: 1px solid var(--app-border);
+  background: var(--app-surface-secondary);
+  color: var(--app-text);
   font-weight: 600;
-  transition: border-color 0.15s ease, background 0.15s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
 }
 
 .cg-btn-ghost:hover {
-  border-color: rgba(255, 255, 255, 0.25);
-  background: rgba(255, 255, 255, 0.07);
+  border-color: var(--app-border-subtle);
+  background: var(--app-surface-elevated);
+  color: var(--app-text);
 }
 
 .app-shell main,
@@ -428,14 +489,13 @@
 /* Botones principales del programa: color de marca liso, sin brillo */
 .gradient-primary,
 .gradient-cajago-btn,
-.dark-shell :is(button, a).bg-primary,
-.dark-shell .cg-btn-primary {
+.dark-shell :is(button, a).bg-primary {
   color: #fff !important;
   background: #6178ee !important;
   background-image: none !important;
-  border-color: transparent !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
   font-weight: 600;
-  box-shadow: none;
+  box-shadow: 0 4px 12px rgba(97, 120, 238, 0.25);
   transform: none;
 }
 
@@ -447,17 +507,17 @@
 
 .gradient-cajago-btn:hover:not(:disabled),
 .gradient-primary:hover:not(:disabled),
-.dark-shell :is(button, a).bg-primary:hover:not(:disabled),
-.dark-shell .cg-btn-primary:hover:not(:disabled) {
+.dark-shell :is(button, a).bg-primary:hover:not(:disabled) {
   background: #6f8cff !important;
-  box-shadow: none;
-  transform: none;
+  border-color: rgba(255, 255, 255, 0.35) !important;
+  box-shadow: 0 6px 16px rgba(97, 120, 238, 0.35);
+  transform: translateY(-1px);
 }
 
 /* Paneles de las secciones: superficie lisa con borde fino */
 .app-content :is(.bg-surface, .bg-\[\#0B1120\], .bg-\[\#0b1120\]):is(.border, [class*='rounded-']) {
-  background: #10141b !important;
-  border-color: rgba(255, 255, 255, 0.07) !important;
+  background: var(--app-surface) !important;
+  border-color: var(--app-border) !important;
 }
 
 .gradient-cajago-text,
@@ -885,4 +945,258 @@ tbody tr:hover {
     padding-top: 0.7rem !important;
   }
   .app-shell table[data-stack] tbody td:first-child::before { display: none; }
+}
+
+
+/* Comprehensive Light Mode Style Rules */
+html.light, html.light body {
+  background-color: var(--app-bg) !important;
+  color: var(--app-text) !important;
+}
+
+html.light .app-shell,
+html.light .app-bg,
+html.light .cg-stage,
+html.light main {
+  background: var(--app-bg) !important;
+  color: var(--app-text) !important;
+}
+
+html.light .app-content .cg-card,
+html.light .cg-card,
+html.light .glass-card,
+html.light .glass-panel {
+  background: var(--app-surface) !important;
+  border-color: var(--app-border) !important;
+  color: var(--app-text) !important;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.04) !important;
+}
+
+html.light .cg-title,
+html.light .app-content .cg-title {
+  color: var(--app-text) !important;
+}
+
+html.light aside,
+html.light .sidebar {
+  background-color: var(--app-sidebar) !important;
+  border-right-color: var(--app-border) !important;
+}
+
+html.light header,
+html.light .header,
+html.light .app-topbar {
+  background-color: rgba(255, 255, 255, 0.96) !important;
+  border-bottom-color: var(--app-border) !important;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04) !important;
+}
+
+/* Remap dark arbitrary classes when in light mode */
+html.light [class*='bg-[#07111f]' i],
+html.light [class*='bg-[#070d1e]' i],
+html.light [class*='bg-[#090d16]' i],
+html.light [class*='bg-[#080b10]' i],
+html.light [class*='bg-[#090c11]' i],
+html.light [class*='bg-[#010211]' i],
+html.light [class*='bg-[#060b22]' i],
+html.light [class*='bg-[#0b0e13]' i],
+html.light [class*='bg-[#080e1e]' i],
+html.light [class*='bg-[#0b1429]' i] {
+  background-color: var(--app-bg) !important;
+}
+
+html.light [class*='bg-[#0c1322]' i],
+html.light [class*='bg-[#090f1b]' i],
+html.light [class*='bg-[#0d1b2d]' i],
+html.light [class*='bg-[#0e1629]' i],
+html.light [class*='bg-[#0b1120]' i],
+html.light [class*='bg-[#10141b]' i],
+html.light [class*='bg-[#121822]' i] {
+  background-color: var(--app-surface) !important;
+}
+
+html.light [class*='bg-[#122238]' i],
+html.light [class*='bg-[#131d31]' i],
+html.light [class*='bg-[#1a222d]' i],
+html.light [class*='bg-[#171e28]' i] {
+  background-color: var(--app-surface-secondary) !important;
+}
+
+/* Text adaptations */
+html.light h1, html.light h2, html.light h3, html.light h4, html.light h5, html.light h6 {
+  color: var(--app-text) !important;
+}
+
+html.light [class*='text-[#fcfcfd]' i],
+html.light [class*='text-[#f4f6f8]' i] {
+  color: var(--app-text) !important;
+}
+
+html.light [class*='text-[#9ca6ba]' i],
+html.light [class*='text-[#a7b0bf]' i] {
+  color: var(--app-text-secondary) !important;
+}
+
+html.light [class*='text-[#737f91]' i] {
+  color: var(--app-text-muted) !important;
+}
+
+html.light .text-slate-400 {
+  color: var(--app-text-muted) !important;
+}
+
+html.light .text-slate-500 {
+  color: var(--app-text-secondary) !important;
+}
+
+/* Universal high-contrast semantic text and badge colors in light mode */
+html.light .text-amber-100,
+html.light [class*='text-amber-100'],
+html.light .text-amber-200,
+html.light [class*='text-amber-200'],
+html.light .text-amber-300,
+html.light [class*='text-amber-300'],
+html.light .text-amber-400 {
+  color: #b45309 !important; /* amber-700 */
+}
+
+html.light .text-emerald-300,
+html.light [class*='text-emerald-300'],
+html.light .text-emerald-400 {
+  color: #047857 !important; /* emerald-700 */
+}
+
+html.light .text-blue-300,
+html.light [class*='text-blue-300'],
+html.light .text-blue-400 {
+  color: #1d4ed8 !important; /* blue-700 */
+}
+
+html.light .text-purple-300,
+html.light [class*='text-purple-300'],
+html.light .text-purple-400 {
+  color: #6d28d9 !important; /* purple-700 */
+}
+
+html.light .text-cyan-300,
+html.light .text-cyan-400 {
+  color: #0e7490 !important; /* cyan-700 */
+}
+
+html.light .text-sky-300,
+html.light .text-sky-400 {
+  color: #0369a1 !important; /* sky-700 */
+}
+
+/* Keep-white high-priority rules */
+html.light .keep-white,
+html.light .keep-white *,
+html.light .cg-btn-primary,
+html.light .cg-btn-primary *,
+html.light [class*='cg-btn-primary'],
+html.light [class*='cg-btn-primary'] *,
+html.light [class*='bg-primary'] .text-white,
+html.light [class*='bg-emerald'] .text-white,
+html.light [class*='bg-green'] .text-white,
+html.light [class*='bg-blue'] .text-white,
+html.light [class*='bg-indigo'] .text-white,
+html.light [class*='bg-violet'] .text-white,
+html.light [class*='bg-rose'] .text-white,
+html.light [class*='bg-red'] .text-white,
+html.light [class*='bg-amber'] .text-white {
+  color: #ffffff !important;
+}
+
+/* Fast text color conversions for plain light mode */
+html.light .text-white:not(.keep-white) {
+  color: var(--app-text) !important;
+}
+
+html.light [class*='text-white/']:not(.keep-white) {
+  color: var(--app-text-secondary) !important;
+}
+
+/* Light button and pill adaptations */
+html.light button[class*='bg-white/']:not([class*='bg-primary']):not([class*='bg-rose']):not([class*='bg-emerald']):not([class*='bg-blue']):not([class*='bg-violet']),
+html.light a[class*='bg-white/']:not([class*='bg-primary']):not([class*='bg-rose']):not([class*='bg-emerald']):not([class*='bg-blue']):not([class*='bg-violet']) {
+  background-color: var(--app-surface) !important;
+  border-color: var(--app-border) !important;
+  color: var(--app-text) !important;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04) !important;
+}
+
+html.light button[class*='bg-white/']:hover:not([class*='bg-primary']):not([class*='bg-rose']):not([class*='bg-emerald']):not([class*='bg-blue']):not([class*='bg-violet']),
+html.light a[class*='bg-white/']:hover:not([class*='bg-primary']):not([class*='bg-rose']):not([class*='bg-emerald']):not([class*='bg-blue']):not([class*='bg-violet']) {
+  background-color: var(--app-surface-secondary) !important;
+  color: var(--app-text) !important;
+}
+
+html.light .border-white\/8,
+html.light .border-white\/10,
+html.light .border-white\/5,
+html.light .border-white\/15,
+html.light .border-white\/20,
+html.light [class*='border-white/'] {
+  border-color: var(--app-border) !important;
+}
+
+html.light .bg-white\/5,
+html.light .bg-white\/8,
+html.light .bg-white\/10,
+html.light .bg-white\/\[0\.02\],
+html.light .bg-white\/\[0\.03\],
+html.light .bg-white\/\[0\.04\],
+html.light .bg-white\/\[0\.05\],
+html.light .bg-white\/\[0\.06\],
+html.light .bg-white\/\[0\.08\] {
+  background-color: var(--app-surface-secondary) !important;
+}
+
+html.light input:not([type='checkbox']):not([type='radio']),
+html.light select,
+html.light textarea,
+html.light .dark-shell input:not([type='checkbox']):not([type='radio']),
+html.light .dark-shell select,
+html.light .dark-shell textarea {
+  background-color: var(--app-surface) !important;
+  color: var(--app-text) !important;
+  border-color: var(--app-border) !important;
+}
+
+html.light select option,
+html.light select optgroup,
+html.light .dark-shell select option,
+html.light .dark-shell select optgroup {
+  background-color: var(--app-surface) !important;
+  color: var(--app-text) !important;
+}
+
+html.light input::placeholder,
+html.light textarea::placeholder {
+  color: var(--app-text-muted) !important;
+}
+
+/* Light mode Toast rules */
+html.light .cajago-toast,
+html.light [data-sonner-toast] {
+  background-color: var(--app-surface) !important;
+  color: var(--app-text) !important;
+  border-color: var(--app-border) !important;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.1) !important;
+}
+
+html.light .cajago-toast [data-title],
+html.light [data-sonner-toast] [data-title] {
+  color: var(--app-text) !important;
+}
+
+html.light .cajago-toast [data-description],
+html.light [data-sonner-toast] [data-description] {
+  color: var(--app-text-secondary) !important;
+}
+
+html.light .cajago-toast [data-button],
+html.light [data-sonner-toast] [data-button] {
+  background-color: var(--app-text) !important;
+  color: var(--app-surface) !important;
 }

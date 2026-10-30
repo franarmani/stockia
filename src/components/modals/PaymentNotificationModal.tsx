@@ -86,7 +86,7 @@ export default function PaymentNotificationModal({ onClose, daysLeft }: { onClos
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center p-4"
       style={{ background: 'rgba(7, 17, 31, 0.92)', backdropFilter: 'blur(12px)' }}>
-      <div className="w-full max-w-md bg-[#0d1b2d] border border-white/[0.08] rounded-2xl shadow-2xl overflow-hidden">
+      <div className="w-full max-w-md bg-surface text-foreground border border-border rounded-2xl shadow-2xl overflow-hidden">
         {/* Header */}
         <div className="relative px-6 pt-6 pb-4 border-b border-white/[0.06]">
           {onClose && (

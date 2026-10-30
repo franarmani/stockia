@@ -97,6 +97,17 @@ function webLoginAllowed() {
   return true
 }
 
+function RouteLoadingFallback() {
+  return (
+    <div className="flex items-center justify-center min-h-[50vh] w-full py-16">
+      <div className="flex flex-col items-center gap-3">
+        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+        <span className="text-xs font-semibold text-muted-foreground">Cargando sección...</span>
+      </div>
+    </div>
+  )
+}
+
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading, profile, needsOnboarding } = useAuthStore()
   const { business } = useBusinessStore()
@@ -108,7 +119,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
       setStuck(false)
       return
     }
-    const timer = setTimeout(() => setStuck(true), 15000)
+    const timer = setTimeout(() => setStuck(true), 5000)
     return () => clearTimeout(timer)
   }, [loading, user, profile])
 
@@ -501,7 +512,7 @@ export default function App() {
   if (showStartupSplash) return <SplashScreen />
 
   return (
-    <Suspense fallback={<SplashScreen />}>
+    <Suspense fallback={<RouteLoadingFallback />}>
       <ScrollToTop />
       <Routes>
         {/* Public */}

@@ -174,7 +174,7 @@ export default function WeatherWidget({ className }: { className?: string }) {
 
   return (
     <div className={cn(
-      'bg-[#0B1120] border border-white/[0.08] rounded-2xl shadow-xl p-5 relative overflow-hidden transition-all flex flex-col justify-between',
+      'cg-card p-5 relative overflow-hidden transition-all flex flex-col justify-between',
       className
     )}>
       {/* Subtle atmospheric ambient glow */}
@@ -216,7 +216,7 @@ export default function WeatherWidget({ className }: { className?: string }) {
           ) : (
             <div className="min-w-0">
               <div className="flex items-center gap-1.5">
-                <span className="text-sm font-bold text-white truncate max-w-[200px]">
+                <span className="text-sm font-bold text-foreground truncate max-w-[200px]">
                   {weather ? `${weather.city}${weather.country ? `, ${weather.country}` : ''}` : (city || DEFAULT_FALLBACK_CITY)}
                 </span>
                 <button
@@ -224,13 +224,13 @@ export default function WeatherWidget({ className }: { className?: string }) {
                     setCityInput(weather?.city || city)
                     setIsEditingCity(true)
                   }}
-                  className="p-1 rounded text-white/40 hover:text-white/80 transition-colors"
+                  className="p-1 rounded text-muted-foreground hover:text-foreground transition-colors"
                   title="Cambiar ciudad"
                 >
                   <Search className="w-3 h-3" />
                 </button>
               </div>
-              <p className="text-[10px] text-white/40 uppercase tracking-widest font-semibold">
+              <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold">
                 Estado del Clima
               </p>
             </div>
@@ -241,7 +241,7 @@ export default function WeatherWidget({ className }: { className?: string }) {
           {/* Auto detect location button */}
           <button
             onClick={autoDetectLocation}
-            className="w-8 h-8 rounded-lg bg-white/[0.03] hover:bg-white/[0.08] border border-white/[0.08] flex items-center justify-center text-white/50 hover:text-white transition-colors"
+            className="w-8 h-8 rounded-lg bg-surface-secondary hover:bg-surface-elevated border border-border flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
             title="Detectar automáticamente mi localidad"
           >
             <MapPin className="w-3.5 h-3.5" />
@@ -250,7 +250,7 @@ export default function WeatherWidget({ className }: { className?: string }) {
           <button
             onClick={handleRefresh}
             disabled={refreshing || loading}
-            className="w-8 h-8 rounded-lg bg-white/[0.03] hover:bg-white/[0.08] border border-white/[0.08] flex items-center justify-center text-white/50 hover:text-white transition-colors disabled:opacity-40"
+            className="w-8 h-8 rounded-lg bg-surface-secondary hover:bg-surface-elevated border border-border flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors disabled:opacity-40"
             title="Actualizar datos del clima"
           >
             <RefreshCw className={cn('w-3.5 h-3.5', (refreshing || loading) && 'animate-spin text-sky-400')} />
@@ -260,12 +260,12 @@ export default function WeatherWidget({ className }: { className?: string }) {
 
       {/* Quick city selector chips (when editing) */}
       {isEditingCity && (
-        <div className="flex flex-wrap gap-1.5 mb-3 pt-1 border-t border-white/[0.06] animate-fade-in">
+        <div className="flex flex-wrap gap-1.5 mb-3 pt-1 border-t border-border animate-fade-in">
           {['Bahía Blanca', 'Buenos Aires', 'Rosario', 'Córdoba', 'Mendoza', 'Mar del Plata'].map((quickCity) => (
             <button
               key={quickCity}
               onClick={() => handleQuickCitySelect(quickCity)}
-              className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-white/[0.04] hover:bg-sky-500/20 hover:text-sky-300 text-white/60 border border-white/[0.06] transition-colors"
+              className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-surface-secondary hover:bg-sky-500/20 hover:text-sky-400 text-text-secondary border border-border transition-colors"
             >
               {quickCity}
             </button>
@@ -275,7 +275,7 @@ export default function WeatherWidget({ className }: { className?: string }) {
 
       {/* Main Body */}
       {loading ? (
-        <div className="flex flex-col items-center justify-center py-10 text-white/40 gap-2.5">
+        <div className="flex flex-col items-center justify-center py-10 text-muted-foreground gap-2.5">
           <RefreshCw className="w-6 h-6 animate-spin text-sky-400" />
           <p className="text-xs">Cargando reporte meteorológico...</p>
         </div>
@@ -289,13 +289,13 @@ export default function WeatherWidget({ className }: { className?: string }) {
                 setCity(DEFAULT_FALLBACK_CITY)
                 fetchWeatherData(DEFAULT_FALLBACK_CITY, false)
               }}
-              className="text-xs px-3 py-1.5 rounded-lg bg-white/[0.05] hover:bg-white/[0.1] text-white/80 transition-colors"
+              className="text-xs px-3 py-1.5 rounded-lg bg-surface-secondary hover:bg-surface-elevated text-foreground border border-border transition-colors"
             >
               Cargar Bahía Blanca
             </button>
             <button
               onClick={autoDetectLocation}
-              className="text-xs px-3 py-1.5 rounded-lg bg-sky-500/20 hover:bg-sky-500/30 text-sky-300 border border-sky-500/30 transition-colors"
+              className="text-xs px-3 py-1.5 rounded-lg bg-sky-500/20 hover:bg-sky-500/30 text-sky-400 border border-sky-500/30 transition-colors"
             >
               Reintentar
             </button>
@@ -304,7 +304,7 @@ export default function WeatherWidget({ className }: { className?: string }) {
       ) : weather ? (
         <div className="flex-1 flex flex-col justify-between space-y-3.5 pt-1">
           {/* Main Temp & Condition Hero */}
-          <div className="flex items-center justify-between p-3.5 rounded-xl bg-white/[0.02] border border-white/[0.06]">
+          <div className="flex items-center justify-between p-3.5 rounded-xl bg-surface-secondary border border-border">
             <div className="flex items-center gap-3.5">
               {/* Weather Icon (Official with fallback) */}
               <div className="relative shrink-0">
@@ -320,12 +320,12 @@ export default function WeatherWidget({ className }: { className?: string }) {
 
               <div>
                 <div className="flex items-baseline gap-1">
-                  <span className="text-3xl lg:text-4xl font-extrabold text-white font-mono tracking-tight">
+                  <span className="text-3xl lg:text-4xl font-extrabold text-foreground font-mono tracking-tight">
                     {weather.temp}°
                   </span>
-                  <span className="text-sm font-semibold text-white/40 font-mono">C</span>
+                  <span className="text-sm font-semibold text-text-muted font-mono">C</span>
                 </div>
-                <p className="text-xs text-white/80 font-medium capitalize mt-0.5">
+                <p className="text-xs text-text-secondary font-medium capitalize mt-0.5">
                   {weather.description}
                 </p>
               </div>
@@ -333,50 +333,50 @@ export default function WeatherWidget({ className }: { className?: string }) {
 
             {/* High / Low & Sensación */}
             <div className="text-right space-y-1">
-              <div className="text-[11px] font-medium text-white/50">
-                ST: <span className="text-white font-semibold">{weather.feelsLike}°C</span>
+              <div className="text-[11px] font-medium text-text-secondary">
+                ST: <span className="text-foreground font-semibold">{weather.feelsLike}°C</span>
               </div>
-              <div className="text-[11px] text-white/40 font-mono">
-                <span className="text-amber-400">↑ {weather.tempMax}°</span> · <span className="text-sky-300">↓ {weather.tempMin}°</span>
+              <div className="text-[11px] text-text-muted font-mono">
+                <span className="text-amber-400">↑ {weather.tempMax}°</span> · <span className="text-sky-400">↓ {weather.tempMin}°</span>
               </div>
             </div>
           </div>
 
           {/* Secondary Metrics Bar */}
           <div className="grid grid-cols-2 gap-2 text-xs">
-            <div className="flex items-center gap-2.5 p-2.5 rounded-xl bg-white/[0.02] border border-white/[0.04]">
+            <div className="flex items-center gap-2.5 p-2.5 rounded-xl bg-surface-secondary border border-border">
               <Droplets className="w-4 h-4 text-sky-400 shrink-0" />
               <div>
-                <span className="text-[10px] text-white/40 block leading-tight">Humedad</span>
-                <span className="font-bold text-white font-mono">{weather.humidity}%</span>
+                <span className="text-[10px] text-text-muted block leading-tight">Humedad</span>
+                <span className="font-bold text-foreground font-mono">{weather.humidity}%</span>
               </div>
             </div>
 
-            <div className="flex items-center gap-2.5 p-2.5 rounded-xl bg-white/[0.02] border border-white/[0.04]">
+            <div className="flex items-center gap-2.5 p-2.5 rounded-xl bg-surface-secondary border border-border">
               <Wind className="w-4 h-4 text-indigo-400 shrink-0" />
               <div>
-                <span className="text-[10px] text-white/40 block leading-tight">Viento</span>
-                <span className="font-bold text-white font-mono">{weather.windSpeed} km/h</span>
+                <span className="text-[10px] text-text-muted block leading-tight">Viento</span>
+                <span className="font-bold text-foreground font-mono">{weather.windSpeed} km/h</span>
               </div>
             </div>
           </div>
 
           {/* Hourly Forecast Pills */}
           {forecast.length > 0 && (
-            <div className="pt-2.5 border-t border-white/[0.06]">
+            <div className="pt-2.5 border-t border-border">
               <div className="flex items-center justify-between mb-2">
-                <p className="text-[10px] font-bold text-white/40 uppercase tracking-wider">
+                <p className="text-[10px] font-bold text-text-muted uppercase tracking-wider">
                   Pronóstico Próximas Horas
                 </p>
-                <span className="text-[10px] text-white/30 font-medium">Intervalos de 3h</span>
+                <span className="text-[10px] text-text-muted font-medium">Intervalos de 3h</span>
               </div>
               <div className="grid grid-cols-4 gap-2">
                 {forecast.map((f, idx) => (
                   <div
                     key={idx}
-                    className="flex flex-col items-center py-2 px-1 rounded-xl bg-white/[0.02] hover:bg-white/[0.05] border border-white/[0.04] text-center transition-all group"
+                    className="flex flex-col items-center py-2 px-1 rounded-xl bg-surface-secondary hover:bg-surface-elevated border border-border text-center transition-all group"
                   >
-                    <span className="text-[10px] font-medium text-white/50 leading-tight">
+                    <span className="text-[10px] font-medium text-text-secondary leading-tight">
                       {f.time}
                     </span>
                     <img
@@ -384,7 +384,7 @@ export default function WeatherWidget({ className }: { className?: string }) {
                       alt={f.description}
                       className="w-8 h-8 object-contain my-0.5 group-hover:scale-110 transition-transform"
                     />
-                    <span className="text-xs font-bold text-white font-mono tabular-nums leading-tight">
+                    <span className="text-xs font-bold text-foreground font-mono tabular-nums leading-tight">
                       {f.temp}°
                     </span>
                   </div>

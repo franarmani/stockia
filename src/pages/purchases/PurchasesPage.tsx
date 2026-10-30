@@ -1041,7 +1041,7 @@ function PurchaseForm({
     }),
     [items, setItems] = useState<PurchaseDraftItem[]>([emptyItem()]),
     [extraTaxes, setExtraTaxes] = useState<any[]>([]),
-    [updateStock, setUpdateStock] = useState(false),
+    [updateStock, setUpdateStock] = useState(true),
     [saving, setSaving] = useState(false),
     [error, setError] = useState(""),
     [reading, setReading] = useState(false),
@@ -1116,6 +1116,7 @@ function PurchaseForm({
   const totals = useMemo(() => {
     const itemTotals = items.reduce(
       (a, item) => {
+        if (!item.description?.trim() || !item.unit_cost) return a;
         const subtotal = multiplyMoney(
           item.unit_cost || "0",
           item.quantity || "0",
@@ -1375,13 +1376,16 @@ function PurchaseForm({
                       onChange={(text) =>
                         updateItem(index, { description: text, product_id: undefined })
                       }
-                      onSelect={(product) =>
+                      onSelect={(product) => {
                         updateItem(index, {
                           product_id: product.id,
                           description: product.name,
                           unit_cost: item.unit_cost || (Number(product.purchase_price) > 0 ? String(product.purchase_price) : ""),
-                        })
-                      }
+                        });
+                        if (index === items.length - 1) {
+                          setItems((prev) => [...prev, emptyItem()]);
+                        }
+                      }}
                     />
                     {item.product_id && (
                       <div className="mt-1.5 flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-emerald-500/10 border border-emerald-500/20 text-[11px] text-emerald-300 font-medium w-fit max-w-full">
@@ -1521,14 +1525,15 @@ function PurchaseForm({
               saving ||
               !supplierId ||
               Boolean(duplicatePurchase) ||
-              items.some((i) => !i.description || !i.unit_cost) ||
+              items.filter((i) => i.description?.trim() && i.unit_cost).length === 0 ||
               (doc.payment_condition === "cash" && !doc.payment_method_id)
             }
             onClick={async () => {
               setSaving(true);
               setError("");
               try {
-                await onSave({ supplierId, document: doc, items, updateStock });
+                const validItems = items.filter((i) => i.description?.trim() && i.unit_cost);
+                await onSave({ supplierId, document: doc, items: validItems, updateStock });
               } catch (e: any) {
                 setError(e.message);
               } finally {

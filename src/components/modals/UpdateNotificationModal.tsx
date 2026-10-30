@@ -25,7 +25,7 @@ export default function UpdateNotificationModal({
           initial={{ opacity: 0, scale: 0.95, y: 15 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 15 }}
-          className="max-w-md w-full bg-[#0B1120] border border-blue-500/30 rounded-3xl overflow-hidden shadow-2xl relative text-white"
+          className="max-w-md w-full bg-surface border border-border rounded-3xl overflow-hidden shadow-2xl relative text-foreground"
         >
           {/* Top accent glow */}
           <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-blue-500 via-indigo-500 to-violet-500" />

@@ -12,9 +12,9 @@ export function CajaGoIcon({ size = 'md', className = '' }: { size?: 'xs' | 'sm'
   const sizeClasses = {
     xs: 'w-5 h-5',
     sm: 'w-7 h-7',
-    md: 'w-9 h-9',
-    lg: 'w-12 h-12',
-    xl: 'w-16 h-16',
+    md: 'w-8 h-8',
+    lg: 'w-10 h-10',
+    xl: 'w-14 h-14',
   }
 
   return (
@@ -38,9 +38,9 @@ export function CajaGoWordmark({ size = 'md', className = '' }: { size?: 'xs' | 
   }
 
   return (
-    <span className={`font-sans font-black select-none ${fontSizes[size]} ${className}`}>
-      <span className="text-[#FCFCFD]">Caja</span>
-      <span className="bg-gradient-to-r from-[#3E73F5] via-[#947FF8] to-[#DE9BD3] bg-clip-text text-transparent">
+    <span className={`font-sans font-extrabold select-none ${fontSizes[size]} ${className}`}>
+      <span className="text-slate-900 dark:text-[#FCFCFD] transition-colors">Caja</span>
+      <span className="text-[#6178ee] font-black ml-0.5">
         Go
       </span>
     </span>
@@ -58,43 +58,16 @@ export default function CajaGoBrand({
     return <CajaGoIcon size={size} className={className} />
   }
 
-  if (useFullLogo) {
-    const fullHeights = {
-      xs: 'h-6',
-      sm: 'h-7',
-      md: 'h-9',
-      lg: 'h-12',
-      xl: 'h-16',
-    }
-    return (
-      <div className={`inline-flex items-center gap-2.5 ${className}`}>
-        <img
-          src="/logocajago.png"
-          alt="CajaGo"
-          className={`${fullHeights[size]} w-auto object-contain select-none filter drop-shadow-[0_4px_20px_rgba(62,115,245,0.25)]`}
-        />
+  return (
+    <div className={`inline-flex items-center gap-2 ${className}`}>
+      <CajaGoIcon size={size} />
+      <div className="flex items-center gap-1.5 leading-none">
+        <CajaGoWordmark size={size} />
         {showTag && (
-          <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#947FF8]/15 text-[#947FF8] border border-[#947FF8]/30 font-bold uppercase tracking-wider">
+          <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-primary/15 text-primary border border-primary/30 font-bold uppercase tracking-wider">
             {showTag}
           </span>
         )}
-      </div>
-    )
-  }
-
-
-  return (
-    <div className={`inline-flex items-center gap-2.5 ${className}`}>
-      <CajaGoIcon size={size} />
-      <div className="flex flex-col">
-        <div className="flex items-center gap-1.5 leading-none">
-          <CajaGoWordmark size={size} />
-          {showTag && (
-            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#947FF8]/15 text-[#947FF8] border border-[#947FF8]/30 font-bold uppercase tracking-wider">
-              {showTag}
-            </span>
-          )}
-        </div>
       </div>
     </div>
   )

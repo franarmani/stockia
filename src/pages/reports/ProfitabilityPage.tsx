@@ -551,20 +551,6 @@ export default function ProfitabilityPage() {
 
   return (
     <div className="animate-fade-in flex flex-col gap-4 sm:gap-6 max-w-7xl mx-auto w-full px-3 sm:px-6 pb-24">
-      {/* Navigation segmented pill switcher */}
-      <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-[#0E1629] border border-white/[0.08] w-fit shadow-inner">
-        <button
-          onClick={() => navigate('/reports')}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-white/50 hover:text-white hover:bg-white/[0.04] transition-all"
-        >
-          <BarChart3 className="w-4 h-4 text-orange-400 shrink-0" />
-          <span>Ventas Generales</span>
-        </button>
-        <div className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-md bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow-cyan-950/40">
-          <TrendingUp className="w-4 h-4 text-white shrink-0" />
-          <span>Costos y Rentabilidad</span>
-        </div>
-      </div>
 
       {/* Main Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
@@ -659,7 +645,7 @@ export default function ProfitabilityPage() {
       )}
 
       {/* Filters Bar */}
-      <div className="bg-white/[0.02] border border-white/5 rounded-2xl sm:rounded-3xl p-3 sm:p-4 shadow-xl shadow-black/20 flex flex-col gap-2.5 sm:gap-3">
+      <div className="cg-card rounded-2xl sm:rounded-3xl p-3 sm:p-4 flex flex-col gap-2.5 sm:gap-3">
         {/* Search */}
         <div className="relative w-full group">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/25 group-focus-within:text-cyan-400 transition-colors" />
@@ -668,7 +654,7 @@ export default function ProfitabilityPage() {
             placeholder="Buscar por producto, código, material..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full h-10 sm:h-11 pl-10 pr-4 rounded-xl border border-white/10 bg-white/[0.03] text-white text-xs placeholder:text-white/20 focus:outline-none focus:ring-2 focus:ring-cyan-500/30 focus:border-cyan-500/40 transition-all"
+            className="w-full h-10 sm:h-11 pl-10 pr-4 rounded-xl border border-border bg-surface text-foreground text-xs placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-cyan-500/30 focus:border-cyan-500/40 transition-all"
           />
         </div>
 
@@ -679,7 +665,7 @@ export default function ProfitabilityPage() {
             <select
               value={filterMaterial}
               onChange={(e) => setFilterMaterial(e.target.value)}
-              className="w-full h-10 px-2.5 sm:px-3 rounded-xl border border-white/10 bg-slate-900/90 text-white text-xs focus:outline-none focus:ring-2 focus:ring-cyan-500/30 focus:border-cyan-500/40 cursor-pointer"
+              className="w-full h-10 px-2.5 sm:px-3 rounded-xl border border-border bg-surface text-foreground text-xs focus:outline-none focus:ring-2 focus:ring-cyan-500/30 focus:border-cyan-500/40 cursor-pointer"
             >
               <option value="">Todos los materiales</option>
               <option value="__none__">Sin material</option>
@@ -696,7 +682,7 @@ export default function ProfitabilityPage() {
             <select
               value={filterCategory}
               onChange={(e) => setFilterCategory(e.target.value)}
-              className="w-full h-10 px-2.5 sm:px-3 rounded-xl border border-white/10 bg-slate-900/90 text-white text-xs focus:outline-none focus:ring-2 focus:ring-cyan-500/30 focus:border-cyan-500/40 cursor-pointer"
+              className="w-full h-10 px-2.5 sm:px-3 rounded-xl border border-border bg-surface text-foreground text-xs focus:outline-none focus:ring-2 focus:ring-cyan-500/30 focus:border-cyan-500/40 cursor-pointer"
             >
               <option value="">Todas las categorías</option>
               {categories.map((c) => (
@@ -713,7 +699,7 @@ export default function ProfitabilityPage() {
               <select
                 value={filterBrand}
                 onChange={(e) => setFilterBrand(e.target.value)}
-                className="w-full h-10 px-2.5 sm:px-3 rounded-xl border border-white/10 bg-slate-900/90 text-white text-xs focus:outline-none focus:ring-2 focus:ring-cyan-500/30 focus:border-cyan-500/40 cursor-pointer"
+                className="w-full h-10 px-2.5 sm:px-3 rounded-xl border border-border bg-surface text-foreground text-xs focus:outline-none focus:ring-2 focus:ring-cyan-500/30 focus:border-cyan-500/40 cursor-pointer"
               >
                 <option value="">Todas las marcas</option>
                 {availableBrands.map((b) => (
@@ -731,7 +717,7 @@ export default function ProfitabilityPage() {
               <select
                 value={filterSupplier}
                 onChange={(e) => setFilterSupplier(e.target.value)}
-                className="w-full h-10 px-2.5 sm:px-3 rounded-xl border border-white/10 bg-slate-900/90 text-white text-xs focus:outline-none focus:ring-2 focus:ring-cyan-500/30 focus:border-cyan-500/40 cursor-pointer"
+                className="w-full h-10 px-2.5 sm:px-3 rounded-xl border border-border bg-surface text-foreground text-xs focus:outline-none focus:ring-2 focus:ring-cyan-500/30 focus:border-cyan-500/40 cursor-pointer"
               >
                 <option value="">Todos los proveedores</option>
                 {suppliers.map((s) => (
@@ -764,12 +750,12 @@ export default function ProfitabilityPage() {
       {/* Bento Grid: Financial KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
         {/* Ganancia Neta Card (Hero) */}
-        <div className="bg-gradient-to-br from-emerald-600/30 to-emerald-950/40 border border-emerald-500/30 rounded-2xl sm:rounded-[2rem] p-4 sm:p-6 relative overflow-hidden group shadow-xl shadow-emerald-900/20 col-span-2 sm:col-span-1">
+        <div className="bg-emerald-500/10 dark:bg-gradient-to-br dark:from-emerald-600/30 dark:to-emerald-950/40 border border-emerald-500/30 rounded-2xl sm:rounded-[2rem] p-4 sm:p-6 relative overflow-hidden group shadow-sm dark:shadow-xl dark:shadow-emerald-900/20 col-span-2 sm:col-span-1">
           <div className="absolute -right-4 -top-4 opacity-10 group-hover:scale-110 transition-transform text-emerald-400">
             <TrendingUp className="w-24 sm:w-28 h-24 sm:h-28" />
           </div>
-          <p className="text-[10px] font-black uppercase tracking-[0.2em] mb-1 text-emerald-300/70">Ganancia Neta Real</p>
-          <p className="text-2xl sm:text-3xl lg:text-4xl font-black text-emerald-300 tracking-tight truncate">
+          <p className="text-[10px] font-black uppercase tracking-[0.2em] mb-1 text-emerald-800/80 dark:text-emerald-300/70">Ganancia Neta Real</p>
+          <p className="text-2xl sm:text-3xl lg:text-4xl font-black text-emerald-800 dark:text-emerald-300 tracking-tight truncate">
             {formatCurrency(totals.profit)}
           </p>
           <div className="mt-3 sm:mt-4 flex items-center gap-2 flex-wrap">
@@ -783,7 +769,7 @@ export default function ProfitabilityPage() {
         </div>
 
         {/* Facturación Total Card */}
-        <div className="bg-white/[0.03] border border-white/5 rounded-2xl sm:rounded-[2rem] p-4 sm:p-6 relative overflow-hidden group col-span-1">
+        <div className="cg-card rounded-2xl sm:rounded-[2rem] p-4 sm:p-6 relative overflow-hidden group col-span-1">
           <div className="absolute -right-4 -top-4 opacity-5 group-hover:scale-110 transition-transform">
             <DollarSign className="w-20 sm:w-24 h-20 sm:h-24 text-cyan-400" />
           </div>
@@ -797,12 +783,12 @@ export default function ProfitabilityPage() {
         </div>
 
         {/* Costo de Ventas (COGS) Card */}
-        <div className="bg-white/[0.03] border border-white/5 rounded-2xl sm:rounded-[2rem] p-4 sm:p-6 relative overflow-hidden group col-span-1">
+        <div className="cg-card rounded-2xl sm:rounded-[2rem] p-4 sm:p-6 relative overflow-hidden group col-span-1">
           <div className="absolute -right-4 -top-4 opacity-5 group-hover:scale-110 transition-transform">
             <Tag className="w-20 sm:w-24 h-20 sm:h-24 text-orange-400" />
           </div>
           <p className="text-[10px] text-white/40 font-black uppercase tracking-[0.2em] mb-1">Costo Ventas</p>
-          <p className="text-xl sm:text-2xl lg:text-3xl font-black text-orange-400/90 tracking-tight truncate">
+          <p className="text-xl sm:text-2xl lg:text-3xl font-black text-amber-800 dark:text-orange-400 tracking-tight truncate">
             {formatCurrency(totals.cost)}
           </p>
           <p className="text-[10px] text-white/40 font-bold uppercase tracking-widest mt-3 sm:mt-4 truncate">
@@ -811,7 +797,7 @@ export default function ProfitabilityPage() {
         </div>
 
         {/* Valorización de Stock Card */}
-        <div className="bg-white/[0.03] border border-white/5 rounded-2xl sm:rounded-[2rem] p-4 sm:p-6 relative overflow-hidden group col-span-2 sm:col-span-1">
+        <div className="cg-card rounded-2xl sm:rounded-[2rem] p-4 sm:p-6 relative overflow-hidden group col-span-2 sm:col-span-1">
           <div className="absolute -right-4 -top-4 opacity-5 group-hover:scale-110 transition-transform">
             <Package className="w-20 sm:w-24 h-20 sm:h-24 text-violet-400" />
           </div>
@@ -907,7 +893,7 @@ export default function ProfitabilityPage() {
       )}
 
       {/* Breakdown View Tabs & Detailed Table */}
-      <div className="bg-white/[0.03] border border-white/5 rounded-2xl sm:rounded-[2.5rem] overflow-hidden shadow-2xl shadow-black/40">
+      <div className="cg-card rounded-2xl sm:rounded-[2.5rem] overflow-hidden shadow-sm">
         {/* Table header and view mode tabs */}
         <div className="p-4 sm:p-6 border-b border-white/5 flex flex-col gap-3">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
@@ -935,7 +921,7 @@ export default function ProfitabilityPage() {
           </div>
 
           <div className="overflow-x-auto no-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0">
-            <div className="inline-flex bg-black/40 border border-white/10 rounded-xl sm:rounded-2xl p-1 gap-1 min-w-max">
+            <div className="inline-flex bg-surface-secondary border border-border rounded-xl sm:rounded-2xl p-1 gap-1 min-w-max">
               <button
                 onClick={() => setViewMode('products')}
                 className={cn(

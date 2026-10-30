@@ -1,3 +1,4 @@
+import ThemeToggle from '@/components/ThemeToggle'
 import { Menu, Plus, Wifi, WifiOff } from 'lucide-react'
 import { useAuthStore } from '@/stores/authStore'
 import { useBusinessStore } from '@/stores/businessStore'
@@ -80,6 +81,9 @@ export default function TopBar({ onMenuClick }: TopBarProps) {
           <span className="text-[11px] font-semibold text-primary">Caja abierta</span>
         </div>
 
+        {/* Theme toggle */}
+        <ThemeToggle />
+
         {/* Subscription badge */}
         <SubscriptionBadge className="hidden md:flex" />
 
@@ -87,10 +91,10 @@ export default function TopBar({ onMenuClick }: TopBarProps) {
         {showNewSaleBtn && (
           <button
             onClick={() => navigate('/pos')}
-            className="header-sale-button hidden sm:flex"
+            className="cg-btn-primary h-9 px-3.5 rounded-xl text-xs gap-2 hidden sm:flex cursor-pointer"
           >
-            <Plus className="w-[18px] h-[18px]" />
-            Nueva venta
+            <Plus className="w-4 h-4 text-white keep-white shrink-0" />
+            <span className="text-white keep-white font-bold">Nueva venta</span>
           </button>
         )}
 

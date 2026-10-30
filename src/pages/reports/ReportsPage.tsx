@@ -231,20 +231,6 @@ export default function ReportsPage() {
 
   return (
     <div className="animate-fade-in flex flex-col gap-6 max-w-7xl mx-auto w-full px-2 sm:px-4 pb-16">
-      {/* Navigation segmented pill switcher */}
-      <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-[#0E1629] border border-white/[0.08] w-fit shadow-inner">
-        <div className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-md bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-orange-950/40">
-          <BarChart3 className="w-4 h-4 text-white shrink-0" />
-          <span>Ventas Generales</span>
-        </div>
-        <button
-          onClick={() => navigate('/rentabilidad')}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-white/50 hover:text-white hover:bg-white/[0.04] transition-all"
-        >
-          <TrendingUp className="w-4 h-4 text-cyan-400 shrink-0" />
-          <span>Costos y Rentabilidad</span>
-        </button>
-      </div>
 
       {/* Executive Header */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 pb-3 border-b border-white/[0.06]">

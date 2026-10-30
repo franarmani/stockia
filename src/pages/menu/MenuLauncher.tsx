@@ -200,16 +200,16 @@ export default function MenuLauncher() {
             <button
               onClick={() => navigate('/cash-register')}
               className={cn(
-                'flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold border transition-all',
+                'flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer shadow-xs',
                 stats?.cajaOpen
-                  ? 'bg-emerald-500/10 border-emerald-500/25 text-emerald-300 hover:bg-emerald-500/20'
-                  : 'bg-amber-500/10 border-amber-500/25 text-amber-300 hover:bg-amber-500/20'
+                  ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/20'
+                  : 'bg-amber-500/10 border-amber-500/30 text-amber-700 dark:text-amber-300 hover:bg-amber-500/20'
               )}
             >
-              <Wallet className="w-4 h-4" />
+              <Wallet className="w-4 h-4 shrink-0" />
               <span>{stats?.cajaOpen ? 'Caja Abierta' : 'Caja Cerrada'}</span>
               {stats?.cajaOpen && stats.cajaExpected > 0 && (
-                <span className="font-mono tabular-nums font-bold text-white pl-1 border-l border-emerald-500/30">
+                <span className="font-mono tabular-nums font-bold text-foreground dark:text-white pl-1 border-l border-emerald-500/30">
                   {formatCurrency(stats.cajaExpected)}
                 </span>
               )}
@@ -218,11 +218,11 @@ export default function MenuLauncher() {
             {/* Primary POS Button */}
             <button
               onClick={() => navigate('/pos')}
-              className="cg-btn-primary h-11 px-5 text-xs group"
+              className="cg-btn-primary h-11 px-5 text-xs group cursor-pointer"
             >
-              <ShoppingCart className="w-4 h-4 group-hover:scale-110 transition-transform" />
-              <span>Nueva Venta</span>
-              <span className="text-[10px] px-1.5 py-0.5 rounded bg-black/10 font-mono">F1</span>
+              <ShoppingCart className="w-4 h-4 group-hover:scale-110 transition-transform text-white keep-white shrink-0" />
+              <span className="text-white keep-white font-bold tracking-tight">Nueva Venta</span>
+              <span className="text-[10px] px-2 py-0.5 rounded-md bg-black/25 text-white font-mono border border-white/25">F1</span>
             </button>
           </div>
         </div>
@@ -326,23 +326,23 @@ export default function MenuLauncher() {
 
       {/* ── 3. INVENTORY CRITICAL ALERT BANNER (If items are under minimum) ── */}
       {stats && stats.lowStockCount > 0 && (
-        <div className="bg-rose-500/10 border border-rose-500/25 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-lg animate-fade-in">
+        <div className="bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/25 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-sm dark:shadow-lg animate-fade-in">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="w-10 h-10 rounded-xl bg-rose-500/20 border border-rose-500/30 flex items-center justify-center text-rose-400 shrink-0">
+            <div className="w-10 h-10 rounded-xl bg-rose-100 dark:bg-rose-500/20 border border-rose-200 dark:border-rose-500/30 flex items-center justify-center text-rose-600 dark:text-rose-400 shrink-0">
               <AlertTriangle className="w-5 h-5" />
             </div>
             <div className="min-w-0">
-              <p className="text-sm font-bold text-white">
+              <p className="text-sm font-bold text-rose-950 dark:text-white">
                 Atención: Tenés {stats.lowStockCount} {stats.lowStockCount === 1 ? 'artículo en stock crítico o agotado' : 'artículos en stock crítico o agotados'}
               </p>
-              <p className="text-xs text-rose-300/70 mt-0.5">
+              <p className="text-xs text-rose-800 dark:text-rose-300/70 mt-0.5 font-medium">
                 Es recomendable reponer mercadería pronto para evitar faltantes en las ventas del mostrador.
               </p>
             </div>
           </div>
           <button
             onClick={() => navigate('/products')}
-            className="px-4 py-2 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/30 text-rose-200 text-xs font-bold transition-all whitespace-nowrap self-stretch sm:self-auto text-center"
+            className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white dark:bg-rose-500/20 dark:hover:bg-rose-500/30 border border-rose-600 dark:border-rose-500/30 dark:text-rose-200 text-xs font-bold transition-all whitespace-nowrap self-stretch sm:self-auto text-center shadow-sm"
           >
             Ver Inventario y Reponer →
           </button>

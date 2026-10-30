@@ -39,6 +39,18 @@
     <script>
       (function() {
         try {
+          var t = localStorage.getItem('cajago_theme') || 'dark';
+          var isDark = t === 'dark' || (t === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+          if (isDark) {
+            document.documentElement.classList.add('dark');
+            document.documentElement.classList.remove('light');
+          } else {
+            document.documentElement.classList.add('light');
+            document.documentElement.classList.remove('dark');
+          }
+        } catch(e) {}
+
+        try {
           // Solo señales reales de la app de escritorio. Antes cualquier dominio que no fuera
           // vercel.app/cajago.com/stockia (localhost, dominios propios) se tomaba como Desktop
           // y la web intentaba abrir la base SQLite de Tauri.

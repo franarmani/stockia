@@ -6,6 +6,7 @@ import { formatCurrency, cn } from '@/lib/utils'
 import { isOnline } from '@/sync/connectivity'
 import { getPendingOperations } from '@/sync/storage'
 import { clearCachedProfileAndBusiness } from '@/lib/sessionCache'
+import Button from '@/components/ui/Button'
 
 interface LocalSummary {
   id: string
@@ -59,68 +60,69 @@ export default function LocalesPage() {
         </div>
         <div>
           <h1 className="cg-title text-[clamp(1.6rem,3.5vw,2.25rem)]">Mis locales</h1>
-          <p className="text-sm text-white/40">Cómo viene cada local hoy y en el mes. Podés pasar a otro sin cerrar sesión.</p>
+          <p className="text-sm text-muted-foreground">Cómo viene cada local hoy y en el mes. Podés pasar a otro sin cerrar sesión.</p>
         </div>
       </div>
 
       {error ? (
-        <div className="rounded-2xl border border-white/8 bg-[#0d1b2d] p-8 text-center text-sm text-white/50">{error}</div>
+        <div className="cg-card p-8 text-center text-sm text-muted-foreground">{error}</div>
       ) : !locales ? (
         <div className="h-48 grid place-items-center"><div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin" /></div>
       ) : locales.length <= 1 ? (
-        <div className="rounded-2xl border border-dashed border-white/10 bg-white/[0.02] p-10 text-center">
-          <Building2 className="w-8 h-8 text-white/20 mx-auto mb-3" />
-          <p className="text-white font-semibold">Todavía no tenés otros locales vinculados</p>
-          <p className="text-sm text-white/40 mt-1">Escribinos a soporte y vinculamos tus locales para que se paguen juntos y los veas desde acá.</p>
+        <div className="cg-card p-10 text-center border-dashed">
+          <Building2 className="w-8 h-8 text-muted-foreground/30 mx-auto mb-3" />
+          <p className="text-foreground font-semibold">Todavía no tenés otros locales vinculados</p>
+          <p className="text-sm text-muted-foreground mt-1">Escribinos a soporte y vinculamos tus locales para que se paguen juntos y los veas desde acá.</p>
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="rounded-2xl border border-white/8 bg-[#0d1b2d] p-4">
-              <p className="text-xs text-white/45">Ventas de hoy, todos los locales</p>
-              <p className="mt-1 text-xl font-bold text-white tabular-nums">{formatCurrency(totalToday)}</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="cg-card p-4 sm:p-5">
+              <p className="text-xs text-muted-foreground font-medium">Ventas de hoy, todos los locales</p>
+              <p className="mt-1 text-2xl font-bold text-foreground tabular-nums">{formatCurrency(totalToday)}</p>
             </div>
-            <div className="rounded-2xl border border-white/8 bg-[#0d1b2d] p-4">
-              <p className="text-xs text-white/45">Ventas del mes, todos los locales</p>
-              <p className="mt-1 text-xl font-bold text-white tabular-nums">{formatCurrency(totalMonth)}</p>
+            <div className="cg-card p-4 sm:p-5">
+              <p className="text-xs text-muted-foreground font-medium">Ventas del mes, todos los locales</p>
+              <p className="mt-1 text-2xl font-bold text-foreground tabular-nums">{formatCurrency(totalMonth)}</p>
             </div>
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid gap-3.5 sm:grid-cols-2">
             {locales.map((local) => (
-              <div key={local.id} className={cn('rounded-2xl border bg-[#0d1b2d] p-5 space-y-4', local.is_current ? 'border-primary/40' : 'border-white/8')}>
+              <div key={local.id} className={cn('cg-card p-5 space-y-4 transition-all', local.is_current ? 'border-primary/50 shadow-sm shadow-primary/10' : '')}>
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="font-semibold text-white truncate">{local.name}</p>
-                    <p className="text-xs text-white/40">{local.city || 'Sin localidad'}</p>
+                    <p className="font-bold text-foreground truncate text-base">{local.name}</p>
+                    <p className="text-xs text-muted-foreground font-medium mt-0.5">{local.city || 'Sin localidad'}</p>
                   </div>
                   {local.is_current
-                    ? <span className="rounded-md bg-primary/15 px-2 py-0.5 text-[11px] font-semibold text-primary">Estás acá</span>
+                    ? <span className="rounded-lg bg-primary/15 border border-primary/30 px-2.5 py-1 text-xs font-bold text-primary shrink-0">Estás acá</span>
                     : (
-                      <button onClick={() => switchTo(local)} disabled={!!switching}
-                        className="h-8 px-3 rounded-lg bg-white/5 text-white/80 text-xs font-semibold hover:bg-white/10 flex items-center gap-1.5 disabled:opacity-50">
+                      <Button variant="secondary" size="sm" onClick={() => switchTo(local)} disabled={!!switching}
+                        className="flex items-center gap-1.5 shrink-0 text-xs">
                         <ArrowRightLeft className="w-3.5 h-3.5" /> {switching === local.id ? 'Cambiando...' : 'Pasar a este local'}
-                      </button>
+                      </Button>
                     )}
                 </div>
-                <div className="grid grid-cols-2 gap-3 text-sm">
+                <div className="grid grid-cols-2 gap-3 text-sm pt-1 border-t border-border/50">
                   <div>
-                    <p className="text-xs text-white/40">Hoy</p>
-                    <p className="font-semibold text-white tabular-nums">{formatCurrency(Number(local.sales_today))}</p>
-                    <p className="text-[11px] text-white/35">{local.sales_today_count} ventas</p>
+                    <p className="text-xs text-muted-foreground font-medium">Hoy</p>
+                    <p className="font-bold text-foreground tabular-nums text-base">{formatCurrency(Number(local.sales_today))}</p>
+                    <p className="text-[11px] text-muted-foreground font-medium">{local.sales_today_count} ventas</p>
                   </div>
                   <div>
-                    <p className="text-xs text-white/40">En el mes</p>
-                    <p className="font-semibold text-white tabular-nums">{formatCurrency(Number(local.sales_month))}</p>
+                    <p className="text-xs text-muted-foreground font-medium">En el mes</p>
+                    <p className="font-bold text-foreground tabular-nums text-base">{formatCurrency(Number(local.sales_month))}</p>
                   </div>
                 </div>
-                <div className="flex flex-wrap gap-2 text-[11px]">
-                  <span className={cn('inline-flex items-center gap-1 rounded-md px-2 py-0.5', local.cash_open ? 'bg-emerald-500/10 text-emerald-300' : 'bg-white/5 text-white/45')}>
-                    <Wallet className="w-3 h-3" /> {local.cash_open ? 'Caja abierta' : 'Caja cerrada'}
+                <div className="flex flex-wrap gap-2 text-xs pt-1">
+                  <span className={cn('inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold border',
+                    local.cash_open ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-800 dark:text-emerald-300' : 'bg-surface-secondary border-border text-muted-foreground')}>
+                    <Wallet className="w-3.5 h-3.5" /> {local.cash_open ? 'Caja abierta' : 'Caja cerrada'}
                   </span>
                   {local.low_stock > 0 && (
-                    <span className="inline-flex items-center gap-1 rounded-md bg-amber-500/10 px-2 py-0.5 text-amber-300">
-                      <AlertTriangle className="w-3 h-3" /> {local.low_stock} productos con poco stock
+                    <span className="inline-flex items-center gap-1.5 rounded-lg bg-amber-500/15 border border-amber-500/30 px-2.5 py-1 text-xs font-semibold text-amber-900 dark:text-amber-300">
+                      <AlertTriangle className="w-3.5 h-3.5" /> {local.low_stock} productos con poco stock
                     </span>
                   )}
                 </div>

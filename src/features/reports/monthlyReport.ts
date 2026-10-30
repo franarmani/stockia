@@ -34,28 +34,53 @@ async function salesBetween(businessId: string, from: Date, to: Date): Promise<S
   const rows: SaleRow[] = []
   for (let offset = 0; ; offset += 1000) {
     const { data, error } = await supabase.from('sales')
-      .select('id, total, total_cost, total_profit, created_at, payment_method, payment_method2, amount_method1, amount_method2')
+      .select('id, total, payment_method, created_at, voided')
       .eq('business_id', businessId).eq('voided', false)
       .gte('created_at', from.toISOString()).lt('created_at', to.toISOString())
       .order('created_at').range(offset, offset + 999)
     if (error) throw new Error(error.message)
-    rows.push(...((data ?? []) as unknown as SaleRow[]))
+    for (const d of (data ?? [])) {
+      rows.push({
+        id: d.id,
+        total: Number(d.total) || 0,
+        total_cost: 0,
+        total_profit: 0,
+        created_at: d.created_at,
+        payment_method: d.payment_method || 'cash',
+        payment_method2: null,
+        amount_method1: null,
+        amount_method2: null,
+      })
+    }
     if (!data || data.length < 1000) return rows
   }
 }
 
-async function itemsBetween(businessId: string, from: Date, to: Date): Promise<ItemRow[]> {
+async function itemsForSales(saleIds: string[]): Promise<ItemRow[]> {
   const rows: ItemRow[] = []
-  for (let offset = 0; ; offset += 1000) {
-    const { data, error } = await (supabase as any).from('sale_items')
-      .select('product_id, quantity, line_total, line_profit, sales!inner(business_id, created_at, voided)')
-      .eq('sales.business_id', businessId).eq('sales.voided', false)
-      .gte('sales.created_at', from.toISOString()).lt('sales.created_at', to.toISOString())
-      .range(offset, offset + 999)
+  if (saleIds.length === 0) return rows
+  for (let i = 0; i < saleIds.length; i += 200) {
+    const batch = saleIds.slice(i, i + 200)
+    const { data, error } = await supabase
+      .from('sale_items')
+      .select('product_id, quantity, price, cost_at_sale, sale_id')
+      .in('sale_id', batch)
     if (error) throw new Error(error.message)
-    rows.push(...(data ?? []))
-    if (!data || data.length < 1000) return rows
+    for (const item of (data ?? [])) {
+      const q = Number(item.quantity) || 0
+      const p = Number(item.price) || 0
+      const c = Number(item.cost_at_sale) || 0
+      const lineTotal = q * p
+      const lineCost = q * c
+      rows.push({
+        product_id: item.product_id,
+        quantity: q,
+        line_total: lineTotal,
+        line_profit: lineTotal - lineCost,
+      })
+    }
   }
+  return rows
 }
 
 export async function loadMonthlyReport(businessId: string, businessName: string, year: number, month: number): Promise<MonthlyReportData> {
@@ -63,13 +88,13 @@ export async function loadMonthlyReport(businessId: string, businessName: string
   const to = new Date(year, month + 1, 1)
   const prevFrom = new Date(year, month - 1, 1)
 
-  const [sales, previous, items, { data: products }, { data: categories }] = await Promise.all([
+  const [sales, previous, { data: products }, { data: categories }] = await Promise.all([
     salesBetween(businessId, from, to),
     salesBetween(businessId, prevFrom, from),
-    itemsBetween(businessId, from, to),
     supabase.from('products').select('id, name, category_id').eq('business_id', businessId).limit(20000),
     supabase.from('categories').select('id, name').eq('business_id', businessId),
   ])
+  const items = await itemsForSales(sales.map(s => s.id))
 
   const sum = (rows: SaleRow[], pick: (row: SaleRow) => number) => rows.reduce((acc, row) => acc + (Number(pick(row)) || 0), 0)
   const daysInMonth = new Date(year, month + 1, 0).getDate()
@@ -105,7 +130,7 @@ export async function loadMonthlyReport(businessId: string, businessName: string
 
   return {
     businessName, year, month,
-    sales: { total: sum(sales, s => s.total), count: sales.length, cost: sum(sales, s => s.total_cost ?? 0), profit: sum(sales, s => s.total_profit ?? 0) },
+    sales: { total: sum(sales, s => s.total), count: sales.length, cost: items.reduce((acc, it) => acc + ((it.line_total || 0) - (it.line_profit || 0)), 0), profit: items.reduce((acc, it) => acc + (it.line_profit || 0), 0) },
     previous: { total: sum(previous, s => s.total), count: previous.length, profit: sum(previous, s => s.total_profit ?? 0) },
     byDay,
     byPayment: [...payments.entries()].map(([key, amount]) => ({ label: PAYMENT_LABELS[key] ?? key, amount })).sort((a, b) => b.amount - a.amount),

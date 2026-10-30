@@ -1,3 +1,4 @@
+import ThemeToggle from '@/components/ThemeToggle'
 import { Outlet, useNavigate, useLocation, NavLink, Navigate } from 'react-router-dom'
 import { SELLER_JR_PATHS } from '@/features/roles/managerApproval'
 import OfflineIndicator from '@/components/OfflineIndicator'
@@ -134,7 +135,7 @@ export default function AppShellLauncher() {
 
   const navItemClass = (active: boolean) => cn(
     'group relative flex items-center gap-3 h-9 px-3 rounded-lg text-[13px] transition-colors duration-150',
-    active ? 'bg-white/[0.07] text-white font-semibold' : 'text-[#9CA6BA] font-medium hover:text-white hover:bg-white/[0.035]'
+    active ? 'bg-slate-200/70 text-slate-900 dark:bg-white/[0.07] dark:text-white font-semibold' : 'text-slate-600 dark:text-[#9CA6BA] font-medium hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/[0.035]'
   )
 
   const renderSidebar = (onCloseButton?: () => void) => (
@@ -157,10 +158,12 @@ export default function AppShellLauncher() {
       <div className="px-4 pb-4 shrink-0">
         <button
           onClick={() => { onCloseButton?.(); navigate('/pos') }}
-          className="cg-btn-primary w-full h-10 px-3.5 rounded-lg text-[13px] justify-between"
+          className="cg-btn-primary w-full h-10 px-3.5 rounded-xl text-[13px] justify-between shadow-xs cursor-pointer"
         >
-          <span className="flex items-center gap-2.5"><ShoppingCart className="w-4 h-4" /> Nueva venta</span>
-          <kbd className="text-[10px] font-mono font-semibold px-1.5 py-0.5 rounded-md bg-white/15">F1</kbd>
+          <span className="flex items-center gap-2.5 text-white keep-white font-bold">
+            <ShoppingCart className="w-4 h-4 text-white keep-white shrink-0" /> Nueva venta
+          </span>
+          <kbd className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded-md bg-black/30 text-white keep-white border border-white/30">F1</kbd>
         </button>
       </div>
 
@@ -168,7 +171,7 @@ export default function AppShellLauncher() {
       <nav className="flex-1 px-3 pb-4 space-y-5 overflow-y-auto custom-scrollbar">
         {NAV_SECTIONS.filter((section) => section.items.some((item) => jrAllowed(item.href))).map((section) => (
           <div key={section.label}>
-            <p className="px-3 pb-1.5 text-[12px] font-medium text-white/35">
+            <p className="px-3 pb-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-white/40">
               {section.label}
             </p>
             <div className="space-y-0.5">
@@ -204,7 +207,7 @@ export default function AppShellLauncher() {
       {/* Pie */}
       <div className="px-3 py-3 shrink-0 border-t border-white/[0.06]">
         <NavLink to="/settings" onClick={() => onCloseButton?.()} className={navItemClass(isActive('/settings'))}>
-          <Settings className={cn('w-4 h-4 shrink-0', isActive('/settings') ? 'text-[#9aa9ff]' : 'text-white/40 group-hover:text-white/80')} />
+          <Settings className={cn('w-4 h-4 shrink-0', isActive('/settings') ? 'text-[#9aa9ff]' : 'text-slate-500 dark:text-white/40 group-hover:text-slate-900 dark:group-hover:text-white/80')} />
           <span className="truncate">Configuración</span>
         </NavLink>
       </div>
@@ -217,9 +220,9 @@ export default function AppShellLauncher() {
   // Full-bleed layout for POS
   if (isPOS) {
     return (
-      <div className="app-shell dark-shell bg-background text-foreground min-h-screen flex flex-col">
+      <div className="app-shell bg-background text-foreground h-screen max-h-screen overflow-hidden flex flex-col">
         <NotificationToastBridge />
-        <main className="flex-1 flex flex-col min-h-0">
+        <main className="flex-1 flex flex-col min-h-0 overflow-hidden">
           <Outlet />
         </main>
         <MiniPlayer />
@@ -230,7 +233,7 @@ export default function AppShellLauncher() {
   }
 
   return (
-    <div className="app-shell dark-shell bg-background text-foreground min-h-screen flex overflow-x-clip">
+    <div className="app-shell bg-background text-foreground min-h-screen flex overflow-x-clip">
       <NotificationToastBridge />
       {/* Desktop Sidebar (Permanent, solid, non-collapsing) */}
       <aside className="hidden min-[1440px]:flex flex-col h-screen sticky top-0 shrink-0 w-[248px] bg-[#080b10]/90 backdrop-blur-xl border-r border-white/[0.06] z-30 shadow-[8px_0_32px_rgba(2,5,10,0.16)]">
@@ -257,20 +260,20 @@ export default function AppShellLauncher() {
           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             <button
               onClick={() => setMobileDrawerOpen(true)}
-              className="min-[1440px]:hidden w-9 h-9 rounded-xl flex items-center justify-center text-white/60 hover:text-white hover:bg-white/[0.06] border border-white/[0.08] shrink-0"
+              className="min-[1440px]:hidden w-9 h-9 rounded-xl flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-surface-secondary border border-border shrink-0 shadow-sm"
               aria-label="Abrir menú"
             >
               <Menu className="w-4 h-4" />
             </button>
 
             <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
-              <span className="hidden sm:inline text-[13px] font-medium text-white/50 truncate shrink-0">
+              <span className="hidden sm:inline text-[13px] font-medium text-muted-foreground truncate shrink-0">
                 {location.pathname.startsWith('/settings')
                   ? 'Configuración'
                   : NAV_SECTIONS.flatMap(section => section.items).find(item => isActive(item.href))?.name ?? location.pathname.slice(1).replace('-', ' ')}
               </span>
-              <span className="hidden sm:inline text-white/20 shrink-0">/</span>
-              <span className="text-[11px] sm:text-xs font-bold text-white truncate max-w-[90px] min-[440px]:max-w-[150px] sm:max-w-[240px] md:max-w-[320px]">
+              <span className="hidden sm:inline text-muted-foreground/40 shrink-0">/</span>
+              <span className="text-[11px] sm:text-xs font-bold text-foreground truncate max-w-[90px] min-[440px]:max-w-[150px] sm:max-w-[240px] md:max-w-[320px]">
                 {business?.name || 'CajaGo'}
               </span>
             </div>
@@ -282,6 +285,7 @@ export default function AppShellLauncher() {
 
             {/* Notification Bell */}
             <NotificationBell />
+            <ThemeToggle />
 
             {/* User Profile & Settings Menu Dropdown */}
             <div className="relative shrink-0" ref={profileMenuRef}>

@@ -1,3 +1,4 @@
+import ThemeToggle from '@/components/ThemeToggle'
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
@@ -20,6 +21,7 @@ import { mpQr } from '@/features/mpQr/mpQrService'
 import { getLocalCustomers, getLocalProducts, getLocalRows } from '@/sync/storage'
 import CameraScanner, { type ScanFeedback } from '@/features/scanner/CameraScanner'
 import { findScannedProduct } from '@/features/scanner/scanLookup'
+import { findProductWithScaleSupport, parseSistelBarcode } from '@/features/scanner/sistelScale'
 import { localStock, stockByProduct, type WarehouseStockRow } from '@/features/warehouses/warehouseStock'
 import { isOnline, onConnectivityChange, withSyncNote } from '@/sync/connectivity'
 import { toast } from 'sonner'
@@ -31,7 +33,7 @@ import SubscriptionBadge from '@/features/subscription/components/SubscriptionBa
 import { CajaGoIcon } from '@/components/brand/CajaGoBrand'
 import type { Product, Customer, CartItem } from '@/types/database'
 import {
-  Search, Tag, QrCode, Plus, Minus, Trash2, ShoppingCart, CreditCard,
+  Search, Tag, QrCode, Scale, Plus, Minus, Trash2, ShoppingCart, CreditCard,
   Banknote, ArrowRightLeft, X, CheckCircle2, User, UserPlus, Wallet,
   FileText, Receipt, Percent, CircleDollarSign, Camera, ChevronRight, Check, Package,
   LogOut, Zap, ScanLine, ChevronDown, Coffee,
@@ -384,9 +386,14 @@ export default function POSPage() {
   }, [products])
 
   const handleBarcodeScanned = useCallback((code: string) => {
-    const { product } = findScannedProduct(code, products)
+    const scan = findProductWithScaleSupport(code, products, findScannedProduct)
+    const { product } = scan
     if (product) {
-      if (isDecimalUnit(product.unit)) {
+      if (scan.isScale && scan.scaleWeight) {
+        addItem(product, scan.scaleWeight)
+        playBeep()
+        toast.success(`${product.name} (${scan.scaleWeight} kg) agregado`)
+      } else if (isDecimalUnit(product.unit)) {
         setQtyInputProduct(product)
         setQtyInputValue('1')
       } else {
@@ -404,7 +411,8 @@ export default function POSPage() {
    * y respeta stock (el del local, sin lo que está en depósitos), precios mayoristas y promociones.
    */
   async function handleCameraScan(code: string): Promise<ScanFeedback> {
-    const { product, code: shown, isProductLink } = findScannedProduct(code, products)
+    const scan = findProductWithScaleSupport(code, products, findScannedProduct)
+    const { product, code: shown, isProductLink } = scan
     if (!product) {
       const canCreate = profile?.role !== 'seller_jr' && !isProductLink
       return {
@@ -415,6 +423,11 @@ export default function POSPage() {
           ? { label: 'Crear producto con este código', run: () => { setShowCameraScanner(false); navigate(`/products?nuevo=${encodeURIComponent(shown)}`) } }
           : undefined,
       }
+    }
+    if (scan.isScale && scan.scaleWeight) {
+      addItem(product, scan.scaleWeight)
+      playBeep()
+      return { ok: true, message: product.name, detail: `${scan.scaleWeight} kg agregados`, close: false }
     }
     if (isDecimalUnit(product.unit)) {
       setQtyInputProduct(product)
@@ -545,14 +558,35 @@ export default function POSPage() {
 
   const filteredProducts = useMemo(() => {
     if (!search) return products
-    const q = search.toLowerCase()
-    return products.filter((p) =>
-      p.name.toLowerCase().includes(q) ||
-      (p.barcode && p.barcode.includes(search)) ||
-      ((p as any).code && String((p as any).code).toLowerCase() === q) ||
-      (p.brand && p.brand.toLowerCase().includes(q)) ||
-      (p.model && p.model.toLowerCase().includes(q))
-    )
+    const term = search.trim()
+    const q = term.toLowerCase()
+    const scale = parseSistelBarcode(term)
+
+    return products.filter((p) => {
+      if (scale) {
+        const codeStr = String((p as any).code || '').trim().toLowerCase()
+        const barcodeStr = String(p.barcode || '').trim().toLowerCase()
+        if (
+          codeStr === scale.plu.toLowerCase() ||
+          codeStr === scale.pluRaw.toLowerCase() ||
+          codeStr === scale.plu4Raw.toLowerCase() ||
+          barcodeStr === scale.plu.toLowerCase() ||
+          barcodeStr === scale.pluRaw.toLowerCase() ||
+          barcodeStr === scale.plu4Raw.toLowerCase() ||
+          barcodeStr === scale.raw ||
+          barcodeStr.endsWith(scale.plu)
+        ) {
+          return true
+        }
+      }
+      return (
+        p.name.toLowerCase().includes(q) ||
+        (p.barcode && p.barcode.toLowerCase().includes(q)) ||
+        ((p as any).code && String((p as any).code).toLowerCase() === q) ||
+        (p.brand && p.brand.toLowerCase().includes(q)) ||
+        (p.model && p.model.toLowerCase().includes(q))
+      )
+    })
   }, [products, search])
 
   const visibleProducts = useMemo(() => filteredProducts.slice(0, 48), [filteredProducts])
@@ -565,10 +599,46 @@ export default function POSPage() {
 
   function handleSearchKeyDown(e: React.KeyboardEvent) {
     if (e.key === 'Enter' && search.trim()) {
-      const typed = search.trim().toLowerCase()
-      const exactMatch = products.find(p => String((p as any).code || '').toLowerCase() === typed) ?? products.find(p => p.barcode === search.trim())
-      if (exactMatch) { handleProductClick(exactMatch); setSearch(''); return }
-      if (filteredProducts.length === 1) { handleProductClick(filteredProducts[0]); setSearch('') }
+      e.preventDefault()
+      const term = search.trim()
+
+      // 1. Sistel scale barcode lookup
+      const scan = findProductWithScaleSupport(term, products, findScannedProduct)
+      if (scan.product) {
+        if (scan.isScale && scan.scaleWeight) {
+          addItem(scan.product, scan.scaleWeight)
+          playBeep()
+          toast.success(`${scan.product.name} (${scan.scaleWeight} kg) agregado`)
+        } else {
+          handleProductClick(scan.product)
+        }
+        setSearch('')
+        return
+      }
+
+      // 2. Exact code or barcode match
+      const typed = term.toLowerCase()
+      const exactMatch = products.find(p => String((p as any).code || '').toLowerCase() === typed) ?? products.find(p => p.barcode === term)
+      if (exactMatch) {
+        handleProductClick(exactMatch)
+        setSearch('')
+        return
+      }
+
+      // 3. Single filtered item
+      if (filteredProducts.length === 1) {
+        handleProductClick(filteredProducts[0])
+        setSearch('')
+        return
+      }
+
+      // 4. Detected Sistel barcode but product not registered yet
+      const scaleParsed = parseSistelBarcode(term)
+      if (scaleParsed) {
+        toast.info(`Balanza Sistel: PLU ${scaleParsed.plu} (${scaleParsed.weightKg} kg). Creá el producto con código ${scaleParsed.plu} para pesarlo directo.`, {
+          duration: 6000,
+        })
+      }
     }
   }
 
@@ -1170,7 +1240,7 @@ export default function POSPage() {
   // ──────────────────────────────────────────────── //
 
   return (
-    <div className="flex flex-col h-dvh bg-[#07111f] overflow-hidden">
+    <div className="flex flex-col h-full max-h-full bg-background text-foreground overflow-hidden">
       {/* Sale success overlay */}
       {showSuccess && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md">
@@ -1191,7 +1261,7 @@ export default function POSPage() {
       )}
 
       {/* ═══════════ HEADER ═══════════ */}
-      <header className="shrink-0 h-[72px] flex items-center justify-between px-4 sm:px-6 border-b border-white/10 bg-surface/80 backdrop-blur-3xl shadow-sm z-50">
+      <header className="shrink-0 h-14 flex items-center justify-between px-4 sm:px-6 border-b border-white/10 bg-surface/80 backdrop-blur-3xl shadow-sm z-50">
         <div className="flex items-center gap-4">
           <button
             onClick={() => navigate('/menu')}
@@ -1216,7 +1286,8 @@ export default function POSPage() {
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <div className="hidden md:flex">
+          <div className="hidden md:flex items-center gap-2">
+            <ThemeToggle />
             <SubscriptionBadge />
           </div>
           <div className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-[11px] font-bold border transition-all ${
@@ -1286,13 +1357,53 @@ export default function POSPage() {
           <div className="flex-1 overflow-y-auto min-h-0">
             {search ? (
               filteredProducts.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-full text-slate-500 select-none">
-                  <div className="w-16 h-16 rounded-2xl bg-white/5 border border-white/8 flex items-center justify-center mb-4">
-                    <Search className="w-7 h-7 opacity-40" />
-                  </div>
-                  <p className="text-sm font-medium text-slate-400">No se encontraron productos</p>
-                  <p className="text-xs text-slate-600 mt-1">Probá con otro término de búsqueda</p>
-                </div>
+                (() => {
+                  const scale = parseSistelBarcode(search.trim())
+                  if (scale) {
+                    return (
+                      <div className="flex flex-col items-center justify-center h-full text-center px-4 max-w-md mx-auto select-none py-10">
+                        <div className="w-16 h-16 rounded-2xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center mb-4 text-sky-400">
+                          <Scale className="w-8 h-8" />
+                        </div>
+                        <p className="text-base font-bold text-foreground">
+                          Código de Balanza Sistel detectado
+                        </p>
+                        <div className="my-3 p-3.5 rounded-xl bg-surface border border-border text-xs text-left w-full space-y-1.5 shadow-sm">
+                          <div className="flex justify-between items-center">
+                            <span className="text-muted-foreground">PLU / Código detectado:</span>
+                            <span className="font-mono font-bold text-foreground text-sm">{scale.plu}</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-muted-foreground">Peso en balanza:</span>
+                            <span className="font-mono font-bold text-emerald-500 dark:text-emerald-400 text-sm">{scale.weightKg} kg</span>
+                          </div>
+                          <div className="flex justify-between items-center text-[11px] text-muted-foreground pt-1 border-t border-border">
+                            <span>Código de barras:</span>
+                            <span className="font-mono">{scale.raw}</span>
+                          </div>
+                        </div>
+                        <p className="text-xs text-muted-foreground mb-4">
+                          No existe ningún producto con el código <strong className="text-foreground font-mono">{scale.plu}</strong>. Crealo con unidad en kilogramos (kg) para pesarlo automáticamente al escanear.
+                        </p>
+                        <button
+                          onClick={() => navigate(`/products?nuevo=${encodeURIComponent(scale.plu)}&unit=kg`)}
+                          className="px-4 py-2.5 rounded-xl bg-primary hover:bg-primary/90 text-white text-xs font-bold shadow-md transition-all active:scale-95"
+                        >
+                          Crear producto con PLU {scale.plu} (kg)
+                        </button>
+                      </div>
+                    )
+                  }
+                  return (
+                    <div className="flex flex-col items-center justify-center h-full text-slate-500 select-none">
+                      <div className="w-16 h-16 rounded-2xl bg-white/5 border border-white/8 flex items-center justify-center mb-4">
+                        <Search className="w-7 h-7 opacity-40" />
+                      </div>
+                      <p className="text-sm font-medium text-slate-400">No se encontraron productos</p>
+                      <p className="text-xs text-slate-600 mt-1">Probá con otro término de búsqueda</p>
+                    </div>
+                  )
+                })()
               ) : (
                 <div className="p-3">
                   <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(170px, 1fr))' }}>

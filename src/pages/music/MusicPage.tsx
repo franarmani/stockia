@@ -184,12 +184,12 @@ export default function MusicPage() {
   return (
     <div className="mx-auto max-w-[1180px] animate-fade-in space-y-8 pb-28">
       {viewingPlaylist ? (
-        <section className="overflow-hidden rounded-[28px] border border-white/[0.07] bg-[#0c1322]">
+        <section className="overflow-hidden rounded-[28px] cg-card border border-border">
           <div className="relative px-5 pb-7 pt-5 sm:px-8 sm:pb-9">
             <div className="absolute right-[-6rem] top-[-8rem] h-72 w-72 rounded-full bg-primary/15 blur-[90px]" />
             <button
               onClick={() => setViewingPlaylist(null)}
-              className="relative z-10 mb-7 inline-flex items-center gap-2 rounded-lg px-2 py-1.5 text-xs font-semibold text-white/50 transition hover:bg-white/[0.05] hover:text-white focus:outline-none focus:ring-2 focus:ring-primary/50"
+              className="relative z-10 mb-7 inline-flex items-center gap-2 rounded-lg px-2 py-1.5 text-xs font-semibold text-muted-foreground transition hover:bg-surface-secondary hover:text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
             >
               <ArrowLeft className="h-4 w-4" />
               Volver a la biblioteca
@@ -205,14 +205,14 @@ export default function MusicPage() {
               </div>
               <div className="min-w-0 pb-1">
                 <p className="text-xs font-bold text-primary">Playlist oficial</p>
-                <h1 className="mt-2 max-w-3xl text-4xl font-black leading-[0.95] tracking-[-0.05em] text-white sm:text-5xl lg:text-6xl">
+                <h1 className="mt-2 max-w-3xl text-4xl font-black leading-[0.95] tracking-[-0.05em] text-foreground sm:text-5xl lg:text-6xl">
                   {viewingPlaylist.name}
                 </h1>
-                <p className="mt-4 max-w-2xl text-sm leading-6 text-white/50">
+                <p className="mt-4 max-w-2xl text-sm leading-6 text-muted-foreground">
                   {viewingPlaylist.description || 'Una selección preparada para acompañar el ritmo de tu negocio.'}
                 </p>
-                <div className="mt-5 flex flex-wrap items-center gap-2 text-xs text-white/40">
-                  <span className="font-bold text-white">CajaGo</span>
+                <div className="mt-5 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                  <span className="font-bold text-foreground">CajaGo</span>
                   <span>•</span>
                   <span>{playlistTracks.length} canciones</span>
                   <span>•</span>
@@ -222,7 +222,7 @@ export default function MusicPage() {
             </div>
           </div>
 
-          <div className="border-t border-white/[0.06] bg-[#090f1b]/80 px-3 py-5 sm:px-6">
+          <div className="border-t border-border bg-surface-secondary/70 px-3 py-5 sm:px-6">
             <div className="mb-5 flex items-center gap-3 px-2">
               <button
                 onClick={() => isViewingPlaylistActive && currentTrack ? togglePlay() : handlePlayPlaylist(viewingPlaylist)}
@@ -232,12 +232,12 @@ export default function MusicPage() {
                 {isViewingPlaylistActive && isPlaying ? <Pause className="h-5 w-5 fill-current" /> : <Play className="ml-0.5 h-5 w-5 fill-current" />}
               </button>
               <div>
-                <p className="text-sm font-semibold text-white">{isViewingPlaylistActive ? 'Reproducción activa' : 'Reproducir playlist'}</p>
-                <p className="text-xs text-white/35">Sonido continuo para tu local</p>
+                <p className="text-sm font-semibold text-foreground">{isViewingPlaylistActive ? 'Reproducción activa' : 'Reproducir playlist'}</p>
+                <p className="text-xs text-muted-foreground">Sonido continuo para tu local</p>
               </div>
             </div>
 
-            <div className="hidden grid-cols-[42px_minmax(0,1fr)_110px] gap-3 border-b border-white/[0.07] px-3 pb-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-white/30 sm:grid">
+            <div className="hidden grid-cols-[42px_minmax(0,1fr)_110px] gap-3 border-b border-border px-3 pb-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground sm:grid">
               <span>#</span><span>Título</span><span className="text-right"><Clock3 className="ml-auto h-3.5 w-3.5" /></span>
             </div>
 
@@ -262,7 +262,7 @@ export default function MusicPage() {
                         setPlaylist(viewingPlaylist, playlistTracks, false)
                         playTrack(track)
                       }}
-                      className={`group grid w-full grid-cols-[42px_minmax(0,1fr)_auto] items-center gap-3 rounded-xl px-3 py-2.5 text-left transition focus:outline-none focus:ring-2 focus:ring-primary/40 sm:grid-cols-[42px_minmax(0,1fr)_110px] ${active ? 'bg-primary/10' : 'hover:bg-white/[0.045]'}`}
+                      className={`group grid w-full grid-cols-[42px_minmax(0,1fr)_auto] items-center gap-3 rounded-xl px-3 py-2.5 text-left transition focus:outline-none focus:ring-2 focus:ring-primary/40 sm:grid-cols-[42px_minmax(0,1fr)_110px] ${active ? 'bg-primary/10' : 'hover:bg-surface-secondary'}`}
                     >
                       <span className={`flex h-8 w-8 items-center justify-center text-xs font-medium ${active ? 'text-primary' : 'text-white/35'}`}>
                         {active && isPlaying ? (
@@ -274,10 +274,10 @@ export default function MusicPage() {
                         )}
                       </span>
                       <span className="min-w-0">
-                        <span className={`block truncate text-sm font-semibold ${active ? 'text-primary' : 'text-white'}`}>{track.title}</span>
+                        <span className={`block truncate text-sm font-semibold ${active ? 'text-primary' : 'text-foreground'}`}>{track.title}</span>
                         <span className="mt-0.5 block truncate text-xs text-white/35">{track.artist || 'Artista desconocido'}</span>
                       </span>
-                      <span className="tabular-nums text-xs text-white/30">{formatTime(track.duration ?? 0)}</span>
+                      <span className="tabular-nums text-xs text-muted-foreground font-mono">{formatTime(track.duration ?? 0)}</span>
                     </button>
                   )
                 })}
@@ -287,7 +287,7 @@ export default function MusicPage() {
         </section>
       ) : (
         <>
-          <section className="relative overflow-hidden rounded-[30px] border border-white/[0.07] bg-[#0c1322] px-5 py-7 sm:px-8 sm:py-9 lg:px-10">
+          <section className="relative overflow-hidden rounded-[30px] cg-card border border-border px-5 py-7 sm:px-8 sm:py-9 lg:px-10">
             <div className="absolute right-[-5rem] top-[-8rem] h-80 w-80 rounded-full bg-primary/15 blur-[100px]" />
             <div className="absolute bottom-[-8rem] left-[30%] h-56 w-56 rounded-full bg-blue-500/10 blur-[90px]" />
             <div className="relative z-10 grid gap-8 lg:grid-cols-[minmax(0,1fr)_310px] lg:items-center">
@@ -298,30 +298,30 @@ export default function MusicPage() {
                   </div>
                   <div>
                     <p className="text-xs font-bold text-primary">CajaGo Music</p>
-                    <p className="text-[11px] text-white/35">Incluido en tu plan Pro</p>
+                    <p className="text-[11px] text-muted-foreground">Incluido en tu plan Pro</p>
                   </div>
                 </div>
-                <h1 className="max-w-3xl text-4xl font-black leading-[0.98] tracking-[-0.05em] text-white sm:text-5xl">
+                <h1 className="max-w-3xl text-4xl font-black leading-[0.98] tracking-[-0.05em] text-foreground sm:text-5xl">
                   La música de tu negocio, sin interrupciones.
                 </h1>
-                <p className="mt-4 max-w-xl text-sm leading-6 text-white/50">
+                <p className="mt-4 max-w-xl text-sm leading-6 text-muted-foreground">
                   Elegí una selección y dejá que CajaGo mantenga el ambiente mientras trabajás en ventas, caja o stock.
                 </p>
                 <div className="mt-7 flex flex-wrap items-center gap-3">
                   <button
                     onClick={() => featuredPlaylist && handlePlayPlaylist(featuredPlaylist)}
                     disabled={!featuredPlaylist}
-                    className="inline-flex h-11 items-center gap-2 rounded-full bg-primary px-5 text-sm font-bold text-white transition hover:scale-[1.02] hover:brightness-110 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-offset-2 focus:ring-offset-[#0c1322]"
+                    className="inline-flex h-11 items-center gap-2 rounded-full bg-primary px-5 text-sm font-bold text-foreground transition hover:scale-[1.02] hover:brightness-110 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-offset-2 focus:ring-offset-[#0c1322]"
                   >
                     <Play className="h-4 w-4 fill-current" />
                     Reproducir selección
                   </button>
-                  <div className="flex items-center gap-2 text-xs text-white/35"><Radio className="h-4 w-4 text-primary" /> Audio continuo en toda la app</div>
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground"><Radio className="h-4 w-4 text-primary" /> Audio continuo en toda la app</div>
                 </div>
               </div>
 
               <div className="relative mx-auto aspect-square w-full max-w-[280px] lg:mx-0 lg:ml-auto">
-                <div className="absolute inset-0 rounded-full border border-white/10 bg-[#080d17] shadow-[0_30px_80px_rgba(0,0,0,0.45)]" />
+                <div className="absolute inset-0 rounded-full border border-border bg-surface-secondary shadow-[0_30px_80px_rgba(0,0,0,0.45)]" />
                 <div className={`absolute inset-[14%] overflow-hidden rounded-[26px] ${featuredPlaylist ? artworkTone(featuredPlaylist) : 'bg-[#172a46] text-[#8bb8ff]'}`}>
                   <Disc3 className="absolute -bottom-8 -right-8 h-44 w-44 opacity-25" strokeWidth={1.1} />
                   <div className="absolute inset-x-5 bottom-5">
@@ -352,9 +352,9 @@ export default function MusicPage() {
             <div className="mb-5 flex items-end justify-between gap-4">
               <div>
                 <p className="text-xs font-semibold text-primary">Tu biblioteca</p>
-                <h2 className="mt-1 text-2xl font-black tracking-[-0.03em] text-white">Playlists para cada momento</h2>
+                <h2 className="mt-1 text-2xl font-black tracking-[-0.03em] text-foreground">Playlists para cada momento</h2>
               </div>
-              <p className="hidden text-xs text-white/30 sm:block">{playlists.length} selecciones disponibles</p>
+              <p className="hidden text-xs text-muted-foreground sm:block">{playlists.length} selecciones disponibles</p>
             </div>
 
             <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3 xl:grid-cols-4">
@@ -364,7 +364,7 @@ export default function MusicPage() {
                 <article
                   key={playlist.id}
                   onClick={() => handleOpenPlaylist(playlist)}
-                  className="group cursor-pointer rounded-2xl bg-white/[0.035] p-3 transition duration-300 hover:-translate-y-1 hover:bg-white/[0.07] focus-within:ring-2 focus-within:ring-primary/40 sm:p-4"
+                  className="group cursor-pointer rounded-2xl cg-card p-3.5 transition duration-300 hover:-translate-y-1 hover:bg-surface-elevated shadow-xs focus-within:ring-2 focus-within:ring-primary/40 sm:p-4"
                 >
                   <div className={`relative aspect-square overflow-hidden rounded-xl ${artworkTone(playlist)}`}>
                     <Disc3 className="absolute -bottom-5 -right-5 h-28 w-28 opacity-25 sm:h-36 sm:w-36" strokeWidth={1.1} />
@@ -380,18 +380,18 @@ export default function MusicPage() {
                       <Play className="ml-0.5 h-4 w-4 fill-current" />
                     </button>
                   </div>
-                  <h3 className="mt-4 line-clamp-2 text-sm font-bold leading-5 text-white">{playlist.name}</h3>
-                  <p className="mt-1 line-clamp-2 text-xs leading-5 text-white/35">{playlist.description || 'Selección musical para tu comercio.'}</p>
+                  <h3 className="mt-4 line-clamp-2 text-sm font-bold leading-5 text-foreground">{playlist.name}</h3>
+                  <p className="mt-1 line-clamp-2 text-xs leading-5 text-muted-foreground">{playlist.description || 'Selección musical para tu comercio.'}</p>
                 </article>
               ))}
             </div>
           </section>
 
-          <section className="grid gap-4 rounded-2xl border border-white/[0.06] bg-[#0c1322] p-5 sm:grid-cols-[auto_minmax(0,1fr)] sm:items-center sm:p-6">
+          <section className="grid gap-4 rounded-2xl cg-card p-5 sm:grid-cols-[auto_minmax(0,1fr)] sm:items-center sm:p-6 shadow-xs">
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/12 text-primary"><Music className="h-5 w-5" /></div>
             <div>
               <p className="text-sm font-bold text-white">Pensado para jornadas largas</p>
-              <p className="mt-1 max-w-2xl text-xs leading-5 text-white/40">La reproducción continúa aunque cambies de módulo. Usá el reproductor flotante para pausar, avanzar o cerrar la música.</p>
+              <p className="mt-1 max-w-2xl text-xs leading-5 text-muted-foreground">La reproducción continúa aunque cambies de módulo. Usá el reproductor flotante para pausar, avanzar o cerrar la música.</p>
             </div>
           </section>
         </>

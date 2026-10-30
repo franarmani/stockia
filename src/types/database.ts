@@ -1552,9 +1552,23 @@ export interface Database {
 export type Business = Database['public']['Tables']['businesses']['Row']
 export type UserProfile = Database['public']['Tables']['users']['Row']
 export type Category = Database['public']['Tables']['categories']['Row']
-export type Supplier = Database['public']['Tables']['suppliers']['Row']
-export type Product = Database['public']['Tables']['products']['Row']
-export type Customer = Database['public']['Tables']['customers']['Row']
+export type Supplier = Database['public']['Tables']['suppliers']['Row'] & {
+  balance?: number
+  credit_terms_days?: number
+  credit_limit?: number
+}
+export type Product = Database['public']['Tables']['products']['Row'] & {
+  product_type?: ProductType
+  currency?: string
+  cost_price?: number | null
+  cost_price_original?: number | null
+  sale_price_original?: number | null
+  auto_update_price?: boolean
+  rate_mode?: 'buy' | 'sell' | 'custom'
+  margin_target?: number | null
+  margin_min?: number | null
+}
+export type Customer = Database['public']['Tables']['customers']['Row'] & CustomerCreditInfo
 export type Sale = Database['public']['Tables']['sales']['Row']
 export type SaleItem = Database['public']['Tables']['sale_items']['Row']
 export type SalePayment = Database['public']['Tables']['sale_payments']['Row']
@@ -1770,3 +1784,233 @@ export const CBTE_TIPOS = {
 } as const
 
 export const IVA_RATE = 0.21
+
+/* ----------------------------------------------------------------
+   NEW: GESTIÓN FINANCIERA, CRÉDITO, MULTIMONEDA E INVENTARIO
+   ---------------------------------------------------------------- */
+
+export interface CustomerCreditInfo {
+  credit_enabled?: boolean
+  credit_limit?: number
+  credit_unlimited?: boolean
+  credit_terms_days?: number
+  credit_status?: 'normal' | 'warn' | 'blocked'
+  credit_notes?: string | null
+}
+
+export interface SupplierMovement {
+  id: string
+  business_id: string
+  supplier_id: string
+  purchase_id: string | null
+  type: 'purchase' | 'payment' | 'credit_note' | 'debit_note' | 'adjustment'
+  amount: number
+  balance_after: number
+  document_ref: string | null
+  due_date: string | null
+  note: string | null
+  user_id: string | null
+  created_at: string
+}
+
+export interface CreditAuthorization {
+  id: string
+  business_id: string
+  customer_id: string
+  sale_id: string | null
+  requested_amount: number
+  credit_limit: number
+  used_amount: number
+  authorized_by: string
+  notes: string | null
+  created_at: string
+}
+
+export interface FinancialAccount {
+  id: string
+  business_id: string
+  name: string
+  type: 'cash' | 'bank' | 'wallet' | 'crypto' | 'other'
+  currency: string
+  balance: number
+  is_default: boolean
+  active: boolean
+  created_at: string
+  updated_at: string
+}
+
+export interface ExpenseCategory {
+  id: string
+  business_id: string
+  name: string
+  is_recurring: boolean
+  created_at: string
+}
+
+export interface Expense {
+  id: string
+  business_id: string
+  category_id: string | null
+  supplier_id: string | null
+  financial_account_id: string | null
+  date: string
+  description: string
+  amount: number
+  currency: string
+  exchange_rate: number
+  amount_converted: number
+  payment_method: string
+  voucher_number: string | null
+  attachment_url: string | null
+  is_recurring: boolean
+  recurrence_period: 'monthly' | 'weekly' | 'yearly' | null
+  status: 'paid' | 'pending' | 'cancelled'
+  notes: string | null
+  user_id: string | null
+  created_at: string
+}
+
+export interface FinancialMovement {
+  id: string
+  business_id: string
+  financial_account_id: string
+  kind: 'sale' | 'purchase' | 'expense' | 'income' | 'expense_manual' | 'transfer_in' | 'transfer_out' | 'adjustment'
+  origin_type: string | null
+  origin_id: string | null
+  amount: number
+  currency: string
+  exchange_rate: number
+  amount_converted: number
+  description: string | null
+  user_id: string | null
+  created_at: string
+}
+
+export interface Currency {
+  code: string
+  name: string
+  symbol: string
+  is_crypto: boolean
+  created_at: string
+}
+
+export interface ExchangeRate {
+  id: string
+  business_id: string
+  currency_code: string
+  buy_rate: number
+  sell_rate: number
+  date: string
+  source: string
+  user_id: string | null
+  created_at: string
+}
+
+export type ProductType = 'finished' | 'raw_material' | 'resale' | 'service' | 'supply'
+
+export interface Recipe {
+  id: string
+  business_id: string
+  finished_product_id: string
+  yield_quantity: number
+  notes: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface RecipeItem {
+  id: string
+  recipe_id: string
+  raw_material_id: string
+  quantity: number
+  unit: string
+  waste_percent: number
+  created_at: string
+}
+
+export type ProductionOrderStatus = 'draft' | 'pending' | 'in_production' | 'completed' | 'cancelled'
+
+export interface ProductionOrder {
+  id: string
+  business_id: string
+  order_number: number
+  finished_product_id: string
+  recipe_id: string | null
+  quantity_target: number
+  quantity_produced: number
+  status: ProductionOrderStatus
+  cost_estimated: number
+  cost_real: number
+  warehouse_id: string | null
+  notes: string | null
+  user_id: string | null
+  created_at: string
+  completed_at: string | null
+}
+
+export interface ProductionOrderItem {
+  id: string
+  production_order_id: string
+  raw_material_id: string
+  quantity_needed: number
+  quantity_consumed: number
+  unit_cost: number
+  created_at: string
+}
+
+export type ShrinkageReason = 'breakage' | 'expiry' | 'loss' | 'production_waste' | 'inventory_diff' | 'other'
+
+export interface Shrinkage {
+  id: string
+  business_id: string
+  product_id: string
+  warehouse_id: string | null
+  quantity: number
+  reason: ShrinkageReason
+  unit_cost: number
+  total_cost: number
+  notes: string | null
+  user_id: string | null
+  created_at: string
+}
+
+export type UnifiedStockMovementType =
+  | 'VENTA'
+  | 'COMPRA'
+  | 'TRANSFERENCIA'
+  | 'PRODUCCION'
+  | 'CONSUMO'
+  | 'MERMA'
+  | 'DEVOLUCION'
+  | 'AJUSTE'
+  | 'IMPORTACION'
+
+export interface UnifiedStockMovement {
+  id: string
+  business_id: string
+  product_id: string
+  type: UnifiedStockMovementType
+  quantity: number
+  quantity_before: number
+  quantity_after: number
+  from_location: string | null
+  to_location: string | null
+  reference_id: string | null
+  reference_type: string | null
+  reason: string | null
+  user_id: string | null
+  created_at: string
+}
+
+export interface AuditLog {
+  id: string
+  business_id: string
+  user_id: string | null
+  action: string
+  entity: string
+  entity_id: string | null
+  old_value: any
+  new_value: any
+  created_at: string
+}
+

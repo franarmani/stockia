@@ -191,10 +191,10 @@ export default function ImportProductsModal({ open, onClose, onDone }: Props) {
           {STEPS.map((s, i) => (
             <div key={i} className="flex items-center flex-1">
               <div className={`flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold shrink-0 transition-colors ${
-                i < step ? 'bg-primary text-white' : i === step ? 'bg-primary/10 text-primary border-2 border-primary' : 'bg-white/5 text-slate-500'
+                i < step ? 'bg-primary text-white' : i === step ? 'bg-primary/10 text-primary border-2 border-primary' : 'bg-surface-secondary text-muted-foreground border border-border'
               }`}>{i < step ? <CheckCircle2 className="w-4 h-4" /> : i + 1}</div>
               <span className={`mx-1.5 text-xs font-medium hidden sm:block ${i === step ? 'text-foreground' : 'text-muted-foreground'}`}>{s}</span>
-              {i < STEPS.length - 1 && <div className={`flex-1 h-0.5 mx-1 ${i < step ? 'bg-primary' : 'bg-white/10'}`} />}
+              {i < STEPS.length - 1 && <div className={`flex-1 h-0.5 mx-1 ${i < step ? 'bg-primary' : 'bg-border'}`} />}
             </div>
           ))}
         </div>
@@ -208,7 +208,7 @@ export default function ImportProductsModal({ open, onClose, onDone }: Props) {
               onDrop={e => { e.preventDefault(); setDragging(false); const f = e.dataTransfer.files[0]; if (f) handleFileDrop(f) }}
               onClick={() => fileInputRef.current?.click()}
               className={`border-2 border-dashed rounded-2xl p-10 text-center cursor-pointer transition-colors ${
-                dragging ? 'border-primary bg-primary/5' : 'border-white/10 hover:border-primary/50 hover:bg-white/5'
+                dragging ? 'border-primary bg-primary/5' : 'border-border bg-surface-secondary/40 hover:border-primary/50 hover:bg-surface-secondary'
               }`}
             >
               <input ref={fileInputRef} type="file" accept=".xlsx,.xls,.csv" className="hidden"

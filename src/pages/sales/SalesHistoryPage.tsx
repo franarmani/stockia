@@ -277,7 +277,7 @@ export default function SalesHistoryPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <h1 className="cg-title text-[clamp(1.6rem,3.5vw,2.25rem)]">Historial de ventas</h1>
-          <p className="text-xs text-white/50 mt-1 font-medium">
+          <p className="text-xs text-muted-foreground mt-1 font-medium">
             {totalCount} ventas — Total acumulado: <span className="text-emerald-400 font-mono font-bold">{formatCurrency(totalAmount)}</span>
           </p>
         </div>
@@ -285,7 +285,7 @@ export default function SalesHistoryPage() {
 
       {/* Period tabs + search */}
       <div className="flex flex-col sm:flex-row gap-3">
-        <div className="flex bg-[#0B1120] border border-white/[0.08] rounded-xl p-1 gap-1 shrink-0 shadow-sm">
+        <div className="flex bg-surface border border-border rounded-xl p-1 gap-1 shrink-0 shadow-sm">
           {periodTabs.map((t) => (
             <button
               key={t.id}
@@ -293,7 +293,7 @@ export default function SalesHistoryPage() {
               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
                 period === t.id
                   ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-900/30'
-                  : 'text-white/60 hover:text-white hover:bg-white/[0.04]'
+                  : 'text-text-secondary hover:text-foreground hover:bg-surface-secondary'
               }`}
             >
               {t.label}
@@ -301,37 +301,37 @@ export default function SalesHistoryPage() {
           ))}
         </div>
         <div className="relative flex-1">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <input
             type="text"
             placeholder="Buscar por cliente o producto..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full h-10 pl-10 pr-3.5 rounded-xl border border-white/[0.08] bg-[#0B1120] text-sm text-white placeholder:text-white/35 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500/50 transition-all shadow-sm"
+            className="w-full h-10 pl-10 pr-3.5 rounded-xl border border-border bg-surface text-sm text-foreground placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500/50 transition-all shadow-sm"
           />
         </div>
       </div>
 
       {/* Filters row */}
       <div className="flex flex-wrap items-center gap-2">
-        <div className="flex items-center gap-1.5 text-xs text-white/50 font-medium">
+        <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
           <Filter className="w-3.5 h-3.5 text-blue-400" /> Filtros:
         </div>
         <select
           value={sellerFilter}
           onChange={(e) => setSellerFilter(e.target.value)}
-          className="h-8 px-2.5 rounded-xl border border-white/[0.08] bg-[#0B1120] text-xs text-white focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500/50 shadow-sm"
+          className="h-8 px-2.5 rounded-xl border border-border bg-surface text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/50 shadow-sm cursor-pointer"
         >
-          <option value="" className="bg-[#0B1120] text-white">Todos los vendedores</option>
-          {sellers.map(s => <option key={s.id} value={s.id} className="bg-[#0B1120] text-white">{s.name}</option>)}
+          <option value="" >Todos los vendedores</option>
+          {sellers.map(s => <option key={s.id} value={s.id} >{s.name}</option>)}
         </select>
         <select
           value={paymentFilter}
           onChange={(e) => setPaymentFilter(e.target.value)}
-          className="h-8 px-2.5 rounded-xl border border-white/[0.08] bg-[#0B1120] text-xs text-white focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500/50 shadow-sm"
+          className="h-8 px-2.5 rounded-xl border border-border bg-surface text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/50 shadow-sm cursor-pointer"
         >
-          <option value="" className="bg-[#0B1120] text-white">Todos los pagos</option>
-          {Object.entries(PAYMENT_LABELS).map(([k, v]) => <option key={k} value={k} className="bg-[#0B1120] text-white">{v}</option>)}
+          <option value="" >Todos los pagos</option>
+          {Object.entries(PAYMENT_LABELS).map(([k, v]) => <option key={k} value={k} >{v}</option>)}
         </select>
         {(sellerFilter || paymentFilter) && (
           <button
@@ -347,20 +347,20 @@ export default function SalesHistoryPage() {
       {loading ? (
         <SkeletonTable rows={6} />
       ) : filtered.length === 0 ? (
-        <div className="bg-[#0B1120] border border-white/[0.08] rounded-2xl shadow-xl text-center py-16 text-white/40">
+        <div className="cg-card text-center py-16 text-text-muted">
           <Receipt className="w-12 h-12 mx-auto mb-3 opacity-20 text-blue-400" />
-          <p className="text-sm font-semibold text-white/60">Sin ventas en este período</p>
-          <p className="text-xs text-white/30 mt-1">Prueba cambiando el rango de fechas o los filtros</p>
+          <p className="text-sm font-semibold text-text-secondary">Sin ventas en este período</p>
+          <p className="text-xs text-text-muted mt-1">Prueba cambiando el rango de fechas o los filtros</p>
         </div>
       ) : (
-        <div className="bg-[#0B1120] border border-white/[0.08] rounded-2xl shadow-xl divide-y divide-white/[0.06] overflow-hidden">
+        <div className="cg-card divide-y divide-border overflow-hidden">
           {filtered.map((sale) => {
             const Icon = PAYMENT_ICONS[sale.payment_method] || ArrowRightLeft
             return (
               <button
                 key={sale.id}
                 onClick={() => setSelectedSale(sale)}
-                className={`w-full flex items-center gap-3.5 px-4 py-3.5 hover:bg-white/[0.04] transition-colors text-left group ${sale.voided ? 'opacity-40' : ''}`}
+                className={`w-full flex items-center gap-3.5 px-4 py-3.5 hover:bg-surface-secondary transition-colors text-left group ${sale.voided ? 'opacity-40' : ''}`}
               >
                 <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 border ${
                   sale.voided
@@ -371,7 +371,7 @@ export default function SalesHistoryPage() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <p className="text-xs sm:text-sm font-bold text-white truncate group-hover:text-blue-300 transition-colors">
+                    <p className="text-xs sm:text-sm font-bold text-foreground truncate group-hover:text-primary transition-colors">
                       {sale.sale_items?.map((i: SaleWithItems['sale_items'][number]) => i.product?.name).filter(Boolean).join(', ') || 'Venta'}
                     </p>
                     {sale.voided && (
@@ -380,13 +380,13 @@ export default function SalesHistoryPage() {
                       </span>
                     )}
                   </div>
-                  <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mt-0.5 text-xs text-white/40">
-                    <span className="text-white/60 font-medium">
+                  <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mt-0.5 text-xs text-muted-foreground">
+                    <span className="text-text-secondary font-medium">
                       {new Date(sale.created_at).toLocaleDateString('es-AR', { day: 'numeric', month: 'short' })}
                       {' '}
                       {new Date(sale.created_at).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}
                     </span>
-                    {sale.customer && <span>• <strong className="text-white/70 font-medium">{sale.customer.name}</strong></span>}
+                    {sale.customer && <span>• <strong className="text-foreground font-medium">{sale.customer.name}</strong></span>}
                     {sale.note && <span>• {sale.note}</span>}
                     {sale.seller && <span>• {sale.seller.name}</span>}
                   </div>
@@ -394,16 +394,16 @@ export default function SalesHistoryPage() {
                 <div className="flex items-center gap-3 shrink-0">
                   <div className="text-right">
                     <p className={`text-sm sm:text-base font-extrabold font-mono tabular-nums ${
-                      sale.voided ? 'text-rose-400 line-through' : 'text-white'
+                      sale.voided ? 'text-rose-400 line-through' : 'text-foreground'
                     }`}>
                       {formatCurrency(sale.total)}
                     </p>
-                    <div className="flex items-center gap-1 text-white/50 justify-end text-xs mt-0.5 font-medium">
+                    <div className="flex items-center gap-1 text-muted-foreground justify-end text-xs mt-0.5 font-medium">
                       <Icon className="w-3.5 h-3.5 text-blue-400" />
                       <span className="text-[11px]">{PAYMENT_LABELS[sale.payment_method] || sale.payment_method}</span>
                     </div>
                   </div>
-                  <ChevronRight className="w-4 h-4 text-white/30 group-hover:text-white group-hover:translate-x-0.5 transition-all" />
+                  <ChevronRight className="w-4 h-4 text-text-muted group-hover:text-foreground group-hover:translate-x-0.5 transition-all" />
                 </div>
               </button>
             )
