@@ -10,6 +10,7 @@ import { useSubscription } from '@/features/subscription'
 import { formatCurrency, cn } from '@/lib/utils'
 import { SkeletonMetrics, SkeletonChart } from '@/components/ui/Skeleton'
 import PaymentNotificationModal from '@/components/modals/PaymentNotificationModal'
+import SubscriptionPaymentBar from '@/components/subscription/SubscriptionPaymentBar'
 import WeatherWidget from '@/components/weather/WeatherWidget'
 import {
   ShoppingCart, Package, TrendingUp, DollarSign,
@@ -39,11 +40,44 @@ export default function MenuLauncher() {
   const navigate = useNavigate()
   const { profile } = useAuthStore()
   const { business } = useBusinessStore()
-  const { planName, isExpired, expiresToday, status } = useSubscription()
+  const { planName, isExpired, expiresToday, status, daysRemaining } = useSubscription()
   const [stats, setStats] = useState<QuickStats | null>(null)
   const [weeklySales, setWeeklySales] = useState<number[]>([])
   const [lastSaleTime, setLastSaleTime] = useState<string | null>(null)
   const [showPayModal, setShowPayModal] = useState(false)
+
+  // ── REGLAS DE RECORDATORIO DE PAGO EN INICIO ──
+  // 1. Día anterior al vencimiento (daysRemaining === 1): El cartel aparece UNA SOLA VEZ.
+  // 2. Día del vencimiento (daysRemaining === 0 o expiresToday o isExpired): Aparece lo de pagar con Mercado Pago.
+  useEffect(() => {
+    if (!business?.id || profile?.is_superadmin || business?.mp_subscription_status === 'authorized') return
+    if (!business?.trial_ends_at) return
+
+    const cycleDate = business.trial_ends_at.split('T')[0]
+
+    // Día anterior al pago (daysRemaining === 1): aparece una sola vez
+    if (daysRemaining === 1) {
+      const dayBeforeKey = `cajago_pay_reminder_day_before_${business.id}_${cycleDate}`
+      try {
+        if (!localStorage.getItem(dayBeforeKey)) {
+          localStorage.setItem(dayBeforeKey, '1')
+          setShowPayModal(true)
+        }
+      } catch {}
+      return
+    }
+
+    // Día del pago (daysRemaining === 0 o expiresToday o isExpired): aparece al entrar a Inicio
+    if (daysRemaining === 0 || expiresToday || isExpired) {
+      const paymentDayKey = `cajago_pay_reminder_day_of_${business.id}_${cycleDate}`
+      try {
+        if (!sessionStorage.getItem(paymentDayKey)) {
+          sessionStorage.setItem(paymentDayKey, '1')
+          setShowPayModal(true)
+        }
+      } catch {}
+    }
+  }, [business?.id, business?.trial_ends_at, daysRemaining, expiresToday, isExpired, profile?.is_superadmin])
 
   useEffect(() => {
     if (!profile?.business_id) return
@@ -168,6 +202,9 @@ export default function MenuLauncher() {
 
   return (
     <div className="animate-fade-in space-y-6 max-w-7xl mx-auto">
+      {/* ── BARRA DE SUSCRIPCIÓN Y PAGO ── */}
+      <SubscriptionPaymentBar onOpenPayment={() => setShowPayModal(true)} />
+
       {/* ── 1. EXECUTIVE OPERATIONAL HEADER ── */}
       <div className="cg-card p-5 sm:p-7 relative overflow-hidden">
         <div className="relative z-10 flex flex-col lg:flex-row lg:items-end justify-between gap-5">
@@ -571,7 +608,7 @@ export default function MenuLauncher() {
         </div>
       </div>
 
-      {showPayModal && <PaymentNotificationModal daysLeft={0} onClose={() => setShowPayModal(false)} />}
+      {showPayModal && <PaymentNotificationModal daysLeft={daysRemaining} onClose={() => setShowPayModal(false)} />}
     </div>
   )
 }

@@ -200,7 +200,7 @@ export default function MercadoPagoSubscriptionCard({
                 </p>
               )}
               <div className="flex flex-wrap gap-2">
-                <button onClick={() => refresh(false)} disabled={!isOnline} className="px-3 h-9 rounded-lg bg-[#6178ee] text-white text-xs font-semibold hover:bg-[#6f8cff] disabled:opacity-40">
+                <button onClick={() => refresh(false)} disabled={!isOnline} className="px-3 h-9 rounded-lg bg-[#009ee3] text-white text-xs font-bold hover:bg-[#0081bb] shadow-sm disabled:opacity-40">
                   Ya pagué, verificar
                 </button>
                 <button onClick={subscribe} disabled={busy || !isOnline} className="px-3 h-9 rounded-lg bg-white/5 text-white/70 text-xs font-semibold hover:bg-white/10 disabled:opacity-40">
@@ -222,10 +222,10 @@ export default function MercadoPagoSubscriptionCard({
               <button
                 onClick={subscribe}
                 disabled={busy || !isOnline}
-                className="w-full h-10 rounded-lg bg-[#6178ee] text-white text-sm font-semibold hover:bg-[#6f8cff] disabled:opacity-40 flex items-center justify-center gap-2"
+                className="w-full h-11 rounded-xl bg-[#009ee3] hover:bg-[#0081bb] text-white text-sm font-bold shadow-md shadow-sky-950/40 disabled:opacity-40 flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-[0.99]"
               >
-                {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-                {isOnline ? 'Suscribirme con Mercado Pago' : 'Necesitás conexión para suscribirte'}
+                {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <CreditCard className="w-4 h-4" />}
+                {isOnline ? 'Pagar con Mercado Pago' : 'Necesitás conexión para suscribirte'}
               </button>
             </div>
           )}

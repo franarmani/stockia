@@ -8,7 +8,6 @@ import { useBusinessStore } from '@/stores/businessStore'
 
 // Layouts
 import AppShellLauncher from '@/components/layout/AppShellLauncher'
-import PaymentNotificationModal from '@/components/modals/PaymentNotificationModal'
 import ScrollToTop from '@/components/layout/ScrollToTop'
 import { calculateRawRemainingDays, isSubscriptionExpired, resetTrustedClock } from '@/features/subscription/utils/subscriptionDates'
 import SubscriptionGuard from '@/features/subscription/components/SubscriptionGuard'
@@ -80,9 +79,6 @@ const AdminPage = lazy(() => import('@/pages/admin/AdminPage'))
 const MusicPage = lazy(() => import('@/pages/music/MusicPage'))
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'))
 
-// Cuánto se "snoozea" el recordatorio de pago al cerrarlo con la X — vuelve a
-// insistir pasado este tiempo en vez de desaparecer para el resto de la sesión.
-const PAYMENT_REMINDER_SNOOZE_MS = 15 * 60 * 1000
 
 /** CajaGo se usa solo como programa: en la web (salvo en desarrollo) el sistema lleva a descargarlo. */
 /**
@@ -111,7 +107,6 @@ function RouteLoadingFallback() {
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading, profile, needsOnboarding } = useAuthStore()
   const { business } = useBusinessStore()
-  const [sessionClosed, setSessionClosed] = useState(false)
   const [stuck, setStuck] = useState(false)
 
   useEffect(() => {
@@ -123,11 +118,6 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
     return () => clearTimeout(timer)
   }, [loading, user, profile])
 
-  useEffect(() => {
-    if (!sessionClosed) return
-    const timer = setTimeout(() => setSessionClosed(false), PAYMENT_REMINDER_SNOOZE_MS)
-    return () => clearTimeout(timer)
-  }, [sessionClosed])
 
 
   useEffect(() => {
@@ -136,12 +126,11 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
       console.log('[ProtectedRoute debug] subscription_status:', business?.subscription_status)
       console.log('[ProtectedRoute debug] trial_ends_at:', business?.trial_ends_at)
       console.log('[ProtectedRoute debug] profile:', JSON.stringify(profile))
-      console.log('[ProtectedRoute debug] sessionClosed:', sessionClosed)
       console.log('[ProtectedRoute debug] calculated daysLeft:', calculateRawRemainingDays(business?.trial_ends_at))
     } catch (e) {
       console.warn('[ProtectedRoute debug] error logging debug info', e)
     }
-  }, [business, profile, sessionClosed])
+  }, [business, profile])
 
   if (user && !profile && needsOnboarding) return <Navigate to="/completar-registro" replace />
 
@@ -188,30 +177,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
     }
   }
 
-  const daysLeft = calculateRawRemainingDays(business?.trial_ends_at)
 
-  // Recordatorio para negocios en trial o ya activos (mensualidad por vencer),
-  // con pocos días restantes (excepto superadmin).
-  // Incluye el día del vencimiento (daysLeft 0); una vez vencido lo maneja el modal de bloqueo.
-  // Con débito automático de Mercado Pago no hay nada que pagar a mano.
-  const shouldShowPaymentReminder = !isSuperAdmin &&
-    business?.mp_subscription_status !== 'authorized' &&
-    (business?.subscription_status === 'trial' || business?.subscription_status === 'active') &&
-    !isSubscriptionExpired(business?.trial_ends_at) &&
-    daysLeft <= 2 &&
-    !sessionClosed
-
-  if (shouldShowPaymentReminder) {
-    return (
-      <>
-        {children}
-        <PaymentNotificationModal
-          daysLeft={daysLeft}
-          onClose={() => setSessionClosed(true)}
-        />
-      </>
-    )
-  }
 
   return <>{children}</>
 }
