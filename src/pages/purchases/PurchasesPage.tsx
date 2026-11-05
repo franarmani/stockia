@@ -328,8 +328,8 @@ export default function PurchasesPage() {
         }}
         onSave={async (value: any) => {
           if (!businessId) return;
-          if (!isValidCuit(value.cuit))
-            throw new Error("El CUIT no es válido.");
+          if (value.cuit?.trim() && !isValidCuit(value.cuit))
+            throw new Error("El CUIT no es válido. Dejalo vacío si es compra informal.");
           await saveSupplier(businessId, value);
           toast.success(
             withSyncNote(value.id ? "Proveedor actualizado" : "Proveedor creado"),
@@ -348,6 +348,31 @@ export default function PurchasesPage() {
         products={products}
         purchases={purchases}
         onClose={() => setPurchaseModal(false)}
+        onOpenNewSupplier={() => {
+          setSupplierForm({ ...emptySupplier, is_informal: true });
+          setSupplierModal(true);
+        }}
+        onQuickCreateInformalSupplier={async () => {
+          if (!businessId) return null;
+          const existing = suppliers.find(
+            (s) =>
+              !s.cuit &&
+              (s.name.toLowerCase().includes("informal") ||
+                s.name.toLowerCase().includes("sin cuit") ||
+                s.name.toLowerCase().includes("varios"))
+          );
+          if (existing) {
+            return existing;
+          }
+          const created = await saveSupplier(businessId, {
+            name: "Proveedor informal (Sin CUIT)",
+            legal_name: "Proveedor informal (Sin CUIT)",
+            cuit: null,
+            vat_condition: "Consumidor Final",
+          });
+          reload();
+          return created;
+        }}
         onSave={async (data: any) => {
           if (!businessId) return;
           const purchaseId = await createPurchase({ ...data, businessId });
@@ -854,6 +879,10 @@ function SupplierForm({ open, value, onClose, onSave }: any) {
 
   useEffect(() => setForm(value), [value, open]);
 
+  const hasName = Boolean(
+    (form.legal_name || form.trade_name || form.name || "").trim()
+  );
+
   return (
     <Modal
       open={open}
@@ -862,16 +891,74 @@ function SupplierForm({ open, value, onClose, onSave }: any) {
       size="lg"
     >
       <div className="space-y-4">
+        {/* Selector de Modo: Fiscal vs Informal */}
+        <div className="flex items-center gap-2 p-1 bg-white/[0.04] border border-white/[0.08] rounded-xl">
+          <button
+            type="button"
+            onClick={() => setForm((prev: any) => ({ ...prev, is_informal: false }))}
+            className={cn(
+              "flex-1 py-2 px-3 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-2",
+              !form.is_informal
+                ? "bg-[#947FF8] text-white shadow-sm"
+                : "text-slate-400 hover:text-white"
+            )}
+          >
+            <span>🧾 Proveedor Fiscal (con CUIT)</span>
+          </button>
+          <button
+            type="button"
+            onClick={() =>
+              setForm((prev: any) => ({
+                ...prev,
+                is_informal: true,
+                vat_condition: prev.vat_condition || "Consumidor Final",
+              }))
+            }
+            className={cn(
+              "flex-1 py-2 px-3 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-2",
+              form.is_informal
+                ? "bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-sm"
+                : "text-slate-400 hover:text-white"
+            )}
+          >
+            <span>📝 Compra informal / Sin CUIT</span>
+          </button>
+        </div>
+
+        {form.is_informal ? (
+          <div className="p-3 rounded-xl bg-amber-500/[0.08] border border-amber-500/25 text-amber-300 text-xs flex items-center gap-2.5">
+            <span className="text-base shrink-0">💡</span>
+            <span>
+              <b>Modo informal activo:</b> Ingresá solo el nombre o apodo del proveedor. El CUIT, la Razón Social y los datos fiscales son 100% opcionales.
+            </span>
+          </div>
+        ) : (
+          <div className="p-2.5 rounded-xl bg-white/[0.03] border border-white/[0.06] text-slate-300 text-xs flex items-center gap-2">
+            <span className="text-sm">🧾</span>
+            <span>Completá el CUIT para consultar los datos oficiales en ARCA automáticamente o cargalos a mano.</span>
+          </div>
+        )}
+
         <div className="grid sm:grid-cols-2 gap-4">
           <Input
-            label="Razón Social *"
-            value={form.legal_name || ""}
-            onChange={(e) => setForm({ ...form, legal_name: e.target.value })}
-            placeholder="Ej: Distribuidora Central S.A."
+            label={form.is_informal ? "Nombre o Apodo del Proveedor *" : "Razón Social *"}
+            value={form.legal_name || form.name || ""}
+            onChange={(e) =>
+              setForm({
+                ...form,
+                legal_name: e.target.value,
+                name: e.target.value,
+              })
+            }
+            placeholder={
+              form.is_informal
+                ? "Ej: Distribuidora Central, Juan, Proveedor X..."
+                : "Ej: Distribuidora Central S.A."
+            }
             required
           />
           <Input
-            label="Nombre Comercial"
+            label="Nombre Comercial (Opcional)"
             value={form.trade_name || ""}
             onChange={(e) => setForm({ ...form, trade_name: e.target.value })}
             placeholder="Ej: Mayorista Central"
@@ -881,48 +968,69 @@ function SupplierForm({ open, value, onClose, onSave }: any) {
         <div className="grid sm:grid-cols-2 gap-4 items-end">
           <div>
             <div className="flex items-center justify-between mb-1.5">
-              <label className="text-xs font-semibold text-[#9CA6BA]">CUIT *</label>
-              <button
-                type="button"
-                disabled={!isValidCuit(form.cuit || "")}
-                onClick={async () => {
-                  setError("");
-                  try {
-                    const official = await lookupSupplierInArca(form.cuit);
-                    setForm({
-                      ...form,
-                      ...official,
-                      cuit: formatCuit(official.cuit || form.cuit),
-                    });
-                  } catch (e: any) {
-                    setError(e.message);
-                  }
-                }}
-                className="text-[11px] font-bold text-[#947FF8] hover:text-[#B785F3] disabled:opacity-30 disabled:pointer-events-none transition-colors"
-              >
-                🔍 Consultar en ARCA
-              </button>
+              <label className="text-xs font-semibold text-[#9CA6BA]">
+                {form.is_informal ? "CUIT (Opcional)" : "CUIT (Opcional para compras informales)"}
+              </label>
+              {Boolean(form.cuit?.trim()) && (
+                <button
+                  type="button"
+                  disabled={!isValidCuit(form.cuit || "")}
+                  onClick={async () => {
+                    setError("");
+                    try {
+                      const official = await lookupSupplierInArca(form.cuit);
+                      setForm({
+                        ...form,
+                        ...official,
+                        cuit: formatCuit(official.cuit || form.cuit),
+                      });
+                    } catch (e: any) {
+                      setError(e.message);
+                    }
+                  }}
+                  className="text-[11px] font-bold text-[#947FF8] hover:text-[#B785F3] disabled:opacity-30 disabled:pointer-events-none transition-colors"
+                >
+                  🔍 Consultar en ARCA
+                </button>
+              )}
             </div>
             <Input
               value={form.cuit || ""}
-              onChange={(e) => setForm({ ...form, cuit: formatCuit(e.target.value) })}
-              placeholder="30-12345678-9"
-              required
+              onChange={(e) =>
+                setForm({ ...form, cuit: formatCuit(e.target.value) })
+              }
+              placeholder={
+                form.is_informal ? "Opcional (dejalo en blanco)" : "30-12345678-9 (opcional)"
+              }
             />
           </div>
 
           <div>
-            <label className="text-xs font-semibold text-[#9CA6BA] block mb-1.5">Condición frente al IVA</label>
+            <label className="text-xs font-semibold text-[#9CA6BA] block mb-1.5">
+              Condición frente al IVA
+            </label>
             <select
               value={form.vat_condition || ""}
-              onChange={(e) => setForm({ ...form, vat_condition: e.target.value })}
+              onChange={(e) =>
+                setForm({ ...form, vat_condition: e.target.value })
+              }
               className="w-full h-11 rounded-xl bg-[#0E1629] text-[#FCFCFD] border border-white/[0.08] px-3.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#947FF8] focus:border-[#947FF8]"
             >
-              <option value="" className="bg-[#0E1629] text-[#FCFCFD]">Seleccionar condición</option>
-              <option value="IVA Responsable Inscripto" className="bg-[#0E1629] text-[#FCFCFD]">IVA Responsable Inscripto</option>
-              <option value="Responsable Monotributo" className="bg-[#0E1629] text-[#FCFCFD]">Responsable Monotributo</option>
-              <option value="IVA Exento" className="bg-[#0E1629] text-[#FCFCFD]">IVA Exento</option>
-              <option value="Consumidor Final" className="bg-[#0E1629] text-[#FCFCFD]">Consumidor Final</option>
+              <option value="" className="bg-[#0E1629] text-[#FCFCFD]">
+                {form.is_informal ? "Consumidor Final / Sin CUIT (por defecto)" : "Seleccionar condición"}
+              </option>
+              <option value="Consumidor Final" className="bg-[#0E1629] text-[#FCFCFD]">
+                Consumidor Final / Sin CUIT
+              </option>
+              <option value="IVA Responsable Inscripto" className="bg-[#0E1629] text-[#FCFCFD]">
+                IVA Responsable Inscripto
+              </option>
+              <option value="Responsable Monotributo" className="bg-[#0E1629] text-[#FCFCFD]">
+                Responsable Monotributo
+              </option>
+              <option value="IVA Exento" className="bg-[#0E1629] text-[#FCFCFD]">
+                IVA Exento
+              </option>
             </select>
           </div>
         </div>
@@ -977,7 +1085,7 @@ function SupplierForm({ open, value, onClose, onSave }: any) {
           label="Observaciones"
           value={form.notes || ""}
           onChange={(e) => setForm({ ...form, notes: e.target.value })}
-          placeholder="Notas internas adicionales"
+          placeholder="Notas internas adicionales (ej: pago en efectivo, contacto, etc.)"
         />
 
         {error && (
@@ -991,11 +1099,16 @@ function SupplierForm({ open, value, onClose, onSave }: any) {
             Cancelar
           </Button>
           <Button
-            disabled={saving || !form.legal_name || !form.cuit}
+            disabled={saving || !hasName}
             className="gradient-cajago-btn font-bold shadow-md"
             onClick={async () => {
               setSaving(true);
               setError("");
+              if (form.cuit?.trim() && !isValidCuit(form.cuit)) {
+                setError("El CUIT no es válido. Si es una compra o proveedor informal, podés dejar el CUIT vacío y guardar directamente.");
+                setSaving(false);
+                return;
+              }
               try {
                 await onSave(form);
               } catch (e: any) {
@@ -1023,6 +1136,8 @@ function PurchaseForm({
   purchases = [],
   onClose,
   onSave,
+  onOpenNewSupplier,
+  onQuickCreateInformalSupplier,
 }: any) {
   const [supplierId, setSupplierId] = useState(""),
     [doc, setDoc] = useState<any>({
@@ -1049,6 +1164,42 @@ function PurchaseForm({
 
   const selectBaseClass =
     "w-full h-11 rounded-[10px] bg-white/[0.035] text-[#FCFCFD] border border-white/10 px-3 text-sm focus:outline-none focus:ring-[3px] focus:ring-[#947FF8]/20 focus:border-[#947FF8] hover:border-white/20 hover:bg-white/[0.05] transition-all cursor-pointer";
+
+  const isInformal = doc.is_internal || doc.document_type === "internal";
+
+  const createEmptyItem = () => ({
+    description: "",
+    quantity: "1",
+    unit_cost: "",
+    vat_rate: isInformal ? "0" : "21",
+  });
+
+  async function handleQuickInformalSupplier() {
+    setError("");
+    const existing = suppliers.find(
+      (s: Supplier) =>
+        !s.cuit &&
+        (s.name.toLowerCase().includes("informal") ||
+          s.name.toLowerCase().includes("sin cuit") ||
+          s.name.toLowerCase().includes("varios"))
+    );
+    if (existing) {
+      setSupplierId(existing.id);
+      toast.success(`Proveedor "${existing.name}" seleccionado`);
+      return;
+    }
+    if (onQuickCreateInformalSupplier) {
+      try {
+        const created = await onQuickCreateInformalSupplier();
+        if (created?.id) {
+          setSupplierId(created.id);
+          toast.success("Proveedor informal creado y seleccionado");
+        }
+      } catch (e: any) {
+        toast.error(e.message || "No se pudo crear el proveedor informal");
+      }
+    }
+  }
 
   const updateDoc = (patch: any) => {
     if (error) setError("");
@@ -1176,10 +1327,32 @@ function PurchaseForm({
           </Button>
         </div>
         {/* Step 1: Proveedor */}
-        <div className="bg-[#0E1629] border border-white/[0.08] rounded-2xl p-4.5 space-y-2">
-          <p className="text-xs font-bold uppercase tracking-wider text-[#947FF8]">
-            1 · Datos del Proveedor
-          </p>
+        <div className="bg-[#0E1629] border border-white/[0.08] rounded-2xl p-4.5 space-y-2.5">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-xs font-bold uppercase tracking-wider text-[#947FF8]">
+              1 · Datos del Proveedor
+            </p>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={handleQuickInformalSupplier}
+                className="text-[11px] font-bold text-amber-400 hover:text-amber-300 bg-amber-500/10 border border-amber-500/25 px-2.5 py-1 rounded-lg transition-colors flex items-center gap-1.5"
+                title="Selecciona o crea en 1 clic un proveedor sin CUIT para compras en negro"
+              >
+                <span>⚡ Proveedor sin CUIT</span>
+              </button>
+              {onOpenNewSupplier && (
+                <button
+                  type="button"
+                  onClick={onOpenNewSupplier}
+                  className="text-[11px] font-bold text-[#947FF8] hover:text-[#B785F3] bg-[#947FF8]/10 border border-[#947FF8]/20 px-2.5 py-1 rounded-lg transition-colors flex items-center gap-1"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Nuevo Proveedor</span>
+                </button>
+              )}
+            </div>
+          </div>
           <select
             value={supplierId}
             onChange={(e) => {
@@ -1191,7 +1364,7 @@ function PurchaseForm({
             <option value="" className="bg-[#0E1629] text-[#FCFCFD]">Seleccionar proveedor...</option>
             {suppliers.map((s: Supplier) => (
               <option key={s.id} value={s.id} className="bg-[#0E1629] text-[#FCFCFD]">
-                {s.legal_name || s.name} · {formatCuit(s.cuit || "")}
+                {s.legal_name || s.name}{s.cuit ? ` · CUIT ${formatCuit(s.cuit)}` : " · (Sin CUIT / Informal)"}
               </option>
             ))}
           </select>
@@ -1199,9 +1372,70 @@ function PurchaseForm({
 
         {/* Step 2: Comprobante */}
         <div className="bg-[#0E1629] border border-white/[0.08] rounded-2xl p-4.5 space-y-4">
-          <p className="text-xs font-bold uppercase tracking-wider text-[#947FF8]">
-            2 · Datos del Comprobante
-          </p>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+            <p className="text-xs font-bold uppercase tracking-wider text-[#947FF8]">
+              2 · Datos del Comprobante
+            </p>
+            {/* Selector de modo informal vs fiscal */}
+            <div className="flex items-center gap-1.5 bg-white/[0.04] p-1 rounded-xl border border-white/[0.08]">
+              <button
+                type="button"
+                onClick={() => {
+                  updateDoc({
+                    document_type: "internal",
+                    is_internal: true,
+                    is_fiscal: false,
+                    letter: "",
+                    point_of_sale: "",
+                  });
+                  setItems((prev) => prev.map((item) => ({ ...item, vat_rate: "0" })));
+                }}
+                className={cn(
+                  "px-3 py-1 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5",
+                  isInformal
+                    ? "bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-sm"
+                    : "text-slate-400 hover:text-white"
+                )}
+              >
+                <span>📝 Compra informal / En negro</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  updateDoc({
+                    document_type: "invoice",
+                    is_internal: false,
+                    is_fiscal: true,
+                    letter: doc.letter || "A",
+                  });
+                  setItems((prev) =>
+                    prev.map((item) => ({
+                      ...item,
+                      vat_rate: item.vat_rate === "0" ? "21" : item.vat_rate,
+                    }))
+                  );
+                }}
+                className={cn(
+                  "px-3 py-1 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5",
+                  !isInformal
+                    ? "bg-[#947FF8] text-white shadow-sm"
+                    : "text-slate-400 hover:text-white"
+                )}
+              >
+                <span>🧾 Factura Fiscal (A/B/C)</span>
+              </button>
+            </div>
+          </div>
+
+          {isInformal && (
+            <div className="p-3 rounded-xl bg-amber-500/[0.08] border border-amber-500/25 text-amber-300 text-xs flex items-center gap-2.5">
+              <span className="text-base shrink-0">💡</span>
+              <span>
+                <b>Modo informal activo:</b> no requiere CUIT, razón social, letra ni punto de venta. Los productos ingresan al stock inmediatamente con su costo al confirmar la operación.
+              </span>
+            </div>
+          )}
+
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5">
             <div className="space-y-1.5">
               <label className="text-sm font-medium text-foreground">Tipo Doc.</label>
@@ -1216,10 +1450,10 @@ function PurchaseForm({
                 }
                 className={selectBaseClass}
               >
-                <option value="invoice" className="bg-[#0E1629] text-[#FCFCFD]">Factura</option>
+                <option value="internal" className="bg-[#0E1629] text-[#FCFCFD]">Doc. interno (sin CUIT / informal)</option>
+                <option value="invoice" className="bg-[#0E1629] text-[#FCFCFD]">Factura fiscal</option>
                 <option value="credit_note" className="bg-[#0E1629] text-[#FCFCFD]">Nota de crédito</option>
                 <option value="debit_note" className="bg-[#0E1629] text-[#FCFCFD]">Nota de débito</option>
-                <option value="internal" className="bg-[#0E1629] text-[#FCFCFD]">Doc. interno</option>
               </select>
             </div>
 
@@ -1342,7 +1576,7 @@ function PurchaseForm({
             <Button
               size="sm"
               variant="secondary"
-              onClick={() => setItems([...items, emptyItem()])}
+              onClick={() => setItems([...items, createEmptyItem()])}
               className="text-xs font-bold"
             >
               <Plus className="w-3.5 h-3.5 mr-1" /> Agregar Fila
@@ -1383,7 +1617,7 @@ function PurchaseForm({
                           unit_cost: item.unit_cost || (Number(product.purchase_price) > 0 ? String(product.purchase_price) : ""),
                         });
                         if (index === items.length - 1) {
-                          setItems((prev) => [...prev, emptyItem()]);
+                          setItems((prev) => [...prev, createEmptyItem()]);
                         }
                       }}
                     />

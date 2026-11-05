@@ -3,7 +3,7 @@ import { syncEngine } from '@/sync/syncEngine'
 import { adjustLocalStock, getLocalRows } from '@/sync/storage'
 import { isNetworkError, isOnline } from '@/sync/connectivity'
 import { cachedRead, callRpcOrQueue } from '@/sync/remote'
-import { normalizeCuit } from './cuit'
+import { isValidCuit, normalizeCuit } from './cuit'
 import { fromCents, multiplyMoney, toCents } from './money'
 import type { PaymentMethod, PurchaseConcept, PurchaseDocument, PurchaseDraftItem, Supplier, SupplierLedgerMovement, TaxType } from './types'
 
@@ -35,13 +35,30 @@ export async function listSuppliers(businessId: string, search = '', order = 'le
     .sort((a, b) => String(a[safeOrder] ?? '￿').localeCompare(String(b[safeOrder] ?? '￿'), 'es'))
 }
 
-export async function saveSupplier(businessId: string, supplier: Partial<Supplier> & { legal_name: string; cuit: string }) {
+export async function saveSupplier(
+  businessId: string,
+  supplier: Partial<Supplier> & { name?: string; legal_name?: string | null; cuit?: string | null }
+) {
+  const displayName = (supplier.name || supplier.trade_name || supplier.legal_name || '').trim()
+  if (!displayName) {
+    throw new Error('Ingresá el nombre o razón social del proveedor.')
+  }
+
+  const rawCuit = (supplier.cuit || '').trim()
+  let cuitClean: string | null = null
+  if (rawCuit) {
+    cuitClean = normalizeCuit(rawCuit)
+    if (!isValidCuit(cuitClean)) {
+      throw new Error('El CUIT no es válido. Dejalo vacío si es una compra o proveedor informal.')
+    }
+  }
+
   const payload = {
-    name: supplier.trade_name?.trim() || supplier.legal_name.trim(),
-    legal_name: supplier.legal_name.trim(),
+    name: displayName,
+    legal_name: supplier.legal_name?.trim() || displayName,
     trade_name: supplier.trade_name?.trim() || null,
-    cuit: normalizeCuit(supplier.cuit),
-    vat_condition: supplier.vat_condition || null,
+    cuit: cuitClean,
+    vat_condition: supplier.vat_condition || (cuitClean ? 'IVA Responsable Inscripto' : 'Consumidor Final'),
     address: supplier.address?.trim() || null,
     city: supplier.city?.trim() || null,
     province: supplier.province?.trim() || null,
@@ -53,7 +70,7 @@ export async function saveSupplier(businessId: string, supplier: Partial<Supplie
     updated_at: new Date().toISOString(),
   }
   const existing = await fetchSuppliers(businessId)
-  if (existing.some(item => item.id !== supplier.id && item.cuit && item.cuit === payload.cuit)) {
+  if (payload.cuit && existing.some(item => item.id !== supplier.id && item.cuit && item.cuit === payload.cuit)) {
     throw new Error('Ya existe un proveedor con ese CUIT.')
   }
 
