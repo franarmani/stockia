@@ -53,10 +53,16 @@ export default function MenuLauncher() {
     if (!business?.id || profile?.is_superadmin || business?.mp_subscription_status === 'authorized') return
     if (!business?.trial_ends_at) return
 
+    // Si aún tiene más de 1 día de suscripción activa, NUNCA abrir automáticamente el modal
+    if (daysRemaining > 1) {
+      setShowPayModal(false)
+      return
+    }
+
     const cycleDate = business.trial_ends_at.split('T')[0]
 
     // Día anterior al pago (daysRemaining === 1): aparece una sola vez
-    if (daysRemaining === 1) {
+    if (daysRemaining === 1 && !isExpired) {
       const dayBeforeKey = `cajago_pay_reminder_day_before_${business.id}_${cycleDate}`
       try {
         if (!localStorage.getItem(dayBeforeKey)) {
@@ -67,8 +73,8 @@ export default function MenuLauncher() {
       return
     }
 
-    // Día del pago (daysRemaining === 0 o expiresToday o isExpired): aparece al entrar a Inicio
-    if (daysRemaining === 0 || expiresToday || isExpired) {
+    // Día del pago o vencido: solo si efectivamente vence hoy o está vencido
+    if ((daysRemaining === 0 && expiresToday) || isExpired) {
       const paymentDayKey = `cajago_pay_reminder_day_of_${business.id}_${cycleDate}`
       try {
         if (!sessionStorage.getItem(paymentDayKey)) {
