@@ -614,7 +614,7 @@ export default function MenuLauncher() {
         </div>
       </div>
 
-      {showPayModal && <PaymentNotificationModal daysLeft={daysRemaining} onClose={() => setShowPayModal(false)} />}
+      {showPayModal && daysRemaining <= 1 && <PaymentNotificationModal daysLeft={daysRemaining} onClose={() => setShowPayModal(false)} />}
     </div>
   )
 }

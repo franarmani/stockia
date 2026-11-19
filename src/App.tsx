@@ -21,6 +21,7 @@ import ManagerPinModal from '@/features/roles/ManagerPinModal'
 import { checkIsTauriDesktop } from '@/sync/storage'
 import { isOAuthUser } from '@/features/onboarding/registration'
 import { syncEngine } from '@/sync/syncEngine'
+import { realtimeManager } from '@/sync/realtime'
 import { checkConnectivity, isOnline } from '@/sync/connectivity'
 import { saveOfflineSnapshot } from '@/desktop/offlineAuth'
 import {
@@ -223,10 +224,18 @@ export default function App() {
   }, [showStartupSplash])
 
   useEffect(() => {
-    if (!activeProfile?.business_id) return
+    if (!activeProfile?.business_id) {
+      realtimeManager.cleanup()
+      return
+    }
+    const businessId = activeProfile.business_id
+
+    // Iniciar conexión en vivo Realtime para sincronizar al instante cambios hechos desde el celular u otros dispositivos
+    realtimeManager.init(businessId)
+
     syncEngine.init().then(async () => {
       // Precarga instantánea en la PC + subida de cola pendiente y descarga de tablas en segundo plano.
-      await syncEngine.preloadBusinessData(activeProfile.business_id)
+      await syncEngine.preloadBusinessData(businessId)
     }, (error) => {
       // Solo un fallo al abrir la base es grave; la causa se muestra para poder diagnosticarlo.
       console.error('[Local DB] initialization failed:', error)
@@ -234,6 +243,22 @@ export default function App() {
     }).catch((error) => {
       console.warn('[Local DB] initial download failed:', error)
     })
+
+    // Al volver a enfocar la ventana de CajaGo (ej. tras usar el celular), verificar cambios recientes
+    let lastFocusRefresh = Date.now()
+    const handleFocus = () => {
+      if (Date.now() - lastFocusRefresh < 10000) return
+      lastFocusRefresh = Date.now()
+      if (isOnline()) {
+        syncEngine.pullLatestProducts(businessId, { forceRemote: true }).catch(() => {})
+      }
+    }
+    window.addEventListener('focus', handleFocus)
+
+    return () => {
+      window.removeEventListener('focus', handleFocus)
+      realtimeManager.cleanup()
+    }
   }, [activeProfile?.business_id])
 
   // ── WEB SIEMPRE AL DÍA ──

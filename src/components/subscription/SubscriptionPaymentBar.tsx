@@ -38,6 +38,9 @@ export default function SubscriptionPaymentBar({ onOpenPayment, className }: Sub
   // If no trialEndsAt and active, no payment due
   if (!trialEndsAt && status === 'active') return null
 
+  // Si la cuenta está activa y le quedan más de 5 días, NO mostrar barra de pago
+  if (status === 'active' && daysRemaining > 5) return null
+
   const isUrgent = expiresToday || isExpired || daysRemaining === 0
   const isTomorrow = daysRemaining === 1 && !isExpired
 

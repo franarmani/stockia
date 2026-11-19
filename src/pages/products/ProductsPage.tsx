@@ -28,7 +28,7 @@ import {
   Search, Plus, Package, AlertTriangle,
   Barcode, MinusCircle, PlusCircle, Edit3, Trash2,
   Tag, X, Truck, Upload, Download, Layers,
-  Zap, ChevronRight, Percent, ScanLine, QrCode
+  Zap, ChevronRight, Percent, ScanLine, QrCode, RefreshCw
 } from 'lucide-react'
 import CameraScanner, { type ScanFeedback } from '@/features/scanner/CameraScanner'
 import ProductQrModal from '@/features/scanner/ProductQrModal'
@@ -77,6 +77,22 @@ export default function ProductsPage() {
   const [stockAdjustment, setStockAdjustment] = useState(0)
   const [stockReason, setStockReason] = useState('')
   const [saving, setSaving] = useState(false)
+  const [syncing, setSyncing] = useState(false)
+
+  async function handleManualSync() {
+    if (!profile?.business_id) return
+    setSyncing(true)
+    try {
+      const fresh = await syncEngine.pullLatestProducts(profile.business_id, { forceRemote: true })
+      const active = fresh.filter(p => p.active !== false) as Product[]
+      setProducts([...active].sort((a, b) => a.name.localeCompare(b.name, 'es')))
+      toast.success(`Catálogo sincronizado (${active.length} productos)`)
+    } catch (e: any) {
+      toast.error('Error al sincronizar: ' + (e.message || 'error de conexión'))
+    } finally {
+      setSyncing(false)
+    }
+  }
 
   const [form, setForm] = useState({
     name: '', barcode: '', code: '', sale_price: '', purchase_price: '',
@@ -434,6 +450,15 @@ export default function ProductsPage() {
         </div>
 
         <div className="grid grid-cols-2 sm:flex items-center gap-2 w-full min-[900px]:w-auto">
+          <button 
+            onClick={handleManualSync}
+            disabled={syncing}
+            className="flex items-center justify-center gap-2 h-10 px-3.5 rounded-xl bg-surface border border-border hover:bg-surface-secondary text-xs font-semibold text-foreground shadow-sm transition-all active:scale-[0.98] min-w-0"
+            title="Sincronizar catálogo con el servidor y celular"
+          >
+            <RefreshCw className={cn("w-3.5 h-3.5 text-muted-foreground", syncing && "animate-spin text-primary")} />
+            <span>{syncing ? 'Sincronizando...' : 'Sincronizar'}</span>
+          </button>
           <button 
             onClick={() => setShowExportModal(true)} 
             className="flex items-center justify-center gap-2 h-10 px-3.5 rounded-xl bg-surface border border-border hover:bg-surface-secondary text-xs font-semibold text-foreground shadow-sm transition-all active:scale-[0.98] min-w-0"

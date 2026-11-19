@@ -102,6 +102,11 @@ class SyncEngine {
   private needsLogin = false
   private initialized = false
   private initializationPromise: Promise<void> | null = null
+  private activeBusinessId: string | null = null
+
+  public setActiveBusinessId(businessId: string | null): void {
+    this.activeBusinessId = businessId
+  }
 
   public async hasPendingWrites(businessId: string, table: string): Promise<boolean> {
     return (await getPendingOperations()).some((op) =>
@@ -142,9 +147,15 @@ class SyncEngine {
         if (online) this.processQueue()
       })
 
-      // Heartbeat: reintenta lo pendiente cada 30 segundos si hay conexión
+      // Heartbeat periódico: sube la cola cada 30s y refresca catálogo en segundo plano cada 60s
+      let heartbeatTicks = 0
       setInterval(() => {
-        if (isOnline() && !this.isProcessing) this.processQueue()
+        if (!isOnline()) return
+        if (!this.isProcessing) this.processQueue()
+        heartbeatTicks++
+        if (heartbeatTicks % 2 === 0 && this.activeBusinessId) {
+          void this.pullLatestProducts(this.activeBusinessId, { forceRemote: true })
+        }
       }, 30000)
     }
 
@@ -963,6 +974,7 @@ class SyncEngine {
    * 3. Descarga en paralelo las tablas principales y reportes del mes a la PC.
    */
   public async preloadBusinessData(businessId: string): Promise<void> {
+    this.activeBusinessId = businessId
     await this.init()
 
     // 1. Calentar caché en RAM desde disco local inmediatamente

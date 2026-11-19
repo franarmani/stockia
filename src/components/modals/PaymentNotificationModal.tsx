@@ -99,9 +99,9 @@ export default function PaymentNotificationModal({ onClose, daysLeft }: { onClos
       ? 'Tu mensualidad vence hoy'
       : daysLeft === 1
       ? 'Mañana se vence tu mensualidad'
-      : typeof daysLeft === 'number' && daysLeft > 1
+      : typeof daysLeft === 'number' && daysLeft > 1 && daysLeft <= 5
       ? `Tu mensualidad vence en ${daysLeft} días`
-      : 'Activá tu plan'
+      : 'Renovar suscripción'
 
   return (
     <div

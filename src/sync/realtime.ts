@@ -15,6 +15,19 @@ class RealtimeManager {
   private businessId: string | null = null
   private saleListeners: Set<RealtimeCallback> = new Set()
   private stockListeners: Set<RealtimeCallback> = new Set()
+  private productsPullTimeout: any = null
+
+  private scheduleProductsPull(businessId: string) {
+    if (this.productsPullTimeout) clearTimeout(this.productsPullTimeout)
+    this.productsPullTimeout = setTimeout(() => {
+      this.productsPullTimeout = null
+      if (isOnline()) {
+        syncEngine.pullLatestProducts(businessId, { forceRemote: true }).catch((err) => {
+          console.warn('[CajaGo Realtime] Error actualizando productos:', err)
+        })
+      }
+    }, 300)
+  }
 
   public init(businessId: string) {
     if (this.businessId === businessId && this.channel) {
@@ -26,6 +39,7 @@ class RealtimeManager {
     // Remove existing channel if any
     if (this.channel) {
       supabase.removeChannel(this.channel)
+      this.channel = null
     }
 
     // Subscribe to postgres_changes on sales and products for this business
@@ -41,6 +55,7 @@ class RealtimeManager {
         },
         (payload) => {
           this.saleListeners.forEach((fn) => fn(payload))
+          syncEngine.notifyDataUpdated()
         }
       )
       .on(
@@ -53,15 +68,62 @@ class RealtimeManager {
         },
         (payload) => {
           this.stockListeners.forEach((fn) => fn(payload))
-          // Automatically refresh local products snapshot
+          this.scheduleProductsPull(businessId)
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'purchases',
+          filter: `business_id=eq.${businessId}`,
+        },
+        () => {
+          this.scheduleProductsPull(businessId)
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'categories',
+          filter: `business_id=eq.${businessId}`,
+        },
+        () => {
           if (isOnline()) {
-            syncEngine.pullLatestProducts(businessId, { forceRemote: true })
+            syncEngine.pullRows('categories', businessId, () =>
+              supabase.from('categories').select('*').eq('business_id', businessId),
+              { forceRemote: true }
+            ).catch(() => {})
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'customers',
+          filter: `business_id=eq.${businessId}`,
+        },
+        () => {
+          if (isOnline()) {
+            syncEngine.pullLatestCustomers(businessId, { forceRemote: true }).catch(() => {})
           }
         }
       )
       .subscribe((status) => {
         if (status === 'SUBSCRIBED') {
-          console.log(`[CajaGo Realtime] Conectado a canal para negocio ${businessId}`)
+          console.log(`[CajaGo Realtime] Conectado en vivo para negocio ${businessId}`)
+        } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          console.warn(`[CajaGo Realtime] Estado canal: ${status}, reconectando en 5s...`)
+          setTimeout(() => {
+            if (this.businessId === businessId) {
+              this.init(businessId)
+            }
+          }, 5000)
         }
       })
   }
@@ -77,6 +139,10 @@ class RealtimeManager {
   }
 
   public cleanup() {
+    if (this.productsPullTimeout) {
+      clearTimeout(this.productsPullTimeout)
+      this.productsPullTimeout = null
+    }
     if (this.channel) {
       supabase.removeChannel(this.channel)
       this.channel = null

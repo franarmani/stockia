@@ -87,9 +87,10 @@ export default function TrialExpiredModal() {
   }
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center"
-      style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(6px)' }}>
-      <div className="w-full sm:max-w-md bg-[#0d1b2d] rounded-t-3xl sm:rounded-2xl shadow-2xl max-h-[92vh] overflow-y-auto">
+    <div className="fixed inset-0 z-[200] flex items-center justify-center p-3 sm:p-4 overflow-y-auto"
+      style={{ background: 'rgba(5, 11, 22, 0.94)', backdropFilter: 'blur(14px)' }}>
+      <div className="w-full max-w-md max-h-[85vh] flex flex-col bg-[#0b1322] border border-slate-700/80 rounded-2xl shadow-2xl overflow-hidden my-auto animate-scale-in">
+        <div className="overflow-y-auto flex-1 min-h-0">
         {/* Header */}
         <div className="px-5 pt-5 pb-4 border-b border-white/10">
           <div className="flex items-center justify-between">
@@ -250,6 +251,7 @@ export default function TrialExpiredModal() {
             <LogOut className="w-4 h-4" />
             Cerrar sesión
           </button>
+        </div>
         </div>
       </div>
     </div>
